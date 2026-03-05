@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import type { YtdlpStatus, DenoStatus, DownloadProgress } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { Icon } from "@iconify/vue";
 import { useSettingStore } from "@/stores/setting";
-import DownloadDirCard from "@/components/DownloadDirCard.vue";
-import CookieCard from "@/components/CookieCard.vue";
-import type { YtdlpStatus, DenoStatus, DownloadProgress } from "@/types";
 
 const settingStore = useSettingStore();
 
@@ -143,7 +142,14 @@ onMounted(async () => {
   <div class="settings-page">
     <div class="page-header">
       <n-h2 style="margin: 0">设置</n-h2>
-      <n-button size="small" quaternary @click="refreshAll">刷新</n-button>
+      <n-button size="small" strong secondary @click="refreshAll">
+        <template #icon>
+          <n-icon>
+            <Icon icon="mdi:refresh" />
+          </n-icon>
+        </template>
+        刷新
+      </n-button>
     </div>
 
     <!-- yt-dlp -->
@@ -153,25 +159,30 @@ onMounted(async () => {
           <n-tag
             v-if="!ytdlpChecking"
             :type="ytdlpStatus?.installed ? 'success' : 'error'"
-            size="small"
             round
           >
             {{ ytdlpStatus?.installed ? "已安装" : "未安装" }}
           </n-tag>
           <n-button
             v-if="ytdlpStatus?.installed"
-            size="tiny"
             :loading="ytdlpUpdating"
+            strong
+            secondary
+            round
+            size="small"
             @click="handleUpdateYtdlp"
           >
             检查更新
           </n-button>
           <n-button
             v-if="ytdlpStatus && !ytdlpStatus.installed"
-            type="primary"
-            size="tiny"
             :loading="ytdlpDownloading"
             :disabled="ytdlpDownloading"
+            type="primary"
+            size="small"
+            strong
+            secondary
+            round
             @click="handleDownloadYtdlp"
           >
             下载
@@ -219,18 +230,20 @@ onMounted(async () => {
         <n-flex align="center" :size="8">
           <n-tag
             v-if="!denoChecking"
-            :type="denoStatus?.installed ? 'success' : 'warning'"
-            size="small"
+            :type="denoStatus?.installed ? 'success' : 'error'"
             round
           >
             {{ denoStatus?.installed ? "已安装" : "未安装" }}
           </n-tag>
           <n-button
             v-if="denoStatus && !denoStatus.installed"
-            type="primary"
-            size="tiny"
             :loading="denoDownloading"
             :disabled="denoDownloading"
+            type="primary"
+            size="small"
+            strong
+            secondary
+            round
             @click="handleDownloadDeno"
           >
             下载
@@ -365,5 +378,4 @@ onMounted(async () => {
   flex-shrink: 0;
   order: 0;
 }
-
 </style>

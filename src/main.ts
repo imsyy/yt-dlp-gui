@@ -6,6 +6,9 @@ import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
 // router
 import router from "./router";
 
+// styles
+import "@/styles/transitions.scss";
+
 // 挂载
 const app = createApp(App);
 // pinia

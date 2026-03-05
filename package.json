@@ -17,6 +17,7 @@
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-shell": "^2.3.5",
     "@vueuse/core": "^14.2.1",
+    "localforage": "^1.10.0",
     "lodash-es": "^4.17.23",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",

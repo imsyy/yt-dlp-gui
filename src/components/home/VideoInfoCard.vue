@@ -4,6 +4,8 @@ import type { VideoInfo } from "@/types";
 
 const props = defineProps<{
   videoInfo: VideoInfo;
+  isPlaylist?: boolean;
+  playlistCount?: number;
 }>();
 
 /** 格式化时长为 h:mm:ss 或 m:ss */
@@ -62,6 +64,14 @@ watch(
         </div>
       </div>
       <div class="video-meta">
+        <n-flex align="center" :size="8" style="margin-bottom: 4px">
+          <n-tag v-if="isPlaylist" size="small" round :bordered="false" type="warning">
+            <template #icon>
+              <n-icon size="12"><Icon icon="mdi:playlist-play" /></n-icon>
+            </template>
+            合集 {{ playlistCount }}P
+          </n-tag>
+        </n-flex>
         <n-ellipsis :line-clamp="2" :tooltip="false" class="video-title">
           {{ videoInfo.title }}
         </n-ellipsis>

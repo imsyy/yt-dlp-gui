@@ -4,7 +4,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { formatFileSize } from "@/utils/format";
 import { isValidUrl } from "@/utils/validate";
 import { useSettingStore } from "@/stores/setting";
-import type { VideoInfo, VideoFormat } from "@/types";
+import { useDownloadStore } from "@/stores/download";
+import type { VideoInfo, VideoFormat, PlaylistEntry } from "@/types";
 import VideoInfoCard from "@/components/home/VideoInfoCard.vue";
 import DownloadOptionsCard from "@/components/home/DownloadOptionsCard.vue";
 import ExtraOptionsCard from "@/components/home/ExtraOptionsCard.vue";
@@ -12,7 +13,9 @@ import SubtitleCard from "@/components/home/SubtitleCard.vue";
 import DownloadDirCard from "@/components/DownloadDirCard.vue";
 import DownloadBar from "@/components/home/DownloadBar.vue";
 
+const router = useRouter();
 const settingStore = useSettingStore();
+const downloadStore = useDownloadStore();
 
 // ========== 状态 ==========
 const url = ref("");
@@ -39,6 +42,11 @@ const noMerge = ref(false);
 const recodeFormat = ref("");
 const limitRate = ref("");
 const selectedSubtitles = ref<string[]>([]);
+
+// 播放列表
+const isPlaylist = ref(false);
+const playlistEntries = ref<PlaylistEntry[]>([]);
+const selectedPlaylistItems = ref<number[]>([]);
 
 // 下载目录卡片 ref
 const dirCardRef = ref<HTMLElement | null>(null);
@@ -117,9 +125,34 @@ const handleSearch = async () => {
       url: url.value.trim(),
       cookieFile,
     });
-    videoInfo.value = info;
+    // Detect playlist vs single video
+    if (info._type === "playlist" && info.entries?.length) {
+      isPlaylist.value = true;
+      playlistEntries.value = info.entries.map((e, i) => ({
+        id: e.id || String(i + 1),
+        title: e.title || `第 ${i + 1} P`,
+        duration: e.duration ?? null,
+        url: e.url || "",
+      }));
+      selectedPlaylistItems.value = playlistEntries.value.map((_, i) => i + 1);
+      // Use first entry's formats if available, otherwise use playlist-level formats
+      const firstEntry = info.entries[0];
+      const formats: VideoFormat[] = firstEntry?.formats || info.formats || [];
+      videoInfo.value = {
+        ...info,
+        title: info.title || firstEntry?.title || "",
+        thumbnail: info.thumbnail || firstEntry?.thumbnail || "",
+        duration: info.duration || firstEntry?.duration || 0,
+        formats,
+      };
+    } else {
+      isPlaylist.value = false;
+      playlistEntries.value = [];
+      selectedPlaylistItems.value = [];
+      videoInfo.value = info;
+    }
 
-    const formats: VideoFormat[] = info.formats || [];
+    const formats: VideoFormat[] = videoInfo.value.formats || [];
     videoFormats.value = formats
       .filter(
         (f) =>
@@ -140,8 +173,10 @@ const handleSearch = async () => {
       selectedAudioFormat.value = audioFormats.value[0].format_id;
 
     detailMode.value = true;
-  } catch (e: any) {
-    window.$message.error(e?.toString() || "获取视频信息失败");
+  } catch (e: unknown) {
+    window.$message.error(
+      e instanceof Error ? e.message : String(e) || "获取视频信息失败",
+    );
   } finally {
     fetching.value = false;
   }
@@ -165,17 +200,95 @@ const handleBack = () => {
   recodeFormat.value = "";
   limitRate.value = "";
   selectedSubtitles.value = [];
+  isPlaylist.value = false;
+  playlistEntries.value = [];
+  selectedPlaylistItems.value = [];
   url.value = "";
 };
 
 /** 开始下载视频，未设置目录时滚动提示 */
-const handleDownload = () => {
+const handleDownload = async () => {
   if (!settingStore.downloadDir) {
     window.$message.warning("请先设置下载目录");
     dirCardRef.value?.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
-  window.$message.info("下载功能开发中...");
+
+  const taskId = `dl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+  const cookieFile = await getCookieFile();
+
+  // Build format label for display
+  const buildFormatLabel = (): string => {
+    const parts: string[] = [];
+    if (downloadMode.value === "audio") {
+      parts.push("仅音频");
+      const af = audioFormats.value.find(
+        (f) => f.format_id === selectedAudioFormat.value,
+      );
+      if (af) parts.push(af.format_note || af.ext);
+    } else {
+      const vf = videoFormats.value.find(
+        (f) => f.format_id === selectedVideoFormat.value,
+      );
+      if (vf) {
+        if (vf.height) parts.push(`${vf.height}p`);
+        if (vf.fps) parts.push(`${vf.fps}fps`);
+      }
+      if (downloadMode.value === "video") parts.push("仅视频");
+    }
+    return parts.join(" ") || "默认画质";
+  };
+
+  const dlParams = {
+    url: url.value.trim(),
+    downloadDir: settingStore.downloadDir,
+    downloadMode: downloadMode.value,
+    videoFormat: selectedVideoFormat.value || null,
+    audioFormat: selectedAudioFormat.value || null,
+    cookieFile,
+    embedSubs: embedSubs.value,
+    embedThumbnail: embedThumbnail.value,
+    embedMetadata: embedMetadata.value,
+    noMerge: noMerge.value,
+    recodeFormat: recodeFormat.value || null,
+    limitRate: limitRate.value || null,
+    subtitles: selectedSubtitles.value,
+    startTime: startTime.value,
+    endTime: endTime.value,
+    noPlaylist: isPlaylist.value && selectedPlaylistItems.value.length === 1,
+    playlistItems: isPlaylist.value && selectedPlaylistItems.value.length > 0
+      ? selectedPlaylistItems.value.sort((a, b) => a - b).join(",")
+      : null,
+  };
+
+  downloadStore.addTask({
+    id: taskId,
+    url: url.value,
+    title: videoInfo.value?.title || "未知视频",
+    thumbnail: videoInfo.value?.thumbnail || "",
+    formatLabel: buildFormatLabel(),
+    status: "downloading",
+    percent: 0,
+    speed: "",
+    eta: "",
+    downloaded: "",
+    total: "",
+    logs: [],
+    createdAt: Date.now(),
+    params: dlParams,
+  });
+
+  try {
+    await invoke("start_download", {
+      params: { id: taskId, ...dlParams },
+    });
+    router.push({ name: "downloads" });
+  } catch (e: unknown) {
+    window.$message.error(
+      e instanceof Error ? e.message : String(e) || "启动下载失败",
+    );
+    downloadStore.removeTask(taskId);
+  }
 };
 </script>
 
@@ -253,8 +366,43 @@ const handleDownload = () => {
 
         <VideoInfoCard
           :video-info="videoInfo as VideoInfo"
+          :is-playlist="isPlaylist"
+          :playlist-count="playlistEntries.length"
           class="section-card"
         />
+
+        <!-- 播放列表选择 -->
+        <n-card v-if="isPlaylist && playlistEntries.length > 0" size="small" class="section-card">
+          <template #header>
+            <n-flex align="center" :size="8">
+              <n-icon size="16"><Icon icon="mdi:playlist-play" /></n-icon>
+              <span>播放列表</span>
+              <n-tag size="small" round :bordered="false" type="info">
+                {{ selectedPlaylistItems.length }} / {{ playlistEntries.length }}
+              </n-tag>
+            </n-flex>
+          </template>
+          <template #header-extra>
+            <n-flex :size="8">
+              <n-button size="tiny" secondary @click="selectedPlaylistItems = playlistEntries.map((_, i) => i + 1)">
+                全选
+              </n-button>
+              <n-button size="tiny" secondary @click="selectedPlaylistItems = []">
+                取消全选
+              </n-button>
+            </n-flex>
+          </template>
+          <n-checkbox-group v-model:value="selectedPlaylistItems">
+            <n-flex vertical :size="6">
+              <n-checkbox
+                v-for="(entry, index) in playlistEntries"
+                :key="entry.id"
+                :value="index + 1"
+                :label="`P${index + 1} ${entry.title}`"
+              />
+            </n-flex>
+          </n-checkbox-group>
+        </n-card>
 
         <DownloadOptionsCard
           v-model:download-mode="downloadMode"

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Icon } from "@iconify/vue";
-import "@/styles/transitions.scss";
 
 const router = useRouter();
 const route = useRoute();
