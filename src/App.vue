@@ -1,160 +1,208 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { invoke } from "@tauri-apps/api/core";
+import { Icon } from "@iconify/vue";
 
-const greetMsg = ref("");
-const name = ref("");
+const router = useRouter();
+const route = useRoute();
 
-async function greet() {
-  // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-  greetMsg.value = await invoke("greet", { name: name.value });
+const currentRoute = computed(() => route.name as string);
+
+function navigateTo(name: string) {
+  router.push({ name });
 }
+
+const navItems = [
+  { key: "home", icon: "mdi:home", label: "首页" },
+  { key: "downloads", icon: "mdi:download", label: "下载" },
+];
 </script>
 
 <template>
-  <main class="container">
-    <h1>Welcome to Tauri + Vue</h1>
+  <Provider>
+    <n-layout style="height: 100vh">
+      <n-layout-header bordered class="app-header">
+        <!-- 左侧 Logo -->
+        <div class="header-side">
+          <div class="logo" @click="navigateTo('home')">
+            <Icon icon="mdi:youtube" />
+            <span class="logo-text">GUI</span>
+          </div>
+        </div>
 
-    <div class="row">
-      <a href="https://vite.dev" target="_blank">
-        <img src="/vite.svg" class="logo vite" alt="Vite logo" />
-      </a>
-      <a href="https://tauri.app" target="_blank">
-        <img src="/tauri.svg" class="logo tauri" alt="Tauri logo" />
-      </a>
-      <a href="https://vuejs.org/" target="_blank">
-        <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-      </a>
-    </div>
-    <p>Click on the Tauri, Vite, and Vue logos to learn more.</p>
+        <!-- 中间导航 -->
+        <div class="header-nav">
+          <n-button
+            v-for="item in navItems"
+            :key="item.key"
+            :quaternary="currentRoute !== item.key"
+            :type="currentRoute === item.key ? 'primary' : 'default'"
+            :secondary="currentRoute === item.key"
+            :focusable="false"
+            round
+            @click="navigateTo(item.key)"
+          >
+            <template #icon>
+              <n-icon>
+                <Icon :icon="item.icon" />
+              </n-icon>
+            </template>
+            <span
+              class="nav-label"
+              :class="{ expanded: currentRoute === item.key }"
+            >
+              {{ item.label }}
+            </span>
+          </n-button>
+        </div>
 
-    <form class="row" @submit.prevent="greet">
-      <input id="greet-input" v-model="name" placeholder="Enter a name..." />
-      <button type="submit">Greet</button>
-    </form>
-    <p>{{ greetMsg }}</p>
-  </main>
+        <!-- 右侧按钮 -->
+        <div class="header-side header-side-right">
+          <n-button
+            :focusable="false"
+            quaternary
+            circle
+            tag="a"
+            href="https://github.com"
+            target="_blank"
+          >
+            <template #icon>
+              <n-icon>
+                <Icon icon="mdi:github" />
+              </n-icon>
+            </template>
+          </n-button>
+          <n-button
+            :type="currentRoute === 'settings' ? 'primary' : 'default'"
+            :secondary="currentRoute === 'settings'"
+            :quaternary="currentRoute !== 'settings'"
+            :focusable="false"
+            circle
+            @click="navigateTo('settings')"
+          >
+            <template #icon>
+              <n-icon>
+                <Icon icon="mdi:cog" />
+              </n-icon>
+            </template>
+          </n-button>
+        </div>
+      </n-layout-header>
+
+      <n-layout
+        position="absolute"
+        style="top: 56px"
+        content-style="padding: 24px;"
+        :native-scrollbar="false"
+      >
+        <router-view v-slot="{ Component }">
+          <Transition name="fade-slide" mode="out-in">
+            <component :is="Component" />
+          </Transition>
+        </router-view>
+      </n-layout>
+    </n-layout>
+  </Provider>
 </template>
 
-<style scoped>
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
-}
-
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #249b73);
-}
-
-</style>
-<style>
-:root {
-  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-  font-size: 16px;
-  line-height: 24px;
-  font-weight: 400;
-
-  color: #0f0f0f;
-  background-color: #f6f6f6;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
-}
-
-.container {
-  margin: 0;
-  padding-top: 10vh;
+<style scoped lang="scss">
+.app-header {
+  height: 56px;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
-}
+  align-items: center;
+  padding: 0 16px;
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-}
+  .header-side {
+    width: 120px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
 
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
-}
-
-.row {
-  display: flex;
-  justify-content: center;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
-}
-
-h1 {
-  text-align: center;
-}
-
-input,
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  color: #0f0f0f;
-  background-color: #ffffff;
-  transition: border-color 0.25s;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
-}
-
-button {
-  cursor: pointer;
-}
-
-button:hover {
-  border-color: #396cd8;
-}
-button:active {
-  border-color: #396cd8;
-  background-color: #e8e8e8;
-}
-
-input,
-button {
-  outline: none;
-}
-
-#greet-input {
-  margin-right: 5px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #f6f6f6;
-    background-color: #2f2f2f;
+    &.header-side-right {
+      justify-content: flex-end;
+      gap: 4px;
+    }
   }
 
-  a:hover {
-    color: #24c8db;
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    user-select: none;
+    cursor: pointer;
+
+    .iconify {
+      font-size: 28px;
+      transition: color 0.3s;
+    }
+
+    .logo-text {
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: 0.5px;
+    }
+
+    &:hover {
+      .iconify {
+        color: #ff0033;
+      }
+    }
   }
 
-  input,
-  button {
-    color: #ffffff;
-    background-color: #0f0f0f98;
-  }
-  button:active {
-    background-color: #0f0f0f69;
+  .header-nav {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+
+    :deep(.n-button) {
+      .n-button__content {
+        transition:
+          max-width 0.2s ease,
+          opacity 0.2s ease;
+      }
+
+      .n-button__icon {
+        margin-right: 0;
+      }
+
+      &:not(.n-button--color) .n-button__icon {
+        margin-left: 0;
+      }
+    }
+
+    .nav-label {
+      display: inline-block;
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition:
+        max-width 0.2s ease,
+        opacity 0.2s ease,
+        margin 0.2s ease;
+      margin-left: 0;
+
+      &.expanded {
+        max-width: 40px;
+        opacity: 1;
+        margin-left: 4px;
+      }
+    }
   }
 }
 
+// 路由切换动画
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.15s ease;
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateX(8px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-8px);
+}
 </style>
