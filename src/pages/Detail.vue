@@ -28,6 +28,15 @@ const timeToSeconds = (ts: number): number => {
   return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
 };
 
+/** 秒数格式化为 HH:MM:SS */
+const formatTime = (secs: number): string => {
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = secs % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+};
+
 // 下载模式
 const downloadMode = ref<"default" | "video" | "audio">("default");
 
@@ -133,6 +142,11 @@ const handleDownload = async () => {
         if (vf.fps) parts.push(`${vf.fps}fps`);
       }
       if (downloadMode.value === "video") parts.push("仅视频");
+    }
+    if (startTime.value != null || endTime.value != null) {
+      const s = startTime.value != null ? formatTime(timeToSeconds(startTime.value)) : "00:00";
+      const e = endTime.value != null ? formatTime(timeToSeconds(endTime.value)) : "结束";
+      parts.push(`✂${s}-${e}`);
     }
     return parts.join(" ") || "默认画质";
   };

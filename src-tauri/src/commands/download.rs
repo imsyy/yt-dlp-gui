@@ -75,7 +75,7 @@ fn process_output_line(
                 );
             }
         }
-        return; // ffmpeg 帧进度不转发到日志（太频繁）
+        return; // ffmpeg 帧进度不转发到日志
     }
 
     // 跟踪输出文件路径（从 [download] Destination 等行解析，作为备选方案）
