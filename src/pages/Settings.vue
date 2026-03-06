@@ -2,7 +2,6 @@
 import type { YtdlpStatus, DenoStatus, DownloadProgress } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { Icon } from "@iconify/vue";
 import { useSettingStore } from "@/stores/setting";
 
 const settingStore = useSettingStore();
@@ -145,7 +144,7 @@ onMounted(async () => {
       <n-button size="small" strong secondary @click="refreshAll">
         <template #icon>
           <n-icon>
-            <Icon icon="mdi:refresh" />
+            <icon-mdi-refresh />
           </n-icon>
         </template>
         刷新
@@ -321,6 +320,22 @@ onMounted(async () => {
           <div class="info-row">
             <span class="info-label">平台</span>
             <n-text code>{{ platformLabel }}</n-text>
+          </div>
+          <div class="info-row">
+            <span class="info-label">开源协议</span>
+            <n-text code>MIT</n-text>
+          </div>
+          <div class="info-row">
+            <span class="info-label">仓库</span>
+            <n-button
+              text
+              tag="a"
+              href="https://github.com/imsyy/yt-dlp-gui"
+              target="_blank"
+              size="tiny"
+            >
+              GitHub
+            </n-button>
           </div>
         </div>
       </n-flex>

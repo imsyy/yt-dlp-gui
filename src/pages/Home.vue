@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Icon } from "@iconify/vue";
 import { invoke } from "@tauri-apps/api/core";
 import { formatFileSize } from "@/utils/format";
 import { isValidUrl } from "@/utils/validate";
@@ -299,7 +298,7 @@ const handleDownload = async () => {
       <div v-if="!detailMode" key="search" class="search-view">
         <div class="search-hero">
           <div class="hero-logo">
-            <Icon icon="mdi:youtube" class="hero-icon" />
+            <icon-mdi-youtube class="hero-icon" />
             <span class="hero-text">GUI</span>
           </div>
           <n-text depth="3" style="font-size: 16px">
@@ -328,7 +327,7 @@ const handleDownload = async () => {
           >
             <template #icon>
               <n-icon>
-                <Icon icon="mdi:magnify" />
+                <icon-mdi-magnify />
               </n-icon>
             </template>
             解析
@@ -350,7 +349,7 @@ const handleDownload = async () => {
           <n-button size="small" strong secondary round @click="handleBack">
             <template #icon>
               <n-icon>
-                <Icon icon="mdi:arrow-left" />
+                <icon-mdi-arrow-left />
               </n-icon>
             </template>
             返回
@@ -375,7 +374,7 @@ const handleDownload = async () => {
         <n-card v-if="isPlaylist && playlistEntries.length > 0" size="small" class="section-card">
           <template #header>
             <n-flex align="center" :size="8">
-              <n-icon size="16"><Icon icon="mdi:playlist-play" /></n-icon>
+              <n-icon size="16"><icon-mdi-playlist-play /></n-icon>
               <span>播放列表</span>
               <n-tag size="small" round :bordered="false" type="info">
                 {{ selectedPlaylistItems.length }} / {{ playlistEntries.length }}

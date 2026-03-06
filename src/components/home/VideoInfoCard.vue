@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Icon } from "@iconify/vue";
 import type { VideoInfo } from "@/types";
 
 const props = defineProps<{
@@ -50,7 +49,7 @@ watch(
           style="border-radius: 6px"
         />
         <div v-if="coverError" class="cover-fallback">
-          <Icon icon="mdi:image-broken-variant" style="font-size: 32px; opacity: 0.4" />
+          <icon-mdi-image-broken-variant style="font-size: 32px; opacity: 0.4" />
         </div>
         <img
           v-show="coverLoaded && !coverError"
@@ -67,7 +66,7 @@ watch(
         <n-flex align="center" :size="8" style="margin-bottom: 4px">
           <n-tag v-if="isPlaylist" size="small" round :bordered="false" type="warning">
             <template #icon>
-              <n-icon size="12"><Icon icon="mdi:playlist-play" /></n-icon>
+              <n-icon size="12"><icon-mdi-playlist-play /></n-icon>
             </template>
             合集 {{ playlistCount }}P
           </n-tag>
@@ -77,8 +76,7 @@ watch(
         </n-ellipsis>
         <n-flex :size="12" align="center" style="margin-top: 8px">
           <n-text depth="3" style="font-size: 12px">
-            <Icon
-              icon="mdi:account"
+            <icon-mdi-account
               style="vertical-align: -2px; margin-right: 2px"
             />
             {{ videoInfo.uploader || "未知" }}
@@ -88,8 +86,7 @@ watch(
             depth="3"
             style="font-size: 12px"
           >
-            <Icon
-              icon="mdi:eye"
+            <icon-mdi-eye
               style="vertical-align: -2px; margin-right: 2px"
             />
             {{ formatViewCount(videoInfo.view_count) }}次播放

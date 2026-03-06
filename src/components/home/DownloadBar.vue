@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Icon } from "@iconify/vue";
+
 
 defineProps<{
   estimatedSizeText: string;
@@ -15,14 +15,14 @@ const emit = defineEmits<{
     <n-card size="small" class="bottom-card">
       <n-flex align="center" justify="space-between">
         <n-flex align="center" :size="4" class="size-info">
-          <Icon icon="mdi:file-outline" />
+          <icon-mdi-file-outline />
           <n-text depth="3">预估大小:</n-text>
           <n-text strong>{{ estimatedSizeText }}</n-text>
         </n-flex>
         <n-button type="primary" round @click="emit('download')">
           <template #icon>
             <n-icon>
-              <Icon icon="mdi:download" />
+              <icon-mdi-download />
             </n-icon>
           </template>
           立即下载

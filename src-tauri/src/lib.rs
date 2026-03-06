@@ -1,4 +1,6 @@
 mod commands;
+mod parser;
+mod process;
 mod utils;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -21,6 +23,8 @@ pub fn run() {
             commands::pause_download,
             commands::resume_download,
             commands::cancel_download,
+            commands::check_files_exist,
+            commands::delete_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

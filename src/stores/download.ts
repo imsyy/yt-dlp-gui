@@ -36,7 +36,7 @@ export const useDownloadStore = defineStore("download", () => {
     }, 500);
   };
 
-  /** 从 IndexedDB 恢复任务列表，将之前未完成的任务标记为中断 */
+  /** 从 IndexedDB 恢复任务列表，将之前未完成的任务标记为中断，移除文件已不存在的已完成任务 */
   const loadTasks = async () => {
     const saved = await storage.getItem<DownloadTask[]>(STORAGE_KEY);
     if (saved && Array.isArray(saved)) {
@@ -49,6 +49,30 @@ export const useDownloadStore = defineStore("download", () => {
         if (!Array.isArray(task.logs)) task.logs = [];
         if (!task.createdAt) task.createdAt = Date.now();
       }
+
+      // Filter out completed tasks whose output files no longer exist
+      const completedWithFile = saved.filter(
+        (t) => t.status === "completed" && t.outputFile,
+      );
+      if (completedWithFile.length > 0) {
+        try {
+          const paths = completedWithFile.map((t) => t.outputFile!);
+          const exists = await invoke<boolean[]>("check_files_exist", { paths });
+          const missingIds = new Set<string>();
+          completedWithFile.forEach((t, i) => {
+            if (!exists[i]) missingIds.add(t.id);
+          });
+          if (missingIds.size > 0) {
+            const filtered = saved.filter((t) => !missingIds.has(t.id));
+            tasks.value = filtered;
+            loaded.value = true;
+            return;
+          }
+        } catch {
+          // If check fails, keep all tasks
+        }
+      }
+
       tasks.value = saved;
     }
     loaded.value = true;

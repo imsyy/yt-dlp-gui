@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Icon } from "@iconify/vue";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useSettingStore } from "@/stores/setting";
@@ -78,7 +77,7 @@ const handleSelectFile = async () => {
           >
             <template #icon>
               <n-icon>
-                <Icon icon="mdi:content-save-outline" />
+                <icon-mdi-content-save-outline />
               </n-icon>
             </template>
             保存
@@ -99,7 +98,7 @@ const handleSelectFile = async () => {
           <n-button size="small" @click="handleSelectFile">
             <template #icon>
               <n-icon>
-                <Icon icon="mdi:file-search-outline" />
+                <icon-mdi-file-search-outline />
               </n-icon>
             </template>
             选择

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Icon } from "@iconify/vue";
-import { NLog } from "naive-ui";
+import { NCheckbox, NFlex, NLog } from "naive-ui";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { invoke } from "@tauri-apps/api/core";
 import { useDownloadStore } from "@/stores/download";
 import type { DownloadTask } from "@/types";
 
@@ -33,11 +33,7 @@ const formatDateLabel = (timestamp: number): string => {
   const date = new Date(timestamp);
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const target = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
-  );
+  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const diff = today.getTime() - target.getTime();
   const dayMs = 86400000;
 
@@ -141,8 +137,26 @@ const coverErrors = reactive(new Set<string>());
 // ========== 打开文件夹 ==========
 const handleOpenFolder = async (task: DownloadTask) => {
   try {
-    const target = task.outputFile || task.params.downloadDir;
-    await revealItemInDir(target);
+    if (task.outputFile) {
+      const [exists] = await invoke<boolean[]>("check_files_exist", {
+        paths: [task.outputFile],
+      });
+      if (exists) {
+        await revealItemInDir(task.outputFile);
+        return;
+      }
+      window.$dialog.warning({
+        title: "文件不存在",
+        content: "该文件已被删除或移动，是否从列表中移除该记录？",
+        positiveText: "移除",
+        negativeText: "取消",
+        onPositiveClick: () => {
+          downloadStore.removeTask(task.id);
+        },
+      });
+      return;
+    }
+    await revealItemInDir(task.params.downloadDir);
   } catch (e: unknown) {
     window.$message.error(
       e instanceof Error ? e.message : String(e) || "打开文件夹失败",
@@ -207,14 +221,40 @@ const handleRetry = async (id: string) => {
   }
 };
 
-const handleRemove = (id: string) => {
+const deleteFileChecked = ref(false);
+
+const handleRemove = (task: DownloadTask) => {
+  deleteFileChecked.value = false;
+  const hasFile = task.status === "completed" && !!task.outputFile;
   window.$dialog.warning({
     title: "移除任务",
-    content: "确定要从列表中移除该任务吗？",
+    content: () =>
+      h(NFlex, { vertical: true, size: 12 }, () => [
+        "确定要从列表中移除该任务吗？",
+        hasFile
+          ? h(
+              NCheckbox,
+              {
+                checked: deleteFileChecked.value,
+                "onUpdate:checked": (v: boolean) => {
+                  deleteFileChecked.value = v;
+                },
+              },
+              { default: () => "同时删除已下载的文件" },
+            )
+          : null,
+      ]),
     positiveText: "移除",
     negativeText: "取消",
-    onPositiveClick: () => {
-      downloadStore.removeTask(id);
+    onPositiveClick: async () => {
+      if (hasFile && deleteFileChecked.value && task.outputFile) {
+        try {
+          await invoke("delete_file", { path: task.outputFile });
+        } catch {
+          // 文件可能已不存在，忽略
+        }
+      }
+      downloadStore.removeTask(task.id);
     },
   });
 };
@@ -230,39 +270,44 @@ const handleClearFinished = () => {
     },
   });
 };
-
 </script>
 
 <template>
-  <div class="downloads-page">
+  <n-flex vertical :size="24">
     <!-- ====== 下载中区域 ====== -->
     <div class="section">
-      <div class="section-header">
-        <n-text strong style="font-size: 15px">
-          <n-icon size="16" style="vertical-align: -2px; margin-right: 4px">
-            <Icon icon="mdi:download" />
-          </n-icon>
-          下载中
-        </n-text>
-        <n-tag v-if="activeTasks.length > 0" size="small" round :bordered="false" type="info">
+      <n-flex align="center" :size="8" style="margin-bottom: 12px">
+        <n-icon size="16"><icon-mdi-download /></n-icon>
+        <n-text strong>下载中</n-text>
+        <n-tag
+          v-if="activeTasks.length > 0"
+          size="small"
+          round
+          :bordered="false"
+          type="info"
+        >
           {{ activeTasks.length }}
         </n-tag>
-      </div>
+      </n-flex>
 
       <div v-if="activeTasks.length === 0" class="section-empty">
         <n-empty description="暂无正在下载的任务" size="small" />
       </div>
       <template v-else>
-        <div v-for="group in activeGroups" :key="'a-' + group.label" class="date-group">
+        <div
+          v-for="group in activeGroups"
+          :key="'a-' + group.label"
+          class="date-group"
+        >
           <n-text depth="3" class="date-label">{{ group.label }}</n-text>
-          <div class="task-list">
+          <n-flex vertical :size="10">
             <n-card
               v-for="task in group.tasks"
               :key="task.id"
               size="small"
               class="task-card"
             >
-              <div class="task-content">
+              <n-flex :size="14">
                 <div class="task-thumbnail">
                   <img
                     v-if="task.thumbnail && !coverErrors.has(task.id)"
@@ -270,18 +315,22 @@ const handleClearFinished = () => {
                     @error="coverErrors.add(task.id)"
                   />
                   <div v-else class="thumbnail-placeholder">
-                    <Icon icon="mdi:video-outline" />
+                    <icon-mdi-video-outline />
                   </div>
                 </div>
                 <n-flex justify="between" vertical class="task-info">
-                  <div class="task-header">
+                  <n-flex align="center" :size="8" class="task-header">
                     <n-tag size="small" :bordered="false" round type="info">
                       {{ task.formatLabel }}
                     </n-tag>
-                    <n-ellipsis :line-clamp="1" :tooltip="false" class="task-title">
+                    <n-ellipsis
+                      :line-clamp="1"
+                      :tooltip="false"
+                      class="task-title"
+                    >
                       {{ task.title }}
                     </n-ellipsis>
-                  </div>
+                  </n-flex>
                   <n-progress
                     :percentage="task.percent"
                     :show-indicator="false"
@@ -291,47 +340,89 @@ const handleClearFinished = () => {
                   />
                   <n-flex align="center" justify="space-between">
                     <n-flex align="center">
-                      <n-tag size="small" :bordered="false" round :type="statusType(task)">
+                      <n-tag
+                        size="small"
+                        :bordered="false"
+                        round
+                        :type="statusType(task)"
+                      >
                         {{ statusLabel(task) }}
                       </n-tag>
                       <n-text v-if="sizeProgress(task)" depth="3">
                         {{ sizeProgress(task) }}
                       </n-text>
                       <n-text depth="3">{{ task.percent.toFixed(1) }}%</n-text>
-                      <n-text v-if="task.eta && task.status === 'downloading'" depth="3">
+                      <n-text
+                        v-if="task.eta && task.status === 'downloading'"
+                        depth="3"
+                      >
                         ETA {{ task.eta }}
                       </n-text>
                     </n-flex>
                     <n-flex align="center" size="small">
                       <template v-if="task.status === 'downloading'">
-                        <n-button size="tiny" strong secondary @click="handlePause(task.id)">
+                        <n-button
+                          size="tiny"
+                          strong
+                          secondary
+                          @click="handlePause(task.id)"
+                        >
                           <template #icon>
-                            <n-icon size="16"><Icon icon="mdi:pause" /></n-icon>
+                            <n-icon size="16"><icon-mdi-pause /></n-icon>
                           </template>
                         </n-button>
-                        <n-button size="tiny" strong secondary type="error" @click="handleCancel(task.id)">
+                        <n-button
+                          size="tiny"
+                          strong
+                          secondary
+                          type="error"
+                          @click="handleCancel(task.id)"
+                        >
                           <template #icon>
-                            <n-icon size="16"><Icon icon="mdi:close-circle-outline" /></n-icon>
+                            <n-icon size="16"
+                              ><icon-mdi-close-circle-outline
+                            /></n-icon>
                           </template>
                         </n-button>
                       </template>
                       <template v-else-if="task.status === 'paused'">
-                        <n-button size="tiny" strong secondary type="primary" @click="handleResume(task.id)">
+                        <n-button
+                          size="tiny"
+                          strong
+                          secondary
+                          type="primary"
+                          @click="handleResume(task.id)"
+                        >
                           <template #icon>
-                            <n-icon size="16"><Icon icon="mdi:play" /></n-icon>
+                            <n-icon size="16"><icon-mdi-play /></n-icon>
                           </template>
                         </n-button>
-                        <n-button size="tiny" strong secondary type="error" @click="handleCancel(task.id)">
+                        <n-button
+                          size="tiny"
+                          strong
+                          secondary
+                          type="error"
+                          @click="handleCancel(task.id)"
+                        >
                           <template #icon>
-                            <n-icon size="16"><Icon icon="mdi:close-circle-outline" /></n-icon>
+                            <n-icon size="16"
+                              ><icon-mdi-close-circle-outline
+                            /></n-icon>
                           </template>
                         </n-button>
                       </template>
                       <n-divider vertical style="margin: 0 2px" />
-                      <n-button size="tiny" strong secondary @click="toggleLog(task.id)">
+                      <n-button
+                        size="tiny"
+                        strong
+                        secondary
+                        @click="toggleLog(task.id)"
+                      >
                         <template #icon>
                           <n-icon size="16">
-                            <Icon :icon="expandedLogs.has(task.id) ? 'mdi:chevron-up' : 'mdi:text-long'" />
+                            <icon-mdi-chevron-up
+                              v-if="expandedLogs.has(task.id)"
+                            /><icon-mdi-text-long v-else />
                           </n-icon>
                         </template>
                       </n-button>
@@ -339,27 +430,34 @@ const handleClearFinished = () => {
                   </n-flex>
                   <n-collapse-transition :show="expandedLogs.has(task.id)">
                     <div class="task-log">
-                      <n-log :log="logContent(task)" :rows="8" :font-size="12" :trim="false" />
+                      <n-log
+                        :log="logContent(task)"
+                        :rows="8"
+                        :font-size="12"
+                        :trim="false"
+                      />
                     </div>
                   </n-collapse-transition>
                 </n-flex>
-              </div>
+              </n-flex>
             </n-card>
-          </div>
+          </n-flex>
         </div>
       </template>
     </div>
 
     <!-- ====== 已完成区域 ====== -->
     <div class="section">
-      <div class="section-header">
-        <n-text strong style="font-size: 15px">
-          <n-icon size="16" style="vertical-align: -2px; margin-right: 4px">
-            <Icon icon="mdi:check-circle-outline" />
-          </n-icon>
-          已完成
-        </n-text>
-        <n-tag v-if="finishedTasks.length > 0" size="small" round :bordered="false" type="success">
+      <n-flex align="center" :size="8" style="margin-bottom: 12px">
+        <n-icon size="16"><icon-mdi-check-circle-outline /></n-icon>
+        <n-text strong>已完成</n-text>
+        <n-tag
+          v-if="finishedTasks.length > 0"
+          size="small"
+          round
+          :bordered="false"
+          type="success"
+        >
           {{ finishedTasks.length }}
         </n-tag>
         <n-button
@@ -372,26 +470,30 @@ const handleClearFinished = () => {
           @click="handleClearFinished"
         >
           <template #icon>
-            <n-icon size="14"><Icon icon="mdi:delete-sweep-outline" /></n-icon>
+            <n-icon size="14"><icon-mdi-delete-sweep-outline /></n-icon>
           </template>
           清空
         </n-button>
-      </div>
+      </n-flex>
 
       <div v-if="finishedTasks.length === 0" class="section-empty">
         <n-empty description="暂无已完成的任务" size="small" />
       </div>
       <template v-else>
-        <div v-for="group in finishedGroups" :key="'f-' + group.label" class="date-group">
+        <div
+          v-for="group in finishedGroups"
+          :key="'f-' + group.label"
+          class="date-group"
+        >
           <n-text depth="3" class="date-label">{{ group.label }}</n-text>
-          <div class="task-list">
+          <n-flex vertical :size="10">
             <n-card
               v-for="task in group.tasks"
               :key="task.id"
               size="small"
               class="task-card"
             >
-              <div class="task-content">
+              <n-flex :size="14">
                 <div class="task-thumbnail">
                   <img
                     v-if="task.thumbnail && !coverErrors.has(task.id)"
@@ -399,18 +501,22 @@ const handleClearFinished = () => {
                     @error="coverErrors.add(task.id)"
                   />
                   <div v-else class="thumbnail-placeholder">
-                    <Icon icon="mdi:video-outline" />
+                    <icon-mdi-video-outline />
                   </div>
                 </div>
                 <n-flex justify="between" vertical class="task-info">
-                  <div class="task-header">
+                  <n-flex align="center" :size="8" class="task-header">
                     <n-tag size="small" :bordered="false" round type="info">
                       {{ task.formatLabel }}
                     </n-tag>
-                    <n-ellipsis :line-clamp="1" :tooltip="false" class="task-title">
+                    <n-ellipsis
+                      :line-clamp="1"
+                      :tooltip="false"
+                      class="task-title"
+                    >
                       {{ task.title }}
                     </n-ellipsis>
-                  </div>
+                  </n-flex>
                   <n-progress
                     :percentage="task.percent"
                     :show-indicator="false"
@@ -419,79 +525,100 @@ const handleClearFinished = () => {
                   />
                   <n-flex align="center" justify="space-between">
                     <n-flex align="center">
-                      <n-tag size="small" :bordered="false" round :type="statusType(task)">
+                      <n-tag
+                        size="small"
+                        :bordered="false"
+                        round
+                        :type="statusType(task)"
+                      >
                         {{ statusLabel(task) }}
                       </n-tag>
                       <template v-if="task.status !== 'completed'">
                         <n-text v-if="sizeProgress(task)" depth="3">
                           {{ sizeProgress(task) }}
                         </n-text>
-                        <n-text depth="3">{{ task.percent.toFixed(1) }}%</n-text>
+                        <n-text depth="3"
+                          >{{ task.percent.toFixed(1) }}%</n-text
+                        >
                       </template>
                     </n-flex>
                     <n-flex align="center" size="small">
                       <n-button
                         v-if="task.status === 'completed'"
-                        size="tiny" strong secondary type="primary"
+                        size="tiny"
+                        strong
+                        secondary
+                        type="primary"
                         @click="handleOpenFolder(task)"
                       >
                         <template #icon>
-                          <n-icon size="16"><Icon icon="mdi:folder-open-outline" /></n-icon>
+                          <n-icon size="16"
+                            ><icon-mdi-folder-open-outline
+                          /></n-icon>
                         </template>
                       </n-button>
                       <n-button
-                        v-if="task.status === 'error' || task.status === 'cancelled'"
-                        size="tiny" strong secondary type="primary"
+                        v-if="
+                          task.status === 'error' || task.status === 'cancelled'
+                        "
+                        size="tiny"
+                        strong
+                        secondary
+                        type="primary"
                         @click="handleRetry(task.id)"
                       >
                         <template #icon>
-                          <n-icon size="16"><Icon icon="mdi:refresh" /></n-icon>
+                          <n-icon size="16"><icon-mdi-refresh /></n-icon>
                         </template>
                       </n-button>
-                      <n-button size="tiny" strong secondary @click="toggleLog(task.id)">
+                      <n-button
+                        size="tiny"
+                        strong
+                        secondary
+                        @click="toggleLog(task.id)"
+                      >
                         <template #icon>
                           <n-icon size="16">
-                            <Icon :icon="expandedLogs.has(task.id) ? 'mdi:chevron-up' : 'mdi:text-long'" />
+                            <icon-mdi-chevron-up
+                              v-if="expandedLogs.has(task.id)"
+                            /><icon-mdi-text-long v-else />
                           </n-icon>
                         </template>
                       </n-button>
-                      <n-button type="error" size="tiny" strong secondary @click="handleRemove(task.id)">
+                      <n-button
+                        type="error"
+                        size="tiny"
+                        strong
+                        secondary
+                        @click="handleRemove(task)"
+                      >
                         <template #icon>
-                          <n-icon size="16"><Icon icon="mdi:delete-outline" /></n-icon>
+                          <n-icon size="16"><icon-mdi-delete-outline /></n-icon>
                         </template>
                       </n-button>
                     </n-flex>
                   </n-flex>
                   <n-collapse-transition :show="expandedLogs.has(task.id)">
                     <div class="task-log">
-                      <n-log :log="logContent(task)" :rows="8" :font-size="12" :trim="false" />
+                      <n-log
+                        :log="logContent(task)"
+                        :rows="8"
+                        :font-size="12"
+                        :trim="false"
+                      />
                     </div>
                   </n-collapse-transition>
                 </n-flex>
-              </div>
+              </n-flex>
             </n-card>
-          </div>
+          </n-flex>
         </div>
       </template>
     </div>
-  </div>
+  </n-flex>
 </template>
 
 <style scoped lang="scss">
-.downloads-page {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-// ========== 区域 ==========
-.section-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
 .section-empty {
   padding: 24px 0;
 }
@@ -512,17 +639,6 @@ const handleClearFinished = () => {
   :deep(.n-card__content) {
     padding: 14px;
   }
-}
-
-.task-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.task-content {
-  display: flex;
-  gap: 14px;
 }
 
 .task-thumbnail {
@@ -557,9 +673,6 @@ const handleClearFinished = () => {
 }
 
 .task-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   min-width: 0;
 
   .task-title {

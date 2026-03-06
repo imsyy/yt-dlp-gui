@@ -6,7 +6,9 @@
       "Bash(cargo add:*)",
       "Bash(npx vue-tsc:*)",
       "Bash(npx vite:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm remove:*)"
     ]
   }
 }

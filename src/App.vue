@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { Icon } from "@iconify/vue";
+import IconMdiHome from "~icons/mdi/home";
+import IconMdiDownload from "~icons/mdi/download";
+import type { Component } from "vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -10,9 +12,9 @@ function navigateTo(name: string) {
   router.push({ name });
 }
 
-const navItems = [
-  { key: "home", icon: "mdi:home", label: "首页" },
-  { key: "downloads", icon: "mdi:download", label: "下载" },
+const navItems: { key: string; icon: Component; label: string }[] = [
+  { key: "home", icon: IconMdiHome, label: "首页" },
+  { key: "downloads", icon: IconMdiDownload, label: "下载" },
 ];
 </script>
 
@@ -23,7 +25,7 @@ const navItems = [
         <!-- 左侧 Logo -->
         <div class="header-side">
           <div class="logo" @click="navigateTo('home')">
-            <Icon icon="mdi:youtube" />
+            <icon-mdi-youtube />
             <span class="logo-text">GUI</span>
           </div>
         </div>
@@ -42,7 +44,7 @@ const navItems = [
           >
             <template #icon>
               <n-icon>
-                <Icon :icon="item.icon" />
+                <component :is="item.icon" />
               </n-icon>
             </template>
             <span
@@ -61,12 +63,12 @@ const navItems = [
             quaternary
             circle
             tag="a"
-            href="https://github.com"
+            href="https://github.com/imsyy/yt-dlp-gui"
             target="_blank"
           >
             <template #icon>
               <n-icon>
-                <Icon icon="mdi:github" />
+                <icon-mdi-github />
               </n-icon>
             </template>
           </n-button>
@@ -80,7 +82,7 @@ const navItems = [
           >
             <template #icon>
               <n-icon>
-                <Icon icon="mdi:cog" />
+                <icon-mdi-cog />
               </n-icon>
             </template>
           </n-button>
@@ -90,14 +92,42 @@ const navItems = [
       <n-layout
         position="absolute"
         style="top: 56px"
-        content-style="padding: 24px;"
+        content-style="padding: 24px; display: flex; flex-direction: column; min-height: 100%;"
         :native-scrollbar="false"
       >
-        <router-view v-slot="{ Component }">
-          <Transition name="fade-slide" mode="out-in">
-            <component :is="Component" />
-          </Transition>
-        </router-view>
+        <div style="flex: 1">
+          <router-view v-slot="{ Component }">
+            <Transition name="fade-slide" mode="out-in">
+              <component :is="Component" />
+            </Transition>
+          </router-view>
+        </div>
+        <n-flex justify="center" align="center" :size="4" class="app-footer">
+          <n-text depth="3" style="font-size: 12px">
+            © {{ new Date().getFullYear() }}
+            <n-button
+              text
+              tag="a"
+              href="https://github.com/imsyy"
+              target="_blank"
+              size="tiny"
+              style="font-size: 12px"
+            >
+              imsyy
+            </n-button>
+            ·
+            <n-button
+              text
+              tag="a"
+              href="https://github.com/imsyy/yt-dlp-gui"
+              target="_blank"
+              size="tiny"
+              style="font-size: 12px"
+            >
+              yt-dlp-gui
+            </n-button>
+          </n-text>
+        </n-flex>
       </n-layout>
     </n-layout>
   </Provider>
@@ -129,7 +159,7 @@ const navItems = [
     user-select: none;
     cursor: pointer;
 
-    .iconify {
+    svg {
       font-size: 28px;
       transition: color 0.3s;
     }
@@ -141,7 +171,7 @@ const navItems = [
     }
 
     &:hover {
-      .iconify {
+      svg {
         color: #ff0033;
       }
     }
@@ -190,4 +220,8 @@ const navItems = [
   }
 }
 
+.app-footer {
+  padding: 24px 0 4px;
+  flex-shrink: 0;
+}
 </style>
