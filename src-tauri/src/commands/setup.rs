@@ -1,4 +1,4 @@
-/// 平台信息、yt-dlp 和 Deno 安装管理
+//! 平台信息、yt-dlp 和 Deno 安装管理
 
 use crate::utils;
 use futures_util::StreamExt;

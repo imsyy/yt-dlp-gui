@@ -27,7 +27,13 @@ pub fn run() {
             commands::check_files_exist,
             commands::delete_file,
             commands::tool_download_thumbnail,
+            commands::tool_fetch_thumbnails,
+            commands::tool_save_thumbnail,
             commands::tool_download_subtitles,
+            commands::tool_fetch_subtitles,
+            commands::tool_save_subtitle,
+            commands::tool_download_text,
+            commands::tool_save_text_to_file,
             commands::tool_download_live_chat,
         ])
         .run(tauri::generate_context!())

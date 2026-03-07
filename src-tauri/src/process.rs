@@ -1,4 +1,4 @@
-/// 操作系统级进程控制模块（挂起/恢复/终止）
+//! 操作系统级进程控制模块（挂起/恢复/终止）
 
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x08000000;

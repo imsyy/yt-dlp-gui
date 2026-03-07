@@ -101,9 +101,18 @@ export interface PlaylistEntry {
   formats?: VideoFormat[];
 }
 
+export interface ThumbnailInfo {
+  url: string;
+  height?: number;
+  width?: number;
+  resolution?: string;
+  id?: string;
+}
+
 export interface VideoInfo {
   title: string;
   thumbnail: string;
+  thumbnails?: ThumbnailInfo[];
   duration: number;
   uploader: string;
   view_count: number;
@@ -111,12 +120,21 @@ export interface VideoInfo {
   description: string;
   formats: VideoFormat[];
   subtitles: Record<string, { ext: string; url: string; name?: string }[]>;
-  automatic_captions: Record<
-    string,
-    { ext: string; url: string; name?: string }[]
-  >;
+  automatic_captions: Record<string, { ext: string; url: string; name?: string }[]>;
   /** Playlist fields — present when the URL is a playlist */
   _type?: string;
   entries?: PlaylistEntry[];
   playlist_count?: number;
+}
+
+export interface SubtitleTrack {
+  ext: string;
+  url: string;
+  name?: string;
+}
+
+export interface SubtitleInfo {
+  title: string;
+  subtitles: Record<string, SubtitleTrack[]>;
+  automatic_captions: Record<string, SubtitleTrack[]>;
 }

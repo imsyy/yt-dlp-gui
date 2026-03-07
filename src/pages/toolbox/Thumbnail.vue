@@ -1,43 +1,108 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
+import { save } from "@tauri-apps/plugin-dialog";
 import { isValidUrl } from "@/utils/validate";
 import { useSettingStore } from "@/stores/setting";
 import { useVideoStore } from "@/stores/video";
+import type { ThumbnailInfo, VideoInfo } from "@/types";
 
 const settingStore = useSettingStore();
 const videoStore = useVideoStore();
 const toolUrl = inject<Ref<string>>("toolUrl")!;
 
 const loading = ref(false);
-const downloadDir = ref(settingStore.downloadDir || "");
+const thumbnails = ref<ThumbnailInfo[]>([]);
+const videoTitle = ref("");
+const savingId = ref<string | null>(null);
 
 const urlValid = computed(() => isValidUrl(toolUrl.value.trim()));
 
-const handleSelectDir = async () => {
-  const selected = await open({ directory: true, multiple: false, title: "选择保存目录" });
-  if (selected) downloadDir.value = selected as string;
+/** 获取缩略图文件扩展名 */
+const getExtFromUrl = (url: string): string => {
+  try {
+    const pathname = new URL(url).pathname;
+    const ext = pathname.split(".").pop()?.toLowerCase();
+    if (ext && ["jpg", "jpeg", "png", "webp"].includes(ext)) return ext;
+  } catch {
+    // ignore
+  }
+  return "jpg";
 };
 
-const handleExecute = async () => {
-  if (!downloadDir.value) {
-    window.$message.warning("请先选择保存目录");
-    return;
-  }
+/** 获取分辨率显示文本 */
+const getResolutionLabel = (t: ThumbnailInfo): string => {
+  if (t.width && t.height) return `${t.width} x ${t.height}`;
+  if (t.resolution) return t.resolution;
+  return "未知";
+};
+
+/** 获取视频信息并提取封面列表 */
+const handleFetch = async () => {
   loading.value = true;
+  thumbnails.value = [];
+  videoTitle.value = "";
   try {
     const cookieFile = await videoStore.getCookieFile();
-    await invoke("tool_download_thumbnail", {
+    const info = await invoke<VideoInfo>("tool_fetch_thumbnails", {
       url: toolUrl.value.trim(),
-      downloadDir: downloadDir.value,
       cookieFile,
       proxy: settingStore.proxy || null,
     });
-    window.$message.success("封面下载完成");
+    videoTitle.value = info.title || "";
+    const list = info.thumbnails || [];
+    // 优先保留有明确尺寸的项，按分辨率去重
+    const withSize = list.filter((t) => t.url && t.width && t.height);
+    const seen = new Set<string>();
+    const deduped = withSize.filter((t) => {
+      const key = `${t.width}x${t.height}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    if (deduped.length > 0) {
+      thumbnails.value = deduped.sort(
+        (a, b) => (b.width || 0) * (b.height || 0) - (a.width || 0) * (a.height || 0),
+      );
+    } else if (info.thumbnail) {
+      // 没有带尺寸的项，使用主封面 URL
+      thumbnails.value = [{ url: info.thumbnail, id: "default" }];
+    } else {
+      window.$message.warning("未找到封面图片");
+    }
   } catch (e: unknown) {
-    window.$message.error(`下载失败: ${e}`);
+    window.$message.error(`获取失败: ${e}`);
   } finally {
     loading.value = false;
+  }
+};
+
+/** 另存为 */
+const handleSave = async (thumb: ThumbnailInfo) => {
+  const ext = getExtFromUrl(thumb.url);
+  const defaultName = videoTitle.value
+    ? `${videoTitle.value.slice(0, 200)}.${ext}`
+    : `thumbnail.${ext}`;
+
+  const filePath = await save({
+    title: "保存封面图片",
+    defaultPath: defaultName,
+    filters: [{ name: "图片文件", extensions: [ext, "jpg", "png", "webp"] }],
+  });
+  if (!filePath) return;
+
+  const id = thumb.id || thumb.url;
+  savingId.value = id;
+  try {
+    await invoke("tool_save_thumbnail", {
+      url: thumb.url,
+      filePath,
+      proxy: settingStore.proxy || null,
+    });
+    window.$message.success("封面已保存");
+  } catch (e: unknown) {
+    window.$message.error(`保存失败: ${e}`);
+  } finally {
+    savingId.value = null;
   }
 };
 </script>
@@ -57,35 +122,52 @@ const handleExecute = async () => {
     <n-card size="small">
       <n-flex vertical :size="12">
         <n-text depth="3" style="font-size: 13px">
-          下载视频的封面图片，自动转换为 JPG 格式保存
+          获取视频的全部封面图片，选择清晰度后另存为本地文件
         </n-text>
-        <n-flex align="center" :size="8">
-          <n-input
-            v-model:value="downloadDir"
-            placeholder="选择保存目录"
-            readonly
-            size="small"
-            style="flex: 1"
-          />
-          <n-button size="small" @click="handleSelectDir">
-            <template #icon>
-              <n-icon><icon-mdi-folder-open-outline /></n-icon>
-            </template>
-            选择
-          </n-button>
-        </n-flex>
         <n-button
           type="primary"
           :loading="loading"
-          :disabled="!urlValid || loading || !downloadDir"
-          @click="handleExecute"
+          :disabled="!urlValid || loading"
+          @click="handleFetch"
         >
           <template #icon>
-            <n-icon><icon-mdi-download /></n-icon>
+            <n-icon><icon-mdi-image-search /></n-icon>
           </template>
-          下载封面
+          获取封面列表
         </n-button>
       </n-flex>
+    </n-card>
+
+    <!-- 封面列表 -->
+    <n-card v-if="thumbnails.length" size="small" :title="`共 ${thumbnails.length} 张封面`">
+      <n-list hoverable clickable bordered>
+        <n-list-item v-for="thumb in thumbnails" :key="thumb.id || thumb.url">
+          <n-flex align="center" :size="12" :wrap="false">
+            <n-image
+              :src="thumb.url"
+              lazy
+              preview-disabled
+              width="120"
+              height="68"
+              object-fit="cover"
+              style="border-radius: 4px; flex-shrink: 0"
+            />
+            <n-flex align="center" justify="space-between" style="flex: 1; min-width: 0">
+              <n-text style="font-size: 13px">{{ getResolutionLabel(thumb) }}</n-text>
+              <n-button
+                size="small"
+                :loading="savingId === (thumb.id || thumb.url)"
+                @click="handleSave(thumb)"
+              >
+                <template #icon>
+                  <n-icon><icon-mdi-content-save-outline /></n-icon>
+                </template>
+                另存为
+              </n-button>
+            </n-flex>
+          </n-flex>
+        </n-list-item>
+      </n-list>
     </n-card>
   </n-flex>
 </template>

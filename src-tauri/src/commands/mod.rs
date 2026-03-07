@@ -1,19 +1,19 @@
-/// Tauri 命令模块
-///
-/// 按功能域拆分:
-/// - setup: 平台信息、yt-dlp/Deno 安装管理
-/// - video: 视频信息获取、Cookie 管理
-/// - download: 下载任务控制
+//! Tauri 命令模块
+//!
+//! 按功能域拆分:
+//! - setup: 平台信息、yt-dlp/Deno 安装管理
+//! - video: 视频信息获取、Cookie 管理
+//! - download: 下载任务控制
 
-mod setup;
-mod video;
 mod download;
+mod setup;
 mod tools;
+mod video;
 
-pub use setup::*;
-pub use video::*;
 pub use download::*;
+pub use setup::*;
 pub use tools::*;
+pub use video::*;
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};

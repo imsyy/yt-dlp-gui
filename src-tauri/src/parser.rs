@@ -1,4 +1,4 @@
-/// yt-dlp 输出解析模块
+//! yt-dlp 输出解析模块
 
 /// 进度信息
 pub struct ProgressInfo {
