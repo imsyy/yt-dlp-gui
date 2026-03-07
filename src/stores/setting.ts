@@ -20,7 +20,7 @@ export const useSettingStore = defineStore("setting", () => {
   const proxy = ref("");
 
   /** 文件名模板，使用 yt-dlp output template 语法 */
-  const outputTemplate = ref("%(title).200s.%(ext)s");
+  const outputTemplate = ref("%(title).200s [%(id)s].%(ext)s");
 
   /** 并发分片数（--concurrent-fragments），0 表示不启用 */
   const concurrentFragments = ref(0);

@@ -11,7 +11,9 @@
       "Bash(pnpm remove:*)",
       "Bash(pnpm lint:*)",
       "Bash(pnpm:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(cargo clippy:*)",
+      "WebFetch(domain:www.naiveui.com)"
     ]
   }
 }
