@@ -27,4 +27,5 @@ futures-util = "0.3.32"
 zip = "8.2.0"
 tauri-plugin-dialog = "2.6.0"
 tauri-plugin-clipboard-manager = "2.3.2"
+tauri-plugin-notification = "2.3.3"
 

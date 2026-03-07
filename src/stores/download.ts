@@ -1,6 +1,11 @@
 import { defineStore } from "pinia";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
+import {
+  isPermissionGranted,
+  requestPermission,
+  sendNotification,
+} from "@tauri-apps/plugin-notification";
 import localforage from "localforage";
 import type { DownloadTask } from "@/types";
 import { useSettingStore } from "@/stores/setting";
@@ -59,6 +64,29 @@ export const useDownloadStore = defineStore("download", () => {
     const settingStore = useSettingStore();
     const max = settingStore.maxConcurrentDownloads;
     return max <= 0 || activeCount.value < max;
+  };
+
+  // ========== 通知 ==========
+
+  const notify = async (title: string, body: string) => {
+    const settingStore = useSettingStore();
+    const mode = settingStore.notifyMode;
+    if (mode === "none") return;
+
+    if (mode === "app" || mode === "all") {
+      window.$notification.create({ title, content: body, duration: 5000 });
+    }
+
+    if (mode === "system" || mode === "all") {
+      let granted = await isPermissionGranted();
+      if (!granted) {
+        const permission = await requestPermission();
+        granted = permission === "granted";
+      }
+      if (granted) {
+        sendNotification({ title, body });
+      }
+    }
   };
 
   // ========== 持久化 ==========
@@ -147,6 +175,7 @@ export const useDownloadStore = defineStore("download", () => {
         task.percent = 100;
         task.speed = "";
         if (event.payload.outputFile) task.outputFile = event.payload.outputFile;
+        notify("下载完成", task.title || "视频下载已完成");
       }
       // 下载完成后尝试启动队列中的下一个
       tryStartNext();

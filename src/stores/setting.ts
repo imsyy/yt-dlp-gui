@@ -31,6 +31,9 @@ export const useSettingStore = defineStore("setting", () => {
   /** 最大同时下载任务数，0 表示不限制 */
   const maxConcurrentDownloads = ref(0);
 
+  /** 下载完成通知模式: none 不通知, app 应用内, system 系统通知, all 全部 */
+  const notifyMode = ref<"none" | "app" | "system" | "all">("system");
+
   return {
     themeMode,
     downloadDir,
@@ -42,6 +45,7 @@ export const useSettingStore = defineStore("setting", () => {
     concurrentFragments,
     noOverwrites,
     maxConcurrentDownloads,
+    notifyMode,
   };
 }, {
   persist: true,

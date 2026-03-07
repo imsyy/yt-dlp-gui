@@ -42,6 +42,14 @@ const maxConcurrentOptions = [
   { label: "5", value: 5 },
 ];
 
+// 通知模式选项
+const notifyModeOptions = [
+  { label: "不通知", value: "none" },
+  { label: "应用内", value: "app" },
+  { label: "系统通知", value: "system" },
+  { label: "全部", value: "all" },
+];
+
 // ========== yt-dlp ==========
 const ytdlpStatus = ref<YtdlpStatus | null>(null);
 const ytdlpChecking = ref(true);
@@ -356,6 +364,17 @@ onMounted(async () => {
             <n-select
               v-model:value="settingStore.maxConcurrentDownloads"
               :options="maxConcurrentOptions"
+              size="small"
+              style="width: 120px"
+            />
+          </div>
+        </div>
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">下载完成通知</span>
+            <n-select
+              v-model:value="settingStore.notifyMode"
+              :options="notifyModeOptions"
               size="small"
               style="width: 120px"
             />
