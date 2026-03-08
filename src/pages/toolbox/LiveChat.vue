@@ -334,7 +334,6 @@ const handleSave = async () => {
         </n-text>
 
         <n-data-table
-          v-model:checked-row-keys="checkedKeys"
           :columns="columns"
           :data="filteredMessages"
           :row-key="rowKey"
@@ -342,6 +341,7 @@ const handleSave = async () => {
           :max-height="480"
           size="small"
           bordered
+          @update:checked-row-keys="(keys: DataTableRowKey[]) => (checkedKeys = keys)"
         />
       </n-flex>
     </n-card>

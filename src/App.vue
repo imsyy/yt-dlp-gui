@@ -58,28 +58,25 @@ const navItems: { key: string; icon: Component; labelKey: string }[] = [
   { key: "toolbox", icon: IconMdiToolbox, labelKey: "nav.toolbox" },
 ];
 
+const win = getCurrentWindow();
+
+// 关闭窗口时的行为
+win.onCloseRequested(async (event) => {
+  if (settingStore.closeToTray) {
+    event.preventDefault();
+    await win.hide();
+  } else {
+    event.preventDefault();
+    handleQuitRequest();
+  }
+});
+
+// 监听托盘退出请求
+listen("tray-quit-requested", () => handleQuitRequest());
+
 onMounted(() => {
-  const win = getCurrentWindow();
   win.show();
-
-  // 同步托盘菜单语言
   syncTrayMenu();
-
-  // 关闭窗口时的行为
-  win.onCloseRequested(async (event) => {
-    if (settingStore.closeToTray) {
-      // 最小化到托盘
-      event.preventDefault();
-      await win.hide();
-    } else {
-      // 直接退出（有下载任务时确认）
-      event.preventDefault();
-      handleQuitRequest();
-    }
-  });
-
-  // 监听托盘退出请求
-  listen("tray-quit-requested", () => handleQuitRequest());
 });
 </script>
 

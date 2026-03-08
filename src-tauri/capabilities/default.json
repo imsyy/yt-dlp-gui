@@ -21,6 +21,7 @@
     "clipboard-manager:allow-read-text",
     "notification:default",
     "updater:default",
-    "process:allow-restart"
+    "process:allow-restart",
+    "process:allow-exit"
   ]
 }
