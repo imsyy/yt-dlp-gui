@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://api.iconify.design/mdi:youtube.svg?color=%23ff0033" width="80" height="80" alt="yt-dlp GUI">
+<img src="./public/app-icon.svg" width="80" height="80" alt="yt-dlp GUI">
 
 # yt-dlp GUI
 

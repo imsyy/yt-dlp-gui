@@ -56,9 +56,9 @@ const osTheme = useOsTheme();
 
 // 全局主题
 const themeOverrides = shallowRef<GlobalThemeOverrides>({
-  common:{
-    borderRadius:"8px"
-  }
+  common: {
+    borderRadius: "8px",
+  },
 });
 
 // 获取明暗模式
