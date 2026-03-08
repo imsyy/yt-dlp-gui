@@ -23,6 +23,12 @@
     "invalidUrl": "剪貼簿內容不是有效的連結",
     "readFailed": "無法讀取剪貼簿"
   },
+  "tray": {
+    "show": "顯示視窗",
+    "quit": "退出",
+    "quitConfirmTitle": "確認退出",
+    "quitConfirmContent": "目前有正在進行的下載任務，退出將中斷所有下載。確定要退出嗎？"
+  },
   "nav": {
     "home": "首頁",
     "downloads": "下載",
@@ -107,6 +113,7 @@
     "disabled": "不啟用",
     "maxConcurrentDownloads": "最大同時下載數",
     "unlimited": "不限制",
+    "closeToTray": "關閉視窗時最小化到托盤",
     "downloadNotification": "下載完成通知",
     "noNotification": "不通知",
     "inApp": "應用程式內",

@@ -1,19 +1,47 @@
 <script setup lang="ts">
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import CookieModal from "@/components/CookieModal.vue";
-import UpdateModal from "@/components/UpdateModal.vue";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+import { exit } from "@tauri-apps/plugin-process";
 import IconMdiHome from "~icons/mdi/home";
 import IconMdiDownload from "~icons/mdi/download";
 import IconMdiToolbox from "~icons/mdi/toolbox";
 import type { Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { useSettingStore } from "@/stores/setting";
+import { useDownloadStore } from "@/stores/download";
 import { localeEntries } from "@/locales";
 
-useI18n();
+const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const settingStore = useSettingStore();
+const downloadStore = useDownloadStore();
+
+/** 同步托盘菜单语言 */
+const syncTrayMenu = () => {
+  invoke("update_tray_menu", {
+    showLabel: t("tray.show"),
+    quitLabel: t("tray.quit"),
+  });
+};
+
+watch(() => settingStore.locale, syncTrayMenu);
+
+/** 处理退出请求，有下载任务时弹出确认框 */
+const handleQuitRequest = () => {
+  if (downloadStore.activeCount > 0) {
+    window.$dialog.warning({
+      title: t("tray.quitConfirmTitle"),
+      content: t("tray.quitConfirmContent"),
+      positiveText: t("common.cancel"),
+      negativeText: t("tray.quit"),
+      onNegativeClick: () => exit(0),
+    });
+  } else {
+    exit(0);
+  }
+};
 
 const localeOptions = localeEntries.map((e) => ({ label: `${e.flag} ${e.label}`, value: e.code }));
 
@@ -31,7 +59,27 @@ const navItems: { key: string; icon: Component; labelKey: string }[] = [
 ];
 
 onMounted(() => {
-  getCurrentWindow().show();
+  const win = getCurrentWindow();
+  win.show();
+
+  // 同步托盘菜单语言
+  syncTrayMenu();
+
+  // 关闭窗口时的行为
+  win.onCloseRequested(async (event) => {
+    if (settingStore.closeToTray) {
+      // 最小化到托盘
+      event.preventDefault();
+      await win.hide();
+    } else {
+      // 直接退出（有下载任务时确认）
+      event.preventDefault();
+      handleQuitRequest();
+    }
+  });
+
+  // 监听托盘退出请求
+  listen("tray-quit-requested", () => handleQuitRequest());
 });
 </script>
 
@@ -83,11 +131,7 @@ onMounted(() => {
               </n-icon>
             </template>
           </n-button>
-          <n-popselect
-            v-model:value="settingStore.locale"
-            :options="localeOptions"
-            trigger="click"
-          >
+          <n-popselect v-model:value="settingStore.locale" :options="localeOptions" trigger="click">
             <n-button :focusable="false" quaternary circle>
               <template #icon>
                 <n-icon>

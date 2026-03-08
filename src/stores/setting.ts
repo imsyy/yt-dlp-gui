@@ -42,6 +42,9 @@ export const useSettingStore = defineStore("setting", () => {
   /** 下载完成通知模式 */
   const notifyMode = ref<"none" | "app" | "system" | "all">("system");
 
+  /** 关闭窗口时最小化到托盘 */
+  const closeToTray = ref(true);
+
   return {
     locale,
     themeMode,
@@ -55,6 +58,7 @@ export const useSettingStore = defineStore("setting", () => {
     noOverwrites,
     maxConcurrentDownloads,
     notifyMode,
+    closeToTray,
   };
 }, {
   persist: true,

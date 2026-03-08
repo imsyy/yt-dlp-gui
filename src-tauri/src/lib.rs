@@ -1,7 +1,26 @@
+use tauri::Emitter;
+use tauri::Manager;
+use tauri::menu::{Menu, MenuItem};
+use tauri::tray::TrayIconEvent;
+
 mod commands;
 mod parser;
 mod process;
 mod utils;
+
+#[tauri::command]
+fn update_tray_menu(app: tauri::AppHandle, show_label: String, quit_label: String) -> Result<(), String> {
+    if let Some(tray) = app.tray_by_id("main") {
+        let show = MenuItem::with_id(&app, "show", &show_label, true, None::<&str>)
+            .map_err(|e| e.to_string())?;
+        let quit = MenuItem::with_id(&app, "quit", &quit_label, true, None::<&str>)
+            .map_err(|e| e.to_string())?;
+        let menu = Menu::with_items(&app, &[&show, &quit])
+            .map_err(|e| e.to_string())?;
+        tray.set_menu(Some(menu)).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -13,8 +32,57 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(w) = app.get_webview_window("main") {
+                let _ = w.unminimize();
+                let _ = w.show();
+                let _ = w.set_focus();
+            }
+        }))
+        .setup(|app| {
+            let show = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
+            let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show, &quit])?;
+
+            if let Some(tray) = app.tray_by_id("main") {
+                tray.set_menu(Some(menu))?;
+                tray.on_menu_event(move |app, event| match event.id.as_ref() {
+                    "show" => {
+                        if let Some(w) = app.get_webview_window("main") {
+                            let _ = w.unminimize();
+                            let _ = w.show();
+                            let _ = w.set_focus();
+                        }
+                    }
+                    "quit" => {
+                        // Emit event to frontend, let it decide whether to confirm
+                        if let Some(w) = app.get_webview_window("main") {
+                            let _ = w.unminimize();
+                            let _ = w.show();
+                            let _ = w.set_focus();
+                        }
+                        let _ = app.emit("tray-quit-requested", ());
+                    }
+                    _ => {}
+                });
+                tray.on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click { button, .. } = event {
+                        if button == tauri::tray::MouseButton::Left {
+                            if let Some(w) = tray.app_handle().get_webview_window("main") {
+                                let _ = w.unminimize();
+                                let _ = w.show();
+                                let _ = w.set_focus();
+                            }
+                        }
+                    }
+                });
+            }
+
+            Ok(())
+        })
         .manage(commands::DownloadState::default())
         .invoke_handler(tauri::generate_handler![
+            update_tray_menu,
             commands::get_platform,
             commands::get_ytdlp_status,
             commands::download_ytdlp,

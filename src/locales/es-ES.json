@@ -23,6 +23,12 @@
     "invalidUrl": "El contenido del portapapeles no es una URL válida",
     "readFailed": "No se pudo leer el portapapeles"
   },
+  "tray": {
+    "show": "Mostrar ventana",
+    "quit": "Salir",
+    "quitConfirmTitle": "Confirmar salida",
+    "quitConfirmContent": "Hay descargas activas. Salir interrumpirá todas las descargas. ¿Está seguro de que desea salir?"
+  },
   "nav": {
     "home": "Inicio",
     "downloads": "Descargas",
@@ -107,6 +113,7 @@
     "disabled": "Desactivado",
     "maxConcurrentDownloads": "Descargas simultáneas máximas",
     "unlimited": "Sin límite",
+    "closeToTray": "Minimizar a la bandeja al cerrar",
     "downloadNotification": "Notificación de descarga",
     "noNotification": "Sin notificación",
     "inApp": "En la aplicación",

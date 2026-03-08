@@ -20,6 +20,11 @@
     ],
     "security": {
       "csp": null
+    },
+    "trayIcon": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": true,
+      "tooltip": "YDL GUI"
     }
   },
   "bundle": {

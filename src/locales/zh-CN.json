@@ -23,6 +23,12 @@
     "invalidUrl": "剪贴板内容不是有效的链接",
     "readFailed": "无法读取剪贴板"
   },
+  "tray": {
+    "show": "显示窗口",
+    "quit": "退出",
+    "quitConfirmTitle": "确认退出",
+    "quitConfirmContent": "当前有正在进行的下载任务，退出将中断所有下载。确定要退出吗？"
+  },
   "nav": {
     "home": "首页",
     "downloads": "下载",
@@ -107,6 +113,7 @@
     "disabled": "不启用",
     "maxConcurrentDownloads": "最大同时下载数",
     "unlimited": "不限制",
+    "closeToTray": "关闭窗口时最小化到托盘",
     "downloadNotification": "下载完成通知",
     "noNotification": "不通知",
     "inApp": "应用内",

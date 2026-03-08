@@ -77,12 +77,9 @@ const checkYtdlpStatus = async () => {
 const handleDownloadYtdlp = async () => {
   ytdlpDownloading.value = true;
   ytdlpDownloadPercent.value = 0;
-  const unlisten = await listen<DownloadProgress>(
-    "ytdlp-download-progress",
-    (event) => {
-      ytdlpDownloadPercent.value = event.payload.percent;
-    },
-  );
+  const unlisten = await listen<DownloadProgress>("ytdlp-download-progress", (event) => {
+    ytdlpDownloadPercent.value = event.payload.percent;
+  });
   try {
     await invoke("download_ytdlp");
     window.$message.success(t("settings.ytdlpDownloadComplete"));
@@ -136,12 +133,9 @@ const checkDenoStatus = async () => {
 const handleDownloadDeno = async () => {
   denoDownloading.value = true;
   denoDownloadPercent.value = 0;
-  const unlisten = await listen<DownloadProgress>(
-    "deno-download-progress",
-    (event) => {
-      denoDownloadPercent.value = event.payload.percent;
-    },
-  );
+  const unlisten = await listen<DownloadProgress>("deno-download-progress", (event) => {
+    denoDownloadPercent.value = event.payload.percent;
+  });
   try {
     await invoke("download_deno");
     window.$message.success(t("settings.denoDownloadComplete"));
@@ -191,26 +185,22 @@ onMounted(async () => {
 <template>
   <div class="settings-page">
     <n-flex align="center" justify="space-between" style="margin-bottom: 20px">
-      <n-h2 style="margin: 0">{{ $t('settings.title') }}</n-h2>
+      <n-h2 style="margin: 0">{{ $t("settings.title") }}</n-h2>
       <n-button size="small" strong secondary @click="refreshAll">
         <template #icon>
           <n-icon>
             <icon-mdi-refresh />
           </n-icon>
         </template>
-        {{ $t('common.refresh') }}
+        {{ $t("common.refresh") }}
       </n-button>
     </n-flex>
 
     <n-card title="yt-dlp" size="small" class="section-card">
       <template #header-extra>
         <n-flex align="center" :size="8">
-          <n-tag
-            v-if="!ytdlpChecking"
-            :type="ytdlpStatus?.installed ? 'success' : 'error'"
-            round
-          >
-            {{ ytdlpStatus?.installed ? $t('settings.installed') : $t('settings.notInstalled') }}
+          <n-tag v-if="!ytdlpChecking" :type="ytdlpStatus?.installed ? 'success' : 'error'" round>
+            {{ ytdlpStatus?.installed ? $t("settings.installed") : $t("settings.notInstalled") }}
           </n-tag>
           <n-button
             v-if="ytdlpStatus?.installed"
@@ -221,7 +211,7 @@ onMounted(async () => {
             size="small"
             @click="handleUpdateYtdlp"
           >
-            {{ $t('settings.checkUpdate') }}
+            {{ $t("settings.checkUpdate") }}
           </n-button>
           <n-button
             v-if="ytdlpStatus && !ytdlpStatus.installed"
@@ -234,7 +224,7 @@ onMounted(async () => {
             round
             @click="handleDownloadYtdlp"
           >
-            {{ $t('common.download') }}
+            {{ $t("common.download") }}
           </n-button>
         </n-flex>
       </template>
@@ -242,16 +232,16 @@ onMounted(async () => {
       <n-spin :show="ytdlpChecking">
         <n-flex vertical :size="12">
           <n-text depth="3" style="font-size: 13px">
-            {{ $t('settings.ytdlpDesc') }}
+            {{ $t("settings.ytdlpDesc") }}
           </n-text>
 
           <div class="info-list">
             <div class="info-row">
-              <span class="info-label">{{ $t('settings.version') }}</span>
+              <span class="info-label">{{ $t("settings.version") }}</span>
               <n-text code>{{ ytdlpStatus?.version || "—" }}</n-text>
             </div>
             <div class="info-row">
-              <span class="info-label">{{ $t('settings.path') }}</span>
+              <span class="info-label">{{ $t("settings.path") }}</span>
               <n-ellipsis :line-clamp="1" :tooltip="{ width: 360 }">
                 {{ ytdlpStatus?.path || "—" }}
               </n-ellipsis>
@@ -276,12 +266,8 @@ onMounted(async () => {
     <n-card :title="$t('settings.denoTitle')" size="small" class="section-card">
       <template #header-extra>
         <n-flex align="center" :size="8">
-          <n-tag
-            v-if="!denoChecking"
-            :type="denoStatus?.installed ? 'success' : 'error'"
-            round
-          >
-            {{ denoStatus?.installed ? $t('settings.installed') : $t('settings.notInstalled') }}
+          <n-tag v-if="!denoChecking" :type="denoStatus?.installed ? 'success' : 'error'" round>
+            {{ denoStatus?.installed ? $t("settings.installed") : $t("settings.notInstalled") }}
           </n-tag>
           <n-button
             v-if="denoStatus && !denoStatus.installed"
@@ -294,7 +280,7 @@ onMounted(async () => {
             round
             @click="handleDownloadDeno"
           >
-            {{ $t('common.download') }}
+            {{ $t("common.download") }}
           </n-button>
         </n-flex>
       </template>
@@ -302,16 +288,16 @@ onMounted(async () => {
       <n-spin :show="denoChecking">
         <n-flex vertical :size="12">
           <n-text depth="3" style="font-size: 13px">
-            {{ $t('settings.denoDesc') }}
+            {{ $t("settings.denoDesc") }}
           </n-text>
 
           <div class="info-list">
             <div class="info-row">
-              <span class="info-label">{{ $t('settings.version') }}</span>
+              <span class="info-label">{{ $t("settings.version") }}</span>
               <n-text code>{{ denoStatus?.version || "—" }}</n-text>
             </div>
             <div class="info-row">
-              <span class="info-label">{{ $t('settings.path') }}</span>
+              <span class="info-label">{{ $t("settings.path") }}</span>
               <n-ellipsis :line-clamp="1" :tooltip="{ width: 360 }">
                 {{ denoStatus?.path || "—" }}
               </n-ellipsis>
@@ -336,7 +322,7 @@ onMounted(async () => {
     <n-card :title="$t('settings.appearance')" size="small" class="section-card">
       <div class="info-list">
         <div class="info-row">
-          <span class="info-label">{{ $t('settings.language') }}</span>
+          <span class="info-label">{{ $t("settings.language") }}</span>
           <n-select
             v-model:value="settingStore.locale"
             :options="localeOptions"
@@ -345,13 +331,17 @@ onMounted(async () => {
           />
         </div>
         <div class="info-row">
-          <span class="info-label">{{ $t('settings.themeMode') }}</span>
+          <span class="info-label">{{ $t("settings.themeMode") }}</span>
           <n-select
             v-model:value="settingStore.themeMode"
             :options="themeModeOptions"
             style="width: 120px"
             size="small"
           />
+        </div>
+        <div class="info-row">
+          <span class="info-label">{{ $t("settings.closeToTray") }}</span>
+          <n-switch v-model:value="settingStore.closeToTray" />
         </div>
       </div>
     </n-card>
@@ -364,7 +354,7 @@ onMounted(async () => {
       <n-flex vertical :size="12">
         <div class="info-list">
           <div class="info-row">
-            <span class="info-label">{{ $t('settings.proxy') }}</span>
+            <span class="info-label">{{ $t("settings.proxy") }}</span>
             <n-input
               v-model:value="settingStore.proxy"
               :placeholder="$t('settings.proxyPlaceholder')"
@@ -376,7 +366,7 @@ onMounted(async () => {
         </div>
         <div class="info-list">
           <div class="info-row">
-            <span class="info-label">{{ $t('settings.concurrentFragments') }}</span>
+            <span class="info-label">{{ $t("settings.concurrentFragments") }}</span>
             <n-select
               v-model:value="settingStore.concurrentFragments"
               :options="concurrentFragmentsOptions"
@@ -387,7 +377,7 @@ onMounted(async () => {
         </div>
         <div class="info-list">
           <div class="info-row">
-            <span class="info-label">{{ $t('settings.maxConcurrentDownloads') }}</span>
+            <span class="info-label">{{ $t("settings.maxConcurrentDownloads") }}</span>
             <n-select
               v-model:value="settingStore.maxConcurrentDownloads"
               :options="maxConcurrentOptions"
@@ -398,7 +388,7 @@ onMounted(async () => {
         </div>
         <div class="info-list">
           <div class="info-row">
-            <span class="info-label">{{ $t('settings.downloadNotification') }}</span>
+            <span class="info-label">{{ $t("settings.downloadNotification") }}</span>
             <n-select
               v-model:value="settingStore.notifyMode"
               :options="notifyModeOptions"
@@ -407,9 +397,12 @@ onMounted(async () => {
             />
           </div>
         </div>
-        <n-checkbox v-model:checked="settingStore.noOverwrites" size="small">
-          {{ $t('settings.noOverwrites') }}
-        </n-checkbox>
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">{{ $t("settings.noOverwrites") }}</span>
+            <n-switch v-model:value="settingStore.noOverwrites" />
+          </div>
+        </div>
       </n-flex>
     </n-card>
 
@@ -423,28 +416,28 @@ onMounted(async () => {
           size="small"
           @click="handleCheckAppUpdate"
         >
-          {{ $t('settings.checkAppUpdate') }}
+          {{ $t("settings.checkAppUpdate") }}
         </n-button>
       </template>
       <n-flex vertical :size="8">
         <n-text depth="3" style="font-size: 13px">
-          {{ $t('settings.aboutDesc') }}
+          {{ $t("settings.aboutDesc") }}
         </n-text>
         <div class="info-list">
           <div class="info-row">
-            <span class="info-label">{{ $t('settings.version') }}</span>
+            <span class="info-label">{{ $t("settings.version") }}</span>
             <n-text code>v{{ appVersion }}</n-text>
           </div>
           <div class="info-row">
-            <span class="info-label">{{ $t('settings.platform') }}</span>
+            <span class="info-label">{{ $t("settings.platform") }}</span>
             <n-text code>{{ platformLabel }}</n-text>
           </div>
           <div class="info-row">
-            <span class="info-label">{{ $t('settings.license') }}</span>
+            <span class="info-label">{{ $t("settings.license") }}</span>
             <n-text code>MIT</n-text>
           </div>
           <div class="info-row">
-            <span class="info-label">{{ $t('settings.repository') }}</span>
+            <span class="info-label">{{ $t("settings.repository") }}</span>
             <n-button
               text
               tag="a"
@@ -498,7 +491,6 @@ onMounted(async () => {
 }
 
 .info-label {
-  color: var(--n-text-color-3, #999);
   flex-shrink: 0;
   order: 0;
 }

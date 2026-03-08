@@ -23,6 +23,12 @@
     "invalidUrl": "Clipboard content is not a valid URL",
     "readFailed": "Cannot read clipboard"
   },
+  "tray": {
+    "show": "Show Window",
+    "quit": "Quit",
+    "quitConfirmTitle": "Confirm Exit",
+    "quitConfirmContent": "There are active downloads. Exiting will interrupt all downloads. Are you sure you want to exit?"
+  },
   "nav": {
     "home": "Home",
     "downloads": "Downloads",
@@ -107,6 +113,7 @@
     "disabled": "Disabled",
     "maxConcurrentDownloads": "Max Concurrent Downloads",
     "unlimited": "Unlimited",
+    "closeToTray": "Minimize to tray on close",
     "downloadNotification": "Download Notification",
     "noNotification": "None",
     "inApp": "In-App",

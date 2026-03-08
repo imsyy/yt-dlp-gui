@@ -23,6 +23,12 @@
     "invalidUrl": "クリップボードの内容は有効なURLではありません",
     "readFailed": "クリップボードを読み取れません"
   },
+  "tray": {
+    "show": "ウィンドウを表示",
+    "quit": "終了",
+    "quitConfirmTitle": "終了の確認",
+    "quitConfirmContent": "ダウンロード中のタスクがあります。終了するとすべてのダウンロードが中断されます。終了しますか？"
+  },
   "nav": {
     "home": "ホーム",
     "downloads": "ダウンロード",
@@ -107,6 +113,7 @@
     "disabled": "無効",
     "maxConcurrentDownloads": "最大同時ダウンロード数",
     "unlimited": "無制限",
+    "closeToTray": "閉じる時にトレイに最小化",
     "downloadNotification": "ダウンロード完了通知",
     "noNotification": "通知しない",
     "inApp": "アプリ内",
