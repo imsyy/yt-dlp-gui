@@ -332,5 +332,15 @@
     "err_suspend_process": "No se pudo suspender el proceso",
     "err_resume_process": "No se pudo reanudar el proceso",
     "err_kill_process": "No se pudo terminar el proceso"
+  },
+  "setup": {
+    "ytdlpTitle": "Se requiere yt-dlp",
+    "ytdlpDesc": "yt-dlp es el motor de descarga principal de esta aplicación y no está instalado actualmente. Sin él, no se pueden analizar ni descargar videos.",
+    "ytdlpHint": "Ve a Ajustes y haz clic en el botón de descarga para instalar yt-dlp automáticamente. Una vez instalado, todas las funciones estarán disponibles.",
+    "denoTitle": "Se recomienda instalar Deno",
+    "denoDesc": "Estás descargando un video de YouTube, pero el entorno Deno JS no está instalado. Algunos formatos de video pueden faltar o no estar disponibles sin él.",
+    "denoHint": "Deno es un entorno de ejecución JavaScript necesario para que yt-dlp analice la información de videos de YouTube. Instalarlo permite obtener la lista completa de formatos, incluyendo opciones de mayor calidad.",
+    "goToSettings": "Ir a Ajustes",
+    "later": "Más tarde"
   }
 }

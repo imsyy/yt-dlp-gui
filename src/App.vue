@@ -84,6 +84,7 @@ onMounted(() => {
   <Provider>
     <CookieModal />
     <UpdateModal />
+    <SetupModal />
     <n-layout style="height: 100vh">
       <n-layout-header bordered class="app-header">
         <div class="header-side">

@@ -9,10 +9,18 @@ export const useStatusStore = defineStore("status", () => {
   const updateVersion = ref("");
   const updateNotes = ref("");
 
+  /** yt-dlp 未安装弹窗 */
+  const showYtdlpSetupModal = ref(false);
+
+  /** Deno 未安装提示弹窗 */
+  const showDenoSetupModal = ref(false);
+
   return {
     showCookieModal,
     showUpdateModal,
     updateVersion,
     updateNotes,
+    showYtdlpSetupModal,
+    showDenoSetupModal,
   };
 });

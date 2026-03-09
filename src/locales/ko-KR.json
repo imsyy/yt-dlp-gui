@@ -332,5 +332,15 @@
     "err_suspend_process": "프로세스 일시정지에 실패했습니다",
     "err_resume_process": "프로세스 재개에 실패했습니다",
     "err_kill_process": "프로세스 종료에 실패했습니다"
+  },
+  "setup": {
+    "ytdlpTitle": "yt-dlp 설치 필요",
+    "ytdlpDesc": "yt-dlp는 이 애플리케이션의 핵심 다운로드 도구이지만 현재 설치되어 있지 않습니다. yt-dlp 없이는 동영상을 분석하거나 다운로드할 수 없습니다.",
+    "ytdlpHint": "설정 페이지로 이동하여 다운로드 버튼을 클릭하면 자동으로 yt-dlp가 설치됩니다. 설치 후 모든 기능을 사용할 수 있습니다.",
+    "denoTitle": "Deno 런타임 설치 권장",
+    "denoDesc": "YouTube 동영상을 다운로드하려고 하지만 Deno JS 런타임이 설치되어 있지 않습니다. 일부 동영상 형식이 누락되거나 다운로드할 수 없을 수 있습니다.",
+    "denoHint": "Deno는 yt-dlp가 YouTube 동영상 정보를 분석하는 데 필요한 JavaScript 런타임입니다. 설치하면 고화질 옵션을 포함한 전체 형식 목록을 사용할 수 있습니다.",
+    "goToSettings": "설정으로 이동",
+    "later": "나중에"
   }
 }

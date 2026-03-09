@@ -60,7 +60,17 @@ yt-dlp is powerful, but its command-line interface can be intimidating. **yt-dlp
 
 ## Screenshots
 
-> Coming soon
+| Home (Dark) | Home (Light) |
+|:-:|:-:|
+| ![Home](screenshot/home.png) | ![Home Light](screenshot/home-light.png) |
+
+| Download Options | Extra Options |
+|:-:|:-:|
+| ![Download](screenshot/download.png) | ![Download Other](screenshot/download-other.png) |
+
+| Downloading | Tools |
+|:-:|:-:|
+| ![Downloading](screenshot/downloading.png) | ![Tools](screenshot/tools.png) |
 
 ## Getting Started
 

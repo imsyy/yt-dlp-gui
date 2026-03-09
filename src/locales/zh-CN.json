@@ -332,5 +332,15 @@
     "err_suspend_process": "挂起进程失败",
     "err_resume_process": "恢复进程失败",
     "err_kill_process": "终止进程失败"
+  },
+  "setup": {
+    "ytdlpTitle": "需要安装 yt-dlp",
+    "ytdlpDesc": "yt-dlp 是本应用的核心下载工具，当前尚未安装。没有它将无法解析和下载任何视频。",
+    "ytdlpHint": "请前往设置页面，点击下载按钮即可自动安装 yt-dlp。安装完成后即可正常使用所有功能。",
+    "denoTitle": "建议安装 Deno 运行时",
+    "denoDesc": "检测到你正在下载 YouTube 视频，但尚未安装 Deno JS 运行时。缺少它可能导致部分视频格式缺失或无法下载。",
+    "denoHint": "Deno 是 yt-dlp 解析 YouTube 视频信息所需的 JavaScript 运行时。安装后可获取完整的格式列表，包括更高画质的选项。",
+    "goToSettings": "前往设置",
+    "later": "稍后再说"
   }
 }

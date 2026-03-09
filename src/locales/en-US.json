@@ -332,5 +332,15 @@
     "err_suspend_process": "Failed to suspend process",
     "err_resume_process": "Failed to resume process",
     "err_kill_process": "Failed to kill process"
+  },
+  "setup": {
+    "ytdlpTitle": "yt-dlp Required",
+    "ytdlpDesc": "yt-dlp is the core download engine for this application and is not currently installed. Without it, no videos can be parsed or downloaded.",
+    "ytdlpHint": "Go to Settings and click the download button to automatically install yt-dlp. Once installed, all features will be available.",
+    "denoTitle": "Deno Runtime Recommended",
+    "denoDesc": "You are downloading a YouTube video, but Deno JS runtime is not installed. Some video formats may be missing or unavailable without it.",
+    "denoHint": "Deno is a JavaScript runtime required by yt-dlp to parse YouTube video info. Installing it enables the full format list, including higher quality options.",
+    "goToSettings": "Go to Settings",
+    "later": "Later"
   }
 }

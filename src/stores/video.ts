@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { formatError } from "@/utils/format";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
-import type { VideoInfo, VideoFormat, PlaylistEntry } from "@/types";
+import type { VideoInfo, VideoFormat, PlaylistEntry, DenoStatus } from "@/types";
 
 export const useVideoStore = defineStore("video", () => {
   const url = ref("");
@@ -81,10 +81,26 @@ export const useVideoStore = defineStore("video", () => {
         )
         .sort((a, b) => (b.abr || 0) - (a.abr || 0));
 
+      // YouTube URL 且 Deno 未安装时提示
+      if (/youtube\.com|youtu\.be/i.test(targetUrl)) {
+        try {
+          const denoStatus = await invoke<DenoStatus>("get_deno_status");
+          if (!denoStatus.installed) {
+            const statusStore = useStatusStore();
+            statusStore.showDenoSetupModal = true;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
       return true;
     } catch (e: unknown) {
       const raw = e instanceof Error ? e.message : String(e) || "获取视频信息失败";
-      if (/sign in|cookies/i.test(raw)) {
+      if (/err_ytdlp_not_installed/.test(raw)) {
+        const statusStore = useStatusStore();
+        statusStore.showYtdlpSetupModal = true;
+      } else if (/sign in|cookies/i.test(raw)) {
         const statusStore = useStatusStore();
         statusStore.showCookieModal = true;
       } else {

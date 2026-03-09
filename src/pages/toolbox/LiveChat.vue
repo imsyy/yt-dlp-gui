@@ -128,7 +128,9 @@ const handleFetch = async () => {
     messages.value = result;
   } catch (e: unknown) {
     const msg = String(e);
-    if (/sign in|cookies/i.test(msg)) {
+    if (/err_ytdlp_not_installed/.test(msg)) {
+      statusStore.showYtdlpSetupModal = true;
+    } else if (/sign in|cookies/i.test(msg)) {
       statusStore.showCookieModal = true;
     } else {
       window.$message.error(formatError(msg));
