@@ -68,7 +68,7 @@ jobs:
           releaseName: "${{ github.ref_name }}"
           releaseDraft: true
           prerelease: false
-          releaseGenerateReleaseNotes: true
+          generateReleaseNotes: true
           includeUpdaterJson: true
           args: --target ${{ matrix.target }}
 
