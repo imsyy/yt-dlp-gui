@@ -115,6 +115,7 @@
     "maxConcurrentDownloads": "Max Concurrent Downloads",
     "unlimited": "Unlimited",
     "closeToTray": "Minimize to tray on close",
+    "autoCheckUpdate": "Check for updates on startup",
     "downloadNotification": "Download Notification",
     "noNotification": "None",
     "inApp": "In-App",

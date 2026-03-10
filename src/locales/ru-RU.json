@@ -115,6 +115,7 @@
     "maxConcurrentDownloads": "Макс. одновременных загрузок",
     "unlimited": "Без ограничений",
     "closeToTray": "Сворачивать в трей при закрытии",
+    "autoCheckUpdate": "Проверять обновления при запуске",
     "downloadNotification": "Уведомления о загрузке",
     "noNotification": "Без уведомлений",
     "inApp": "В приложении",

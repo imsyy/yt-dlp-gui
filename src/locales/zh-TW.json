@@ -115,6 +115,7 @@
     "maxConcurrentDownloads": "最大同時下載數",
     "unlimited": "不限制",
     "closeToTray": "關閉視窗時最小化到托盤",
+    "autoCheckUpdate": "啟動時自動檢查更新",
     "downloadNotification": "下載完成通知",
     "noNotification": "不通知",
     "inApp": "應用程式內",

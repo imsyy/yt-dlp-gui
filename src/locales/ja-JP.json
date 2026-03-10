@@ -115,6 +115,7 @@
     "maxConcurrentDownloads": "最大同時ダウンロード数",
     "unlimited": "無制限",
     "closeToTray": "閉じる時にトレイに最小化",
+    "autoCheckUpdate": "起動時にアップデートを自動確認",
     "downloadNotification": "ダウンロード完了通知",
     "noNotification": "通知しない",
     "inApp": "アプリ内",

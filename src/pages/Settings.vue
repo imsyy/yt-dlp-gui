@@ -343,6 +343,10 @@ onMounted(async () => {
           <span class="info-label">{{ $t("settings.closeToTray") }}</span>
           <n-switch v-model:value="settingStore.closeToTray" />
         </div>
+        <div class="info-row">
+          <span class="info-label">{{ $t("settings.autoCheckUpdate") }}</span>
+          <n-switch v-model:value="settingStore.autoCheckUpdate" />
+        </div>
       </div>
     </n-card>
 

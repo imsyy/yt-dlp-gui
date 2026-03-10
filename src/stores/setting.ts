@@ -48,6 +48,9 @@ export const useSettingStore = defineStore("setting", () => {
   /** 关闭窗口时最小化到托盘 */
   const closeToTray = ref(true);
 
+  /** 启动时自动检查更新 */
+  const autoCheckUpdate = ref(true);
+
   return {
     locale,
     themeMode,
@@ -63,6 +66,7 @@ export const useSettingStore = defineStore("setting", () => {
     maxConcurrentDownloads,
     notifyMode,
     closeToTray,
+    autoCheckUpdate,
   };
 }, {
   persist: true,

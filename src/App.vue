@@ -3,6 +3,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { exit } from "@tauri-apps/plugin-process";
+import { check } from "@tauri-apps/plugin-updater";
 import IconMdiHome from "~icons/mdi/home";
 import IconMdiDownload from "~icons/mdi/download";
 import IconMdiToolbox from "~icons/mdi/toolbox";
@@ -10,6 +11,7 @@ import type { Component } from "vue";
 import { useI18n } from "vue-i18n";
 import { useSettingStore } from "@/stores/setting";
 import { useDownloadStore } from "@/stores/download";
+import { useStatusStore } from "@/stores/status";
 import { localeEntries } from "@/locales";
 
 const { t } = useI18n();
@@ -74,9 +76,27 @@ win.onCloseRequested(async (event) => {
 // 监听托盘退出请求
 listen("tray-quit-requested", () => handleQuitRequest());
 
+/** 启动时自动检查应用更新 */
+const checkAppUpdate = async () => {
+  try {
+    const statusStore = useStatusStore();
+    const update = await check();
+    if (update) {
+      statusStore.updateVersion = update.version;
+      statusStore.updateNotes = update.body || "";
+      statusStore.showUpdateModal = true;
+    }
+  } catch {
+    // 静默失败，不打扰用户
+  }
+};
+
 onMounted(() => {
   win.show();
   syncTrayMenu();
+  if (settingStore.autoCheckUpdate) {
+    checkAppUpdate();
+  }
 });
 </script>
 

@@ -115,6 +115,7 @@
     "maxConcurrentDownloads": "최대 동시 다운로드 수",
     "unlimited": "제한 없음",
     "closeToTray": "닫을 때 트레이로 최소화",
+    "autoCheckUpdate": "시작 시 자동 업데이트 확인",
     "downloadNotification": "다운로드 완료 알림",
     "noNotification": "알림 없음",
     "inApp": "앱 내",

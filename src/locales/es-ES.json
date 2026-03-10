@@ -115,6 +115,7 @@
     "maxConcurrentDownloads": "Descargas simultáneas máximas",
     "unlimited": "Sin límite",
     "closeToTray": "Minimizar a la bandeja al cerrar",
+    "autoCheckUpdate": "Buscar actualizaciones al iniciar",
     "downloadNotification": "Notificación de descarga",
     "noNotification": "Sin notificación",
     "inApp": "En la aplicación",
