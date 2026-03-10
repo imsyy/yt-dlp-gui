@@ -1,7 +1,7 @@
 {
   "name": "yt-dlp-gui",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A modern, cross-platform desktop GUI for yt-dlp — download videos from YouTube, Bilibili, Twitter and 1000+ sites. Built with Tauri 2 + Vue 3.",
   "keywords": [
     "yt-dlp",
