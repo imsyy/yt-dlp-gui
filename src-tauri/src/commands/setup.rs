@@ -3,10 +3,15 @@
 use crate::utils;
 use futures_util::StreamExt;
 use std::process::Stdio;
+use std::time::Duration;
 use tauri::{AppHandle, Emitter};
 use tokio::io::AsyncBufReadExt;
 
+use super::common;
 use super::{DenoStatus, YtdlpStatus};
+
+/// HTTP 下载超时时间（30 分钟，用于大文件下载）
+const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(1800);
 
 #[cfg(target_os = "windows")]
 use super::CREATE_NO_WINDOW;
@@ -67,7 +72,10 @@ pub async fn download_ytdlp(app: AppHandle) -> Result<(), String> {
     let ytdlp_path = utils::get_ytdlp_path(&app)?;
     let url = utils::get_ytdlp_download_url();
 
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(DOWNLOAD_TIMEOUT)
+        .build()
+        .map_err(|e| format!("err_create_http_client:{}", e))?;
     let response = client
         .get(url)
         .send()
@@ -193,7 +201,8 @@ pub async fn check_plugin_installed(app: AppHandle, file_path: String) -> Result
 #[tauri::command]
 pub async fn uninstall_plugin(app: AppHandle, file_path: String) -> Result<(), String> {
     let plugin_dir = utils::get_plugin_dir(&app)?;
-    let target = plugin_dir.join(&file_path);
+    // 路径安全验证：确保目标文件在插件目录内，防止路径遍历攻击
+    let target = common::validate_path_within(&plugin_dir, &file_path)?;
     if target.exists() {
         tokio::fs::remove_file(&target)
             .await
@@ -207,7 +216,10 @@ pub async fn uninstall_plugin(app: AppHandle, file_path: String) -> Result<(), S
 pub async fn install_plugin(app: AppHandle, url: String) -> Result<(), String> {
     let plugin_dir = utils::get_plugin_dir(&app)?;
 
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(DOWNLOAD_TIMEOUT)
+        .build()
+        .map_err(|e| format!("err_create_http_client:{}", e))?;
     let response = client
         .get(&url)
         .send()
@@ -307,7 +319,10 @@ pub async fn download_deno(app: AppHandle) -> Result<(), String> {
     let deno_path = utils::get_deno_path(&app)?;
     let url = utils::get_deno_download_url();
 
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(DOWNLOAD_TIMEOUT)
+        .build()
+        .map_err(|e| format!("err_create_http_client:{}", e))?;
     let response = client
         .get(url)
         .send()

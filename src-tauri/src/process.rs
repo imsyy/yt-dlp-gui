@@ -55,13 +55,19 @@ mod win32 {
 
 /// 递归收集指定 PID 及其所有子进程的 PID
 #[cfg(target_os = "windows")]
-fn collect_process_tree(root_pid: u32) -> Vec<u32> {
-    let mut pids = vec![root_pid];
+fn collect_process_tree(root_pid: u32) -> std::collections::HashSet<u32> {
+    let mut pid_set = std::collections::HashSet::new();
+    pid_set.insert(root_pid);
+
+    // SAFETY: 调用 Win32 API CreateToolhelp32Snapshot + Process32FirstW/NextW 遍历系统进程表。
+    // - snapshot 句柄已检查有效性（!= -1），使用后通过 CloseHandle 释放。
+    // - PROCESSENTRY32W 以 zeroed 初始化并正确设置 dw_size，满足 API 前置条件。
+    // - 所有指针均指向栈上有效内存，生命周期覆盖整个 unsafe 块。
     unsafe {
         use win32::*;
         let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
         if snapshot == -1 {
-            return pids;
+            return pid_set;
         }
         let mut entry = std::mem::zeroed::<PROCESSENTRY32W>();
         entry.dw_size = std::mem::size_of::<PROCESSENTRY32W>() as u32;
@@ -79,24 +85,31 @@ fn collect_process_tree(root_pid: u32) -> Vec<u32> {
         CloseHandle(snapshot);
 
         // BFS 收集整棵进程树
+        let mut queue = vec![root_pid];
         let mut i = 0;
-        while i < pids.len() {
-            let parent = pids[i];
+        while i < queue.len() {
+            let parent = queue[i];
             for &(pid, ppid) in &all_procs {
-                if ppid == parent && !pids.contains(&pid) {
-                    pids.push(pid);
+                if ppid == parent && pid_set.insert(pid) {
+                    queue.push(pid);
                 }
             }
             i += 1;
         }
     }
-    pids
+    pid_set
 }
 
 /// 挂起指定 PID 的进程及其所有子进程（暂停所有线程）
 #[cfg(target_os = "windows")]
 pub fn suspend_process(pid: u32) -> Result<(), String> {
     let pids = collect_process_tree(pid);
+
+    // SAFETY: 调用 Win32 API CreateToolhelp32Snapshot + Thread32First/Next 遍历系统线程表。
+    // - snapshot 句柄已检查有效性（!= -1），使用后通过 CloseHandle 释放。
+    // - THREADENTRY32 以 zeroed 初始化并正确设置 dw_size，满足 API 前置条件。
+    // - OpenThread 返回的线程句柄已检查有效性（!= 0），使用后通过 CloseHandle 释放。
+    // - SuspendThread 仅挂起目标进程树中的线程，不影响其他进程。
     unsafe {
         use win32::*;
         let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
@@ -137,6 +150,9 @@ pub fn suspend_process(pid: u32) -> Result<(), String> {
 #[cfg(target_os = "windows")]
 pub fn resume_process(pid: u32) -> Result<(), String> {
     let pids = collect_process_tree(pid);
+
+    // SAFETY: 同 suspend_process，遍历线程表并恢复目标进程树中的所有线程。
+    // 所有句柄均经过有效性检查并在使用后关闭。
     unsafe {
         use win32::*;
         let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);

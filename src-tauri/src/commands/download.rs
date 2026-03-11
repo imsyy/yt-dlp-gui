@@ -8,6 +8,7 @@ use std::process::Stdio;
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter, Manager};
 
+use super::common::append_cookie_proxy_args;
 use super::{DownloadParams, DownloadProcessInfo, DownloadState};
 
 #[cfg(target_os = "windows")]
@@ -309,19 +310,13 @@ fn build_download_args(app: &AppHandle, params: &DownloadParams) -> Result<Vec<S
         }
     }
 
-    // Cookie
-    if let Some(ref cf) = params.cookie_file {
-        if !cf.is_empty() {
-            args.push("--cookies".to_string());
-            args.push(cf.clone());
-        }
-    }
-    if let Some(ref browser) = params.cookie_browser {
-        if !browser.is_empty() {
-            args.push("--cookies-from-browser".to_string());
-            args.push(browser.clone());
-        }
-    }
+    // Cookie 和浏览器 Cookie
+    append_cookie_proxy_args(
+        &mut args,
+        params.cookie_file.as_deref(),
+        params.cookie_browser.as_deref(),
+        None, // 代理在上方已单独处理
+    );
 
     // 额外选项
     if params.embed_subs {

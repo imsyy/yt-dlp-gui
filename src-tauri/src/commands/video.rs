@@ -4,8 +4,7 @@ use crate::utils;
 use serde_json::Value;
 use tauri::AppHandle;
 
-#[cfg(target_os = "windows")]
-use super::CREATE_NO_WINDOW;
+use super::common;
 
 // ========== Cookie 管理 ==========
 
@@ -30,72 +29,13 @@ pub async fn fetch_video_info(
     cookie_browser: Option<String>,
     proxy: Option<String>,
 ) -> Result<Value, String> {
-    let ytdlp_path = utils::get_ytdlp_path(&app)?;
-    if !ytdlp_path.exists() {
-        return Err("err_ytdlp_not_installed".to_string());
-    }
-
-    let mut args = vec![
-        "-J".to_string(),              // -J 已隐含 simulate，无需 --no-download
-        "--ignore-config".to_string(), // 忽略用户系统配置
-        "--color".to_string(),
-        "never".to_string(),
-    ];
-    args.extend(utils::build_js_runtime_args(&app));
-    args.extend(utils::build_plugin_args(&app));
-
-    if let Some(ref cf) = cookie_file {
-        if !cf.is_empty() {
-            args.push("--cookies".to_string());
-            args.push(cf.clone());
-        }
-    }
-    if let Some(ref browser) = cookie_browser {
-        if !browser.is_empty() {
-            args.push("--cookies-from-browser".to_string());
-            args.push(browser.clone());
-        }
-    }
-
-    // 代理
-    if let Some(ref p) = proxy {
-        if !p.is_empty() {
-            args.push("--proxy".to_string());
-            args.push(p.clone());
-        }
-    }
-
-    args.push(url);
-
-    let mut cmd = tokio::process::Command::new(&ytdlp_path);
-    cmd.args(&args)
-        .env("PYTHONUTF8", "1")
-        .env("PYTHONIOENCODING", "utf-8");
-    #[cfg(target_os = "windows")]
-    cmd.creation_flags(CREATE_NO_WINDOW);
-
-    let output = cmd
-        .output()
-        .await
-        .map_err(|e| format!("err_run_ytdlp:{}", e))?;
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-
-    // 优先从 stdout 解析 JSON（yt-dlp 可能在 stderr 输出警告但仍成功）
-    if let Some(json_str) = stdout
-        .lines()
-        .find(|line| line.trim_start().starts_with('{'))
-    {
-        return serde_json::from_str(json_str).map_err(|e| format!("err_parse_video_info:{}", e));
-    }
-
-    // 未找到 JSON，从 stderr 提取 ERROR 行作为错误信息
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    let error_lines: Vec<&str> = stderr.lines().filter(|l| l.contains("ERROR:")).collect();
-    let msg = if error_lines.is_empty() {
-        stderr.trim().to_string()
-    } else {
-        error_lines.join("\n")
-    };
-    Err(msg)
+    common::run_ytdlp_json(
+        &app,
+        &url,
+        &[],
+        cookie_file.as_deref(),
+        cookie_browser.as_deref(),
+        proxy.as_deref(),
+    )
+    .await
 }

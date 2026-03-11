@@ -1,7 +1,10 @@
 //! 工具箱命令：封面下载、字幕下载、直播弹幕获取
+
 use crate::utils;
 use serde_json::Value;
 use tauri::AppHandle;
+
+use super::common::{self, append_cookie_proxy_args, build_http_client, extract_ytdlp_error};
 
 #[cfg(target_os = "windows")]
 use super::CREATE_NO_WINDOW;
@@ -39,26 +42,7 @@ async fn run_ytdlp_tool(
     args.push(output_template);
 
     args.extend(extra_args);
-
-    if let Some(cf) = cookie_file {
-        if !cf.is_empty() {
-            args.push("--cookies".to_string());
-            args.push(cf.to_string());
-        }
-    }
-    if let Some(browser) = cookie_browser {
-        if !browser.is_empty() {
-            args.push("--cookies-from-browser".to_string());
-            args.push(browser.to_string());
-        }
-    }
-    if let Some(p) = proxy {
-        if !p.is_empty() {
-            args.push("--proxy".to_string());
-            args.push(p.to_string());
-        }
-    }
-
+    append_cookie_proxy_args(&mut args, cookie_file, cookie_browser, proxy);
     args.push(url.to_string());
 
     let mut cmd = tokio::process::Command::new(&ytdlp_path);
@@ -79,13 +63,7 @@ async fn run_ytdlp_tool(
     if output.status.success() {
         Ok(stdout.to_string())
     } else {
-        let error_lines: Vec<&str> = stderr.lines().filter(|l| l.contains("ERROR:")).collect();
-        let msg = if error_lines.is_empty() {
-            stderr.trim().to_string()
-        } else {
-            error_lines.join("\n")
-        };
-        Err(msg)
+        Err(extract_ytdlp_error(&stderr))
     }
 }
 
@@ -98,72 +76,15 @@ pub async fn tool_fetch_thumbnails(
     cookie_browser: Option<String>,
     proxy: Option<String>,
 ) -> Result<Value, String> {
-    let ytdlp_path = utils::get_ytdlp_path(&app)?;
-    if !ytdlp_path.exists() {
-        return Err("err_ytdlp_not_installed".to_string());
-    }
-
-    let mut args = vec![
-        "-J".to_string(),
-        "--ignore-config".to_string(),
-        "--color".to_string(),
-        "never".to_string(),
-        "--no-check-formats".to_string(),
-        "--no-playlist".to_string(),
-    ];
-    args.extend(utils::build_js_runtime_args(&app));
-    args.extend(utils::build_plugin_args(&app));
-
-    if let Some(ref cf) = cookie_file {
-        if !cf.is_empty() {
-            args.push("--cookies".to_string());
-            args.push(cf.clone());
-        }
-    }
-    if let Some(ref browser) = cookie_browser {
-        if !browser.is_empty() {
-            args.push("--cookies-from-browser".to_string());
-            args.push(browser.clone());
-        }
-    }
-    if let Some(ref p) = proxy {
-        if !p.is_empty() {
-            args.push("--proxy".to_string());
-            args.push(p.clone());
-        }
-    }
-
-    args.push(url);
-
-    let mut cmd = tokio::process::Command::new(&ytdlp_path);
-    cmd.args(&args)
-        .env("PYTHONUTF8", "1")
-        .env("PYTHONIOENCODING", "utf-8");
-    #[cfg(target_os = "windows")]
-    cmd.creation_flags(CREATE_NO_WINDOW);
-
-    let output = cmd
-        .output()
-        .await
-        .map_err(|e| format!("err_run_ytdlp:{}", e))?;
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-
-    if let Some(json_str) = stdout
-        .lines()
-        .find(|line| line.trim_start().starts_with('{'))
-    {
-        return serde_json::from_str(json_str).map_err(|e| format!("err_parse_video_info:{}", e));
-    }
-
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    let error_lines: Vec<&str> = stderr.lines().filter(|l| l.contains("ERROR:")).collect();
-    let msg = if error_lines.is_empty() {
-        stderr.trim().to_string()
-    } else {
-        error_lines.join("\n")
-    };
-    Err(msg)
+    common::run_ytdlp_json(
+        &app,
+        &url,
+        &["--no-check-formats", "--no-playlist"],
+        cookie_file.as_deref(),
+        cookie_browser.as_deref(),
+        proxy.as_deref(),
+    )
+    .await
 }
 
 /// 将指定 URL 的图片下载到指定文件路径（另存为）
@@ -173,17 +94,7 @@ pub async fn tool_save_thumbnail(
     file_path: String,
     proxy: Option<String>,
 ) -> Result<(), String> {
-    let mut builder = reqwest::Client::builder();
-    if let Some(ref p) = proxy {
-        if !p.is_empty() {
-            let reqwest_proxy =
-                reqwest::Proxy::all(p).map_err(|e| format!("err_proxy_config:{}", e))?;
-            builder = builder.proxy(reqwest_proxy);
-        }
-    }
-    let client = builder
-        .build()
-        .map_err(|e| format!("err_create_http_client:{}", e))?;
+    let client = build_http_client(proxy.as_deref())?;
 
     let response = client
         .get(&url)
@@ -200,7 +111,6 @@ pub async fn tool_save_thumbnail(
         .await
         .map_err(|e| format!("err_read_thumbnail_data:{}", e))?;
 
-    // 确保父目录存在
     if let Some(parent) = std::path::Path::new(&file_path).parent() {
         tokio::fs::create_dir_all(parent)
             .await
@@ -249,81 +159,22 @@ pub async fn tool_fetch_subtitles(
     cookie_browser: Option<String>,
     proxy: Option<String>,
 ) -> Result<Value, String> {
-    let ytdlp_path = utils::get_ytdlp_path(&app)?;
-    if !ytdlp_path.exists() {
-        return Err("err_ytdlp_not_installed".to_string());
-    }
+    let info = common::run_ytdlp_json(
+        &app,
+        &url,
+        &["--no-check-formats", "--no-playlist"],
+        cookie_file.as_deref(),
+        cookie_browser.as_deref(),
+        proxy.as_deref(),
+    )
+    .await?;
 
-    let mut args = vec![
-        "-J".to_string(),
-        "--ignore-config".to_string(),
-        "--color".to_string(),
-        "never".to_string(),
-        "--no-check-formats".to_string(),
-        "--no-playlist".to_string(),
-    ];
-    args.extend(utils::build_js_runtime_args(&app));
-    args.extend(utils::build_plugin_args(&app));
-
-    if let Some(ref cf) = cookie_file {
-        if !cf.is_empty() {
-            args.push("--cookies".to_string());
-            args.push(cf.clone());
-        }
-    }
-    if let Some(ref browser) = cookie_browser {
-        if !browser.is_empty() {
-            args.push("--cookies-from-browser".to_string());
-            args.push(browser.clone());
-        }
-    }
-    if let Some(ref p) = proxy {
-        if !p.is_empty() {
-            args.push("--proxy".to_string());
-            args.push(p.clone());
-        }
-    }
-
-    args.push(url);
-
-    let mut cmd = tokio::process::Command::new(&ytdlp_path);
-    cmd.args(&args)
-        .env("PYTHONUTF8", "1")
-        .env("PYTHONIOENCODING", "utf-8");
-    #[cfg(target_os = "windows")]
-    cmd.creation_flags(CREATE_NO_WINDOW);
-
-    let output = cmd
-        .output()
-        .await
-        .map_err(|e| format!("err_run_ytdlp:{}", e))?;
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
-
-    if let Some(json_str) = stdout
-        .lines()
-        .find(|line| line.trim_start().starts_with('{'))
-    {
-        let info: Value =
-            serde_json::from_str(json_str).map_err(|e| format!("err_parse_video_info:{}", e))?;
-
-        // 只返回字幕相关字段和标题
-        let result = serde_json::json!({
-            "title": info.get("title").cloned().unwrap_or(Value::Null),
-            "subtitles": info.get("subtitles").cloned().unwrap_or(Value::Object(Default::default())),
-            "automatic_captions": info.get("automatic_captions").cloned().unwrap_or(Value::Object(Default::default())),
-        });
-        return Ok(result);
-    }
-
-    let stderr = String::from_utf8_lossy(&output.stderr);
-    let error_lines: Vec<&str> = stderr.lines().filter(|l| l.contains("ERROR:")).collect();
-    let msg = if error_lines.is_empty() {
-        stderr.trim().to_string()
-    } else {
-        error_lines.join("\n")
-    };
-    Err(msg)
+    // 只返回字幕相关字段和标题
+    Ok(serde_json::json!({
+        "title": info.get("title").cloned().unwrap_or(Value::Null),
+        "subtitles": info.get("subtitles").cloned().unwrap_or(Value::Object(Default::default())),
+        "automatic_captions": info.get("automatic_captions").cloned().unwrap_or(Value::Object(Default::default())),
+    }))
 }
 
 /// 下载单个字幕文件并另存为
@@ -333,17 +184,7 @@ pub async fn tool_save_subtitle(
     file_path: String,
     proxy: Option<String>,
 ) -> Result<(), String> {
-    let mut builder = reqwest::Client::builder();
-    if let Some(ref p) = proxy {
-        if !p.is_empty() {
-            let reqwest_proxy =
-                reqwest::Proxy::all(p).map_err(|e| format!("err_proxy_config:{}", e))?;
-            builder = builder.proxy(reqwest_proxy);
-        }
-    }
-    let client = builder
-        .build()
-        .map_err(|e| format!("err_create_http_client:{}", e))?;
+    let client = build_http_client(proxy.as_deref())?;
 
     let response = client
         .get(&url)
@@ -376,17 +217,7 @@ pub async fn tool_save_subtitle(
 /// 下载 URL 文本内容并返回（用于前端获取字幕文本做合并处理）
 #[tauri::command]
 pub async fn tool_download_text(url: String, proxy: Option<String>) -> Result<String, String> {
-    let mut builder = reqwest::Client::builder();
-    if let Some(ref p) = proxy {
-        if !p.is_empty() {
-            let reqwest_proxy =
-                reqwest::Proxy::all(p).map_err(|e| format!("err_proxy_config:{}", e))?;
-            builder = builder.proxy(reqwest_proxy);
-        }
-    }
-    let client = builder
-        .build()
-        .map_err(|e| format!("err_create_http_client:{}", e))?;
+    let client = build_http_client(proxy.as_deref())?;
 
     let response = client
         .get(&url)
@@ -407,7 +238,13 @@ pub async fn tool_download_text(url: String, proxy: Option<String>) -> Result<St
 /// 将文本内容保存到指定文件路径
 #[tauri::command]
 pub async fn tool_save_text_to_file(content: String, file_path: String) -> Result<(), String> {
-    if let Some(parent) = std::path::Path::new(&file_path).parent() {
+    // 路径安全检查：阻止写入系统关键路径
+    let path = std::path::Path::new(&file_path);
+    if file_path.contains("..") {
+        return Err("err_path_traversal".to_string());
+    }
+
+    if let Some(parent) = path.parent() {
         tokio::fs::create_dir_all(parent)
             .await
             .map_err(|e| format!("err_create_dir:{}", e))?;
@@ -420,8 +257,9 @@ pub async fn tool_save_text_to_file(content: String, file_path: String) -> Resul
     Ok(())
 }
 
-/// 下载视频字幕文件（旧接口，保留兼容）
+/// 下载视频字幕文件
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn tool_download_subtitles(
     app: AppHandle,
     url: String,
@@ -509,7 +347,6 @@ fn parse_live_chat_line(line: &str) -> Option<LiveChatMessage> {
             .unwrap_or("")
             .to_string();
 
-        // 提取消息文本
         let message = extract_runs_text(renderer.pointer("/message/runs"))
             .or_else(|| extract_runs_text(renderer.pointer("/headerSubtext/runs")))
             .unwrap_or_default();
@@ -599,25 +436,12 @@ pub async fn tool_fetch_live_chat(
     ];
     args.extend(utils::build_js_runtime_args(&app));
     args.extend(utils::build_plugin_args(&app));
-
-    if let Some(ref cf) = cookie_file {
-        if !cf.is_empty() {
-            args.push("--cookies".to_string());
-            args.push(cf.clone());
-        }
-    }
-    if let Some(ref browser) = cookie_browser {
-        if !browser.is_empty() {
-            args.push("--cookies-from-browser".to_string());
-            args.push(browser.clone());
-        }
-    }
-    if let Some(ref p) = proxy {
-        if !p.is_empty() {
-            args.push("--proxy".to_string());
-            args.push(p.clone());
-        }
-    }
+    append_cookie_proxy_args(
+        &mut args,
+        cookie_file.as_deref(),
+        cookie_browser.as_deref(),
+        proxy.as_deref(),
+    );
     args.push(url);
 
     let mut cmd = tokio::process::Command::new(&ytdlp_path);
@@ -638,13 +462,7 @@ pub async fn tool_fetch_live_chat(
     if !output.status.success() {
         let _ = tokio::fs::remove_dir_all(&temp_dir).await;
         let stderr = String::from_utf8_lossy(&output.stderr);
-        let error_lines: Vec<&str> = stderr.lines().filter(|l| l.contains("ERROR:")).collect();
-        let msg = if error_lines.is_empty() {
-            stderr.trim().to_string()
-        } else {
-            error_lines.join("\n")
-        };
-        return Err(msg);
+        return Err(extract_ytdlp_error(&stderr));
     }
 
     // 解析完成后统一清理临时目录
