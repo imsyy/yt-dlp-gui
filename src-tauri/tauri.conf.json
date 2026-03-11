@@ -40,6 +40,11 @@
     ]
   },
   "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["ytdlp-gui"]
+      }
+    },
     "updater": {
       "endpoints": [
         "https://github.com/imsyy/yt-dlp-gui/releases/latest/download/latest.json"

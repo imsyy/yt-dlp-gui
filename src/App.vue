@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { exit } from "@tauri-apps/plugin-process";
 import { check } from "@tauri-apps/plugin-updater";
+import { onOpenUrl } from "@tauri-apps/plugin-deep-link";
 import IconMdiHome from "~icons/mdi/home";
 import IconMdiDownload from "~icons/mdi/download";
 import IconMdiToolbox from "~icons/mdi/toolbox";
@@ -76,6 +77,28 @@ win.onCloseRequested(async (event) => {
 // 监听托盘退出请求
 listen("tray-quit-requested", () => handleQuitRequest());
 
+/** 处理深链接 URL（来自浏览器扩展或命令行） */
+const handleDeepLink = (deepLinkUrl: string) => {
+  try {
+    const url = new URL(deepLinkUrl);
+    if (url.host !== "download") return;
+    const videoUrl = url.searchParams.get("url");
+    if (!videoUrl) return;
+    const cookies = url.searchParams.get("cookies");
+    if (cookies) {
+      try {
+        settingStore.cookieText = decodeURIComponent(atob(cookies));
+        settingStore.cookieMode = "text";
+      } catch {
+        // Cookie 解码失败，忽略
+      }
+    }
+    router.push({ name: "home", query: { url: videoUrl } });
+  } catch {
+    // 无效的深链接 URL，忽略
+  }
+};
+
 /** 启动时自动检查应用更新 */
 const checkAppUpdate = async () => {
   try {
@@ -97,6 +120,16 @@ onMounted(() => {
   if (settingStore.autoCheckUpdate) {
     checkAppUpdate();
   }
+  // 监听深链接（首次启动时由 tauri-plugin-deep-link 触发）
+  onOpenUrl((urls) => {
+    for (const u of urls) {
+      handleDeepLink(u);
+    }
+  });
+  // 监听 single-instance 转发的深链接（应用已运行时）
+  listen<string>("deep-link-url", (event) => {
+    handleDeepLink(event.payload);
+  });
 });
 </script>
 

@@ -90,11 +90,29 @@ const formatHistoryTime = (time: number): string => {
 const currentTipIndex = ref(0);
 let tipTimer: ReturnType<typeof setInterval> | null = null;
 
+const route = useRoute();
+
 onMounted(() => {
   tipTimer = setInterval(() => {
     const tips = tm("home.tips");
     currentTipIndex.value = (currentTipIndex.value + 1) % tips.length;
   }, 4000);
+  // 从深链接 query 参数自动填充 URL 并触发解析
+  const deepLinkUrl = route.query.url as string | undefined;
+  if (deepLinkUrl) {
+    url.value = deepLinkUrl;
+    router.replace({ name: "home", query: {} });
+    handleSearch();
+  }
+});
+
+// 监听 query 变化（已在首页时收到新深链接）
+watch(() => route.query.url, (newUrl) => {
+  if (newUrl && typeof newUrl === "string") {
+    url.value = newUrl;
+    router.replace({ name: "home", query: {} });
+    handleSearch();
+  }
 });
 
 onUnmounted(() => {

@@ -23,6 +23,7 @@
     "notification:default",
     "updater:default",
     "process:allow-restart",
-    "process:allow-exit"
+    "process:allow-exit",
+    "deep-link:default"
   ]
 }
