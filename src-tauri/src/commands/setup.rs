@@ -30,6 +30,12 @@ pub fn get_platform() -> String {
     }
 }
 
+/// 设置 yt-dlp / Deno 路径解析模式
+#[tauri::command]
+pub fn set_binary_path_resolve_mode(mode: String) -> Result<(), String> {
+    utils::set_binary_path_resolve_mode(&mode)
+}
+
 // ========== yt-dlp 管理 ==========
 
 /// 获取 yt-dlp 安装状态和版本
@@ -69,7 +75,7 @@ pub async fn get_ytdlp_status(app: AppHandle) -> Result<YtdlpStatus, String> {
 /// 下载 yt-dlp 可执行文件
 #[tauri::command]
 pub async fn download_ytdlp(app: AppHandle) -> Result<(), String> {
-    let ytdlp_path = utils::get_ytdlp_path(&app)?;
+    let ytdlp_path = utils::get_managed_ytdlp_path(&app)?;
     let url = utils::get_ytdlp_download_url();
 
     let client = reqwest::Client::builder()
@@ -316,7 +322,7 @@ pub async fn get_deno_status(app: AppHandle) -> Result<DenoStatus, String> {
 /// 下载 Deno 可执行文件（从 zip 解压）
 #[tauri::command]
 pub async fn download_deno(app: AppHandle) -> Result<(), String> {
-    let deno_path = utils::get_deno_path(&app)?;
+    let deno_path = utils::get_managed_deno_path(&app)?;
     let url = utils::get_deno_download_url();
 
     let client = reqwest::Client::builder()
