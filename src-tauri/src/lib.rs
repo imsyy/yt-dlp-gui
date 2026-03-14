@@ -91,6 +91,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             update_tray_menu,
             commands::get_platform,
+            commands::set_binary_path_resolve_mode,
             commands::get_ytdlp_status,
             commands::download_ytdlp,
             commands::update_ytdlp,

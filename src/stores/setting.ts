@@ -51,6 +51,9 @@ export const useSettingStore = defineStore("setting", () => {
   /** 启动时自动检查更新 */
   const autoCheckUpdate = ref(true);
 
+  /** 二进制路径解析模式 */
+  const binaryPathResolveMode = ref<"system-preferred" | "app-only">("system-preferred");
+
   /** 在任务栏显示下载进度 */
   const showTaskbarProgress = ref(true);
 
@@ -70,6 +73,7 @@ export const useSettingStore = defineStore("setting", () => {
     notifyMode,
     closeToTray,
     autoCheckUpdate,
+    binaryPathResolveMode,
     showTaskbarProgress,
   };
 }, {

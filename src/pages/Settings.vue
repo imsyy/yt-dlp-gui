@@ -55,6 +55,17 @@ const notifyModeOptions = computed(() => [
   { label: t("settings.all"), value: "all" },
 ]);
 
+const binaryPathResolveModeOptions = computed(() => [
+  { label: t("settings.pathModeSystemPreferred"), value: "system-preferred" },
+  { label: t("settings.pathModeAppOnly"), value: "app-only" },
+]);
+
+const applyBinaryPathResolveMode = async () => {
+  await invoke("set_binary_path_resolve_mode", {
+    mode: settingStore.binaryPathResolveMode,
+  });
+};
+
 const ytdlpStatus = ref<YtdlpStatus | null>(null);
 const ytdlpChecking = ref(true);
 const ytdlpDownloading = ref(false);
@@ -178,8 +189,17 @@ const refreshAll = () => {
 onMounted(async () => {
   platform.value = await invoke<string>("get_platform");
   appVersion.value = await getVersion();
+  await applyBinaryPathResolveMode();
   refreshAll();
 });
+
+watch(
+  () => settingStore.binaryPathResolveMode,
+  async () => {
+    await applyBinaryPathResolveMode();
+    refreshAll();
+  },
+);
 </script>
 
 <template>
@@ -195,6 +215,18 @@ onMounted(async () => {
         {{ $t("common.refresh") }}
       </n-button>
     </n-flex>
+
+    <n-card size="small" class="section-card">
+      <div class="info-row">
+        <span class="info-label">{{ $t("settings.pathResolveMode") }}</span>
+        <n-select
+          v-model:value="settingStore.binaryPathResolveMode"
+          :options="binaryPathResolveModeOptions"
+          style="width: 160px"
+          size="small"
+        />
+      </div>
+    </n-card>
 
     <n-card title="yt-dlp" size="small" class="section-card">
       <template #header-extra>
