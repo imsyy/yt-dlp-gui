@@ -131,10 +131,12 @@ pub async fn download_ytdlp(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-/// 更新 yt-dlp 到最新版本
+/// 更新 yt-dlp 到最新版本（始终更新应用管理的副本，而非系统安装版）
 #[tauri::command]
 pub async fn update_ytdlp(app: AppHandle) -> Result<String, String> {
-    let ytdlp_path = utils::get_ytdlp_path(&app)?;
+    // 系统安装的 yt-dlp 通常在受保护目录，`-U` 自更新会因权限失败；
+    // 这里只更新应用数据目录下的副本，与 download_ytdlp 保持一致。
+    let ytdlp_path = utils::get_managed_ytdlp_path(&app)?;
     if !ytdlp_path.exists() {
         return Err("err_ytdlp_not_installed".to_string());
     }

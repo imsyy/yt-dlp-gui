@@ -119,6 +119,7 @@
     "pathResolveMode": "ツールパス優先度",
     "pathModeSystemPreferred": "システム優先",
     "pathModeAppOnly": "アプリのみ",
+    "pathResolveModeHint": "システム優先：PATH 経由で検出し、見つからない場合はアプリ管理版を使用。アプリのみ：常にアプリデータディレクトリ内の版を使用。",
     "personalization": "カスタマイズ",
     "showTaskbarProgress": "タスクバーにダウンロード進捗を表示",
     "downloadNotification": "ダウンロード完了通知",

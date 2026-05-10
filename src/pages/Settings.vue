@@ -218,7 +218,12 @@ watch(
 
     <n-card size="small" class="section-card">
       <div class="info-row">
-        <span class="info-label">{{ $t("settings.pathResolveMode") }}</span>
+        <n-tooltip placement="right" :style="{ maxWidth: '320px' }">
+          <template #trigger>
+            <span class="info-label">{{ $t("settings.pathResolveMode") }}</span>
+          </template>
+          {{ $t("settings.pathResolveModeHint") }}
+        </n-tooltip>
         <n-select
           v-model:value="settingStore.binaryPathResolveMode"
           :options="binaryPathResolveModeOptions"

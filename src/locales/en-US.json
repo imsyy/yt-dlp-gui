@@ -119,6 +119,7 @@
     "pathResolveMode": "Tool Path Priority",
     "pathModeSystemPreferred": "System Preferred",
     "pathModeAppOnly": "App Only",
+    "pathResolveModeHint": "System Preferred: detect via PATH and fall back to the app-managed copy. App Only: always use the version inside the app data directory.",
     "personalization": "Personalization",
     "showTaskbarProgress": "Show download progress on taskbar",
     "downloadNotification": "Download Notification",

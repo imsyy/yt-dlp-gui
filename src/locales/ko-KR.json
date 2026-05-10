@@ -119,6 +119,7 @@
     "pathResolveMode": "도구 경로 우선순위",
     "pathModeSystemPreferred": "시스템 우선",
     "pathModeAppOnly": "앱만 사용",
+    "pathResolveModeHint": "시스템 우선: PATH에서 검색하고, 없으면 앱 관리 버전으로 대체. 앱만 사용: 항상 앱 데이터 디렉터리의 버전을 사용.",
     "personalization": "개인 설정",
     "showTaskbarProgress": "작업 표시줄에 다운로드 진행률 표시",
     "downloadNotification": "다운로드 완료 알림",

@@ -119,6 +119,7 @@
     "pathResolveMode": "Prioridad de ruta de herramientas",
     "pathModeSystemPreferred": "Prioridad del sistema",
     "pathModeAppOnly": "Solo aplicación",
+    "pathResolveModeHint": "Prioridad del sistema: detecta vía PATH y recurre a la versión gestionada por la app si no se encuentra. Solo aplicación: usa siempre la versión del directorio de datos de la app.",
     "personalization": "Personalización",
     "showTaskbarProgress": "Mostrar progreso de descarga en la barra de tareas",
     "downloadNotification": "Notificación de descarga",

@@ -119,6 +119,7 @@
     "pathResolveMode": "工具路徑優先級",
     "pathModeSystemPreferred": "系統優先",
     "pathModeAppOnly": "僅應用程式",
+    "pathResolveModeHint": "系統優先：先透過 PATH 探測系統安裝版，找不到時回退到應用管理的版本。僅應用程式：始終使用應用資料目錄中的版本。",
     "personalization": "個性化",
     "showTaskbarProgress": "在工作列顯示下載進度",
     "downloadNotification": "下載完成通知",

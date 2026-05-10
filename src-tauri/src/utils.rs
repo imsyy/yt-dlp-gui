@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-use std::process::Command;
 use std::sync::{OnceLock, RwLock};
 use tauri::{AppHandle, Manager};
 
@@ -48,41 +47,21 @@ fn get_managed_executable_path(app: &AppHandle, file_name: &str) -> Result<PathB
     Ok(app_data.join(file_name))
 }
 
-/// 自动探测系统中可执行文件路径（which/where）
-fn find_system_executable(names: &[&str]) -> Option<PathBuf> {
-    let command = if cfg!(target_os = "windows") {
-        "where.exe"
-    } else {
-        "which"
-    };
-
-    let output = Command::new(command).args(names).output().ok()?;
-    if !output.status.success() {
-        return None;
-    }
-
-    // TODO: 这里在编码非 UTF-8 的系统上可能会有问题
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    stdout
-        .lines()
-        .map(str::trim)
-        .filter(|line| !line.is_empty())
-        .map(|line| line.trim_matches('"'))
-        .map(PathBuf::from)
-        .find(|path| path.exists())
+/// 在系统 PATH 中查找可执行文件
+/// 使用 `which` crate 而非派生子进程，避免 Windows 控制台代码页（GBK 等）
+/// 输出非 UTF-8 时解析失败；同时自动处理 PATHEXT 等平台细节。
+fn find_system_executable(name: &str) -> Option<PathBuf> {
+    which::which(name).ok().filter(|path| path.exists())
 }
 
 /// 解析可执行文件路径
 /// - system-preferred: 优先系统安装路径，其次应用管理路径
 /// - app-only: 仅应用管理路径
-fn resolve_executable_path(managed_path: PathBuf, system_names: &[&str]) -> PathBuf {
+fn resolve_executable_path(managed_path: PathBuf, system_name: &str) -> PathBuf {
     match get_path_resolve_mode() {
         BinaryPathResolveMode::AppOnly => managed_path,
         BinaryPathResolveMode::SystemPreferred => {
-            if let Some(path) = find_system_executable(system_names) {
-                return path;
-            }
-            managed_path
+            find_system_executable(system_name).unwrap_or(managed_path)
         }
     }
 }
@@ -99,9 +78,7 @@ pub fn get_managed_ytdlp_path(app: &AppHandle) -> Result<PathBuf, String> {
 /// 获取 yt-dlp 可执行文件路径
 pub fn get_ytdlp_path(app: &AppHandle) -> Result<PathBuf, String> {
     let managed_path = get_managed_ytdlp_path(app)?;
-    let system_names: &[&str] = &["yt-dlp"];
-
-    Ok(resolve_executable_path(managed_path, system_names))
+    Ok(resolve_executable_path(managed_path, "yt-dlp"))
 }
 
 /// 获取应用管理的 Deno 路径（应用数据目录）
@@ -116,9 +93,7 @@ pub fn get_managed_deno_path(app: &AppHandle) -> Result<PathBuf, String> {
 /// 获取 Deno 可执行文件路径
 pub fn get_deno_path(app: &AppHandle) -> Result<PathBuf, String> {
     let managed_path = get_managed_deno_path(app)?;
-    let system_names: &[&str] = &["deno"];
-
-    Ok(resolve_executable_path(managed_path, system_names))
+    Ok(resolve_executable_path(managed_path, "deno"))
 }
 
 /// 获取 Cookie 文件路径（存放在应用数据目录下）
