@@ -30,7 +30,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "createUpdaterArtifacts": true,
+    "createUpdaterArtifacts": false,
     "resources": {
       "../browser-extension": "browser-extension"
     },
@@ -50,7 +50,7 @@
     },
     "updater": {
       "endpoints": [
-        "https://github.com/imsyy/yt-dlp-gui/releases/latest/download/latest.json"
+        "https://github.com/Yesmohsen/yt-dlp-gui/releases/latest/download/latest.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEJENzM3NUZDRDIzNDM3MzcKUldRM056VFMvSFZ6dldFQXBCT0JXcmNLRHRmd0tKNE1ucEFnWTl2WHZOcHFSZ205QnFFNjRibUMK",
       "windows": {

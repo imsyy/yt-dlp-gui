@@ -76,7 +76,8 @@ jobs:
           releaseDraft: true
           prerelease: false
           generateReleaseNotes: true
-          includeUpdaterJson: true
+          # includeUpdaterJson is disabled: updater signing needs a private key
+          # secret (`createUpdaterArtifacts: false` in tauri.conf.json).
           args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
 
       - name: Package browser extension (Linux only)
