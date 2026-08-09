@@ -17,14 +17,19 @@ jobs:
         include:
           - platform: windows-latest
             target: x86_64-pc-windows-msvc
+            bundles: nsis,msi
           - platform: windows-latest
             target: aarch64-pc-windows-msvc
+            bundles: nsis,msi
           - platform: macos-latest
             target: x86_64-apple-darwin
+            bundles: dmg
           - platform: macos-latest
             target: aarch64-apple-darwin
+            bundles: dmg
           - platform: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
+            bundles: deb,appimage
 
     runs-on: ${{ matrix.platform }}
 
@@ -46,9 +51,9 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          # 钉到 v10：v11 把 onlyBuiltDependencies 校验改到 lockfile 层，
-          # 单独配置 package.json 不再生效，会导致 ERR_PNPM_IGNORED_BUILDS。
-          version: 10
+          # pnpm 11 removed `onlyBuiltDependencies`; build approvals live in
+          # pnpm-workspace.yaml via `allowBuilds` (see repo config).
+          version: 11
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -72,7 +77,17 @@ jobs:
           prerelease: false
           generateReleaseNotes: true
           includeUpdaterJson: true
-          args: --target ${{ matrix.target }}
+          args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+
+      - name: Package browser extension (Linux only)
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        run: |
+          cd browser-extension
+          zip -r "$GITHUB_WORKSPACE/browser-extension.zip" .
+          cd "$GITHUB_WORKSPACE"
+          gh release upload "${{ github.ref_name }}" browser-extension.zip --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload artifacts (Windows)
         if: matrix.platform == 'windows-latest'
@@ -99,3 +114,10 @@ jobs:
           path: |
             src-tauri/target/${{ matrix.target }}/release/bundle/deb/*.deb
             src-tauri/target/${{ matrix.target }}/release/bundle/appimage/*.AppImage
+
+      - name: Upload browser extension artifact (Linux only)
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-extension
+          path: browser-extension.zip

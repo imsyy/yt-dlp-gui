@@ -24,6 +24,7 @@ dist-ssr
 *.sw?
 
 .test/*
+test-yt-dlp-gui/
 
 # Tauri signing keys
 ~
