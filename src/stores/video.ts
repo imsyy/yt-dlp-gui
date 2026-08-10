@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { invoke } from "@tauri-apps/api/core";
 import { showErrorDialog } from "@/utils/format";
+import { filterPlaylistEntries } from "@/utils/playlist";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import type {
@@ -69,15 +70,17 @@ export const useVideoStore = defineStore("video", () => {
       let isPlaylist = false;
       let playlistEntries: PlaylistEntry[] = [];
 
-      if (info._type === "playlist" && info.entries?.length) {
+      const entries = filterPlaylistEntries(info.entries || []);
+
+      if (info._type === "playlist" && entries.length) {
         isPlaylist = true;
-        playlistEntries = info.entries.map((e, i) => ({
+        playlistEntries = entries.map((e, i) => ({
           id: e.id || String(i + 1),
           title: e.title || `第 ${i + 1} P`,
           duration: e.duration ?? null,
           url: e.url || "",
         }));
-        const firstEntry = info.entries[0];
+        const firstEntry = entries[0];
         const formats: VideoFormat[] = firstEntry?.formats || info.formats || [];
         // 合集字幕：yt-dlp -J 对 playlist 不会在 root 暴露 subtitles，
         // 必须从各 entry 聚合。同语言的 tracks 取首个出现该语言的 entry。
@@ -87,8 +90,8 @@ export const useVideoStore = defineStore("video", () => {
           thumbnail: info.thumbnail || firstEntry?.thumbnail || "",
           duration: info.duration || firstEntry?.duration || 0,
           formats,
-          subtitles: aggregateSubtitleMap(info.entries, "subtitles"),
-          automatic_captions: aggregateSubtitleMap(info.entries, "automatic_captions"),
+          subtitles: aggregateSubtitleMap(entries, "subtitles"),
+          automatic_captions: aggregateSubtitleMap(entries, "automatic_captions"),
         };
       } else {
         videoInfo = info;
