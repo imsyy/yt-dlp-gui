@@ -18,6 +18,7 @@ declare module 'vue' {
     DownloadDirCard: typeof import('./src/components/DownloadDirCard.vue')['default']
     DownloadOptionsCard: typeof import('./src/components/home/DownloadOptionsCard.vue')['default']
     ExtraOptionsCard: typeof import('./src/components/home/ExtraOptionsCard.vue')['default']
+    FfmpegDirCard: typeof import('./src/components/FfmpegDirCard.vue')['default']
     IconMdiAccount: typeof import('~icons/mdi/account')['default']
     IconMdiArrowLeft: typeof import('~icons/mdi/arrow-left')['default']
     IconMdiArrowRight: typeof import('~icons/mdi/arrow-right')['default']

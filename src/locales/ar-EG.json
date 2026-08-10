@@ -133,6 +133,7 @@
     "systemNotification": "النظام",
     "all": "الكل",
     "noOverwrites": "عدم استبدال الملفات الموجودة مسبقاً",
+    "confirmClearCompleted": "التأكيد قبل مسح التنزيلات المكتملة",
     "about": "حول التطبيق",
     "aboutDesc": "واجهة رسومية لـ yt-dlp مبنية بـ Tauri 2 + Vue 3 + Naive UI",
     "license": "الترخيص",
@@ -233,6 +234,12 @@
     "title": "مجلد التنزيل",
     "notSet": "مجلد التنزيل غير محدد",
     "selectDir": "اختر مجلد التنزيل"
+  },
+  "ffmpegDir": {
+    "title": "مجلد FFmpeg",
+    "desc": "اختياري. حدد المجلد الذي يحتوي على ffmpeg/ffprobe ليستخدمه yt-dlp. اتركه فارغًا لاستخدام ffmpeg من متغير PATH في النظام.",
+    "notSet": "غير محدد (يُستخدم ffmpeg من PATH النظام)",
+    "selectDir": "اختر مجلد FFmpeg"
   },
   "toolbox": {
     "browserExtTitle": "إضافة المتصفح",

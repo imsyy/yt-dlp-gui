@@ -133,6 +133,7 @@
     "systemNotification": "Hệ thống",
     "all": "Tất cả",
     "noOverwrites": "Không ghi đè tệp đã tồn tại",
+    "confirmClearCompleted": "Xác nhận trước khi xóa các mục đã tải xong",
     "about": "Giới thiệu",
     "aboutDesc": "Giao diện đồ họa cho yt-dlp được xây dựng với Tauri 2 + Vue 3 + Naive UI",
     "license": "Giấy phép",
@@ -233,6 +234,12 @@
     "title": "Thư mục tải xuống",
     "notSet": "Chưa đặt thư mục tải xuống",
     "selectDir": "Chọn thư mục tải xuống"
+  },
+  "ffmpegDir": {
+    "title": "Thư mục FFmpeg",
+    "desc": "Tùy chọn. Chỉ định thư mục chứa ffmpeg/ffprobe để yt-dlp sử dụng. Để trống để dùng ffmpeg trong PATH hệ thống.",
+    "notSet": "Chưa đặt (dùng ffmpeg trong PATH hệ thống)",
+    "selectDir": "Chọn thư mục FFmpeg"
   },
   "toolbox": {
     "browserExtTitle": "Tiện ích trình duyệt",

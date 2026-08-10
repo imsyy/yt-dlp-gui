@@ -133,6 +133,7 @@
     "systemNotification": "システム通知",
     "all": "すべて",
     "noOverwrites": "既存ファイルを上書きしない",
+    "confirmClearCompleted": "完了済みタスクのクリア前に確認する",
     "about": "このアプリについて",
     "aboutDesc": "Tauri 2 + Vue 3 + Naive UIで構築されたyt-dlpのGUIツール",
     "license": "ライセンス",
@@ -233,6 +234,12 @@
     "title": "ダウンロード先",
     "notSet": "ダウンロード先が未設定です",
     "selectDir": "ダウンロード先を選択"
+  },
+  "ffmpegDir": {
+    "title": "FFmpeg ディレクトリ",
+    "desc": "任意設定。yt-dlp が使用する ffmpeg/ffprobe のディレクトリを指定します。空欄の場合はシステム PATH 内の ffmpeg を使用します。",
+    "notSet": "未設定（システム PATH の ffmpeg を使用）",
+    "selectDir": "FFmpeg ディレクトリを選択"
   },
   "toolbox": {
     "browserExtTitle": "ブラウザ拡張機能",

@@ -85,6 +85,35 @@ pub fn build_youtube_extractor_args() -> Vec<String> {
     ]
 }
 
+// ========== FFmpeg 目录 ==========
+
+static FFMPEG_DIR: OnceLock<RwLock<String>> = OnceLock::new();
+
+fn ffmpeg_dir_lock() -> &'static RwLock<String> {
+    FFMPEG_DIR.get_or_init(|| RwLock::new(String::new()))
+}
+
+/// 设置 FFmpeg 所在目录；空字符串表示清除（交由 yt-dlp 自行在 PATH 中查找）。
+pub fn set_ffmpeg_dir(dir: &str) -> Result<(), String> {
+    let mut guard = ffmpeg_dir_lock()
+        .write()
+        .map_err(|e| format!("err_set_ffmpeg_dir:{}", e))?;
+    *guard = dir.trim().to_string();
+    Ok(())
+}
+
+/// 若用户设置了 FFmpeg 目录，返回 `--ffmpeg-location` 参数
+pub fn build_ffmpeg_location_args() -> Vec<String> {
+    let guard = match ffmpeg_dir_lock().read() {
+        Ok(g) => g,
+        Err(_) => return vec![],
+    };
+    if guard.is_empty() {
+        return vec![];
+    }
+    vec!["--ffmpeg-location".to_string(), guard.clone()]
+}
+
 /// 构建应用数据目录下的可执行文件路径
 fn get_managed_executable_path(app: &AppHandle, file_name: &str) -> Result<PathBuf, String> {
     let app_data = app

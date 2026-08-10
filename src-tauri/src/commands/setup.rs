@@ -42,6 +42,12 @@ pub fn set_youtube_extractor_args(po_token: String, visitor_data: String) -> Res
     utils::set_youtube_extractor_args(&po_token, &visitor_data)
 }
 
+/// 设置 FFmpeg 所在目录（用于 `--ffmpeg-location`），传空字符串表示清除
+#[tauri::command]
+pub fn set_ffmpeg_dir(dir: String) -> Result<(), String> {
+    utils::set_ffmpeg_dir(&dir)
+}
+
 // ========== yt-dlp 管理 ==========
 
 /// 获取 yt-dlp 安装状态和版本

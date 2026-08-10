@@ -114,6 +114,7 @@ pub fn run() {
             commands::get_platform,
             commands::set_binary_path_resolve_mode,
             commands::set_youtube_extractor_args,
+            commands::set_ffmpeg_dir,
             commands::get_ytdlp_status,
             commands::download_ytdlp,
             commands::update_ytdlp,

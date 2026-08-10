@@ -140,6 +140,7 @@
     "systemNotification": "System",
     "all": "All",
     "noOverwrites": "Don't overwrite existing files",
+    "confirmClearCompleted": "Confirm before clearing completed downloads",
     "about": "About",
     "aboutDesc": "A yt-dlp GUI built with Tauri 2 + Vue 3 + Naive UI",
     "license": "License",
@@ -240,6 +241,12 @@
     "title": "Download Directory",
     "notSet": "Download directory not set",
     "selectDir": "Select Download Directory"
+  },
+  "ffmpegDir": {
+    "title": "FFmpeg Directory",
+    "desc": "Optional. Specify the folder containing ffmpeg/ffprobe for yt-dlp to use. Leave empty to use the ffmpeg found in the system PATH.",
+    "notSet": "Not set (uses ffmpeg from system PATH)",
+    "selectDir": "Select FFmpeg Directory"
   },
   "toolbox": {
     "browserExtTitle": "Browser Extension",

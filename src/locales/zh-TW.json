@@ -133,6 +133,7 @@
     "systemNotification": "系統通知",
     "all": "全部",
     "noOverwrites": "檔案已存在時不覆蓋",
+    "confirmClearCompleted": "清空已完成任務前二次確認",
     "about": "關於",
     "aboutDesc": "基於 Tauri 2 + Vue 3 + Naive UI 建構的 yt-dlp 圖形介面工具",
     "license": "開源授權",
@@ -233,6 +234,12 @@
     "title": "下載目錄",
     "notSet": "未設定下載目錄",
     "selectDir": "選擇下載目錄"
+  },
+  "ffmpegDir": {
+    "title": "FFmpeg 目錄",
+    "desc": "可選。指定 yt-dlp 使用的 ffmpeg/ffprobe 所在目錄，留空則使用系統 PATH 中的 ffmpeg。",
+    "notSet": "未設定（使用系統 PATH 中的 ffmpeg）",
+    "selectDir": "選擇 FFmpeg 所在目錄"
   },
   "toolbox": {
     "browserExtTitle": "瀏覽器擴充功能",

@@ -3,11 +3,13 @@ import { NCheckbox, NFlex, NLog, type LogInst } from "naive-ui";
 import { revealItemInDir, openUrl } from "@tauri-apps/plugin-opener";
 import { invoke } from "@tauri-apps/api/core";
 import { useDownloadStore } from "@/stores/download";
+import { useSettingStore } from "@/stores/setting";
 import { useI18n } from "vue-i18n";
 import type { DownloadTask } from "@/types";
 
 const { t } = useI18n();
 const downloadStore = useDownloadStore();
+const settingStore = useSettingStore();
 
 const activeTasks = computed(() =>
   downloadStore.tasks.filter(
@@ -269,6 +271,10 @@ const handleRemove = (task: DownloadTask) => {
 };
 
 const handleClearFinished = () => {
+  if (!settingStore.confirmClearCompleted) {
+    downloadStore.clearFinished();
+    return;
+  }
   window.$dialog.warning({
     title: t("downloads.clearCompleted"),
     content: t("downloads.confirmClearCompleted"),

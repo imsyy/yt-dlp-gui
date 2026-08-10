@@ -133,6 +133,7 @@
     "systemNotification": "Системные",
     "all": "Все",
     "noOverwrites": "Не перезаписывать существующие файлы",
+    "confirmClearCompleted": "Подтверждать перед очисткой завершённых загрузок",
     "about": "О программе",
     "aboutDesc": "Графический интерфейс для yt-dlp на базе Tauri 2 + Vue 3 + Naive UI",
     "license": "Лицензия",
@@ -233,6 +234,12 @@
     "title": "Папка загрузки",
     "notSet": "Папка загрузки не задана",
     "selectDir": "Выбрать папку загрузки"
+  },
+  "ffmpegDir": {
+    "title": "Каталог FFmpeg",
+    "desc": "Необязательно. Укажите папку с ffmpeg/ffprobe, которую будет использовать yt-dlp. Оставьте пустым, чтобы использовать ffmpeg из системного PATH.",
+    "notSet": "Не задано (используется ffmpeg из системного PATH)",
+    "selectDir": "Выбрать каталог FFmpeg"
   },
   "toolbox": {
     "browserExtTitle": "Расширение браузера",

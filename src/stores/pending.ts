@@ -1,31 +1,36 @@
 import { defineStore } from "pinia";
+import { useSettingStore } from "@/stores/setting";
 import type { FetchedVideoData, PendingItem } from "@/types";
 
 const generateId = () => `pd_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-const createItem = (data: FetchedVideoData): PendingItem => ({
-  ...data,
-  id: generateId(),
-  createdAt: Date.now(),
-  selectedPlaylistItems: data.isPlaylist ? data.playlistEntries.map((_, i) => i + 1) : [],
-  downloadMode: "default",
-  selectedVideoFormat: data.videoFormats[0]?.format_id ?? "",
-  selectedAudioFormat: data.audioFormats[0]?.format_id ?? "",
-  startTime: null,
-  endTime: null,
-  embedSubs: false,
-  embedThumbnail: false,
-  embedMetadata: false,
-  embedChapters: false,
-  sponsorblockRemove: false,
-  extractAudio: false,
-  audioConvertFormat: "",
-  noMerge: false,
-  recodeFormat: "",
-  limitRate: "",
-  ffmpegArgs: "",
-  selectedSubtitles: [],
-});
+/** 额外选项默认值取自 settingStore，即上次修改后记住的选择 */
+const createItem = (data: FetchedVideoData): PendingItem => {
+  const settingStore = useSettingStore();
+  return {
+    ...data,
+    id: generateId(),
+    createdAt: Date.now(),
+    selectedPlaylistItems: data.isPlaylist ? data.playlistEntries.map((_, i) => i + 1) : [],
+    downloadMode: "default",
+    selectedVideoFormat: data.videoFormats[0]?.format_id ?? "",
+    selectedAudioFormat: data.audioFormats[0]?.format_id ?? "",
+    startTime: null,
+    endTime: null,
+    embedSubs: settingStore.embedSubs,
+    embedThumbnail: settingStore.embedThumbnail,
+    embedMetadata: settingStore.embedMetadata,
+    embedChapters: settingStore.embedChapters,
+    sponsorblockRemove: settingStore.sponsorblockRemove,
+    extractAudio: settingStore.extractAudio,
+    audioConvertFormat: settingStore.audioConvertFormat,
+    noMerge: settingStore.noMerge,
+    recodeFormat: settingStore.recodeFormat,
+    limitRate: settingStore.limitRate,
+    ffmpegArgs: settingStore.ffmpegArgs,
+    selectedSubtitles: [],
+  };
+};
 
 export const usePendingStore = defineStore("pending", () => {
   const items = ref<PendingItem[]>([]);

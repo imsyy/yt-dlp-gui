@@ -133,6 +133,7 @@
     "systemNotification": "Notificación del sistema",
     "all": "Todas",
     "noOverwrites": "No sobrescribir archivos existentes",
+    "confirmClearCompleted": "Confirmar antes de borrar las descargas completadas",
     "about": "Acerca de",
     "aboutDesc": "Interfaz gráfica para yt-dlp creada con Tauri 2 + Vue 3 + Naive UI",
     "license": "Licencia",
@@ -233,6 +234,12 @@
     "title": "Carpeta de descarga",
     "notSet": "No se ha establecido la carpeta de descarga",
     "selectDir": "Seleccionar carpeta de descarga"
+  },
+  "ffmpegDir": {
+    "title": "Directorio de FFmpeg",
+    "desc": "Opcional. Especifica la carpeta que contiene ffmpeg/ffprobe para que yt-dlp los use. Déjalo vacío para usar el ffmpeg del PATH del sistema.",
+    "notSet": "No establecido (usa el ffmpeg del PATH del sistema)",
+    "selectDir": "Seleccionar directorio de FFmpeg"
   },
   "toolbox": {
     "browserExtTitle": "Extensión del navegador",

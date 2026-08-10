@@ -133,6 +133,7 @@
     "systemNotification": "System",
     "all": "Alle",
     "noOverwrites": "Bestehende Dateien nicht überschreiben",
+    "confirmClearCompleted": "Vor dem Löschen abgeschlossener Downloads bestätigen",
     "about": "Über",
     "aboutDesc": "Eine yt-dlp-Oberfläche auf Basis von Tauri 2 + Vue 3 + Naive UI",
     "license": "Lizenz",
@@ -233,6 +234,12 @@
     "title": "Download-Ordner",
     "notSet": "Download-Ordner nicht festgelegt",
     "selectDir": "Download-Ordner auswählen"
+  },
+  "ffmpegDir": {
+    "title": "FFmpeg-Verzeichnis",
+    "desc": "Optional. Legen Sie den Ordner fest, der ffmpeg/ffprobe für yt-dlp enthält. Leer lassen, um das ffmpeg aus dem System-PATH zu verwenden.",
+    "notSet": "Nicht festgelegt (verwendet ffmpeg aus dem System-PATH)",
+    "selectDir": "FFmpeg-Verzeichnis auswählen"
   },
   "toolbox": {
     "browserExtTitle": "Browser-Erweiterung",

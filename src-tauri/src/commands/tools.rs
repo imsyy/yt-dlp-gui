@@ -39,6 +39,7 @@ async fn run_ytdlp_tool(
     args.extend(utils::build_js_runtime_args(app));
     args.extend(utils::build_plugin_args(app));
     args.extend(utils::build_youtube_extractor_args());
+    args.extend(utils::build_ffmpeg_location_args());
 
     let output_template = std::path::PathBuf::from(download_dir)
         .join("%(title).200s.%(ext)s")
@@ -617,6 +618,7 @@ pub async fn tool_fetch_live_chat(
     ];
     args.extend(utils::build_js_runtime_args(&app));
     args.extend(utils::build_plugin_args(&app));
+    args.extend(utils::build_ffmpeg_location_args());
     append_cookie_proxy_args(
         &mut args,
         cookie_file.as_deref(),

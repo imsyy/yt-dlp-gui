@@ -73,6 +73,10 @@ const applyYoutubeExtractorArgs = async () => {
   });
 };
 
+const applyFfmpegDir = async () => {
+  await invoke("set_ffmpeg_dir", { dir: settingStore.ffmpegDir });
+};
+
 const ytdlpStatus = ref<YtdlpStatus | null>(null);
 const ytdlpChecking = ref(true);
 const ytdlpDownloading = ref(false);
@@ -193,19 +197,23 @@ const refreshAll = () => {
   checkDenoStatus();
 };
 
+// 注：应用启动时的初始同步在 App.vue 中统一处理（保证不打开设置页也生效），
+// 这里的 apply* 调用只负责用户在本页修改设置时的实时同步。
 onMounted(async () => {
   platform.value = await invoke<string>("get_platform");
   appVersion.value = await getVersion();
-  await applyBinaryPathResolveMode();
-  await applyYoutubeExtractorArgs();
   refreshAll();
 });
 
 watch(
   () => settingStore.binaryPathResolveMode,
   async () => {
-    await applyBinaryPathResolveMode();
-    refreshAll();
+    try {
+      await applyBinaryPathResolveMode();
+      refreshAll();
+    } catch (e: unknown) {
+      window.$message.error(t("common.saveFailed", { e }));
+    }
   },
 );
 
@@ -213,7 +221,23 @@ watch(
 watch(
   () => [settingStore.youtubePoToken, settingStore.youtubeVisitorData],
   async () => {
-    await applyYoutubeExtractorArgs();
+    try {
+      await applyYoutubeExtractorArgs();
+    } catch (e: unknown) {
+      window.$message.error(t("common.saveFailed", { e }));
+    }
+  },
+);
+
+// FFmpeg 目录变更时同步到后端
+watch(
+  () => settingStore.ffmpegDir,
+  async () => {
+    try {
+      await applyFfmpegDir();
+    } catch (e: unknown) {
+      window.$message.error(t("common.saveFailed", { e }));
+    }
   },
 );
 </script>
@@ -456,6 +480,8 @@ watch(
 
     <DownloadDirCard class="section-card" />
 
+    <FfmpegDirCard class="section-card" />
+
     <n-card :title="$t('settings.downloadOptions')" size="small" class="section-card">
       <n-flex vertical :size="12">
         <div class="info-list">
@@ -507,6 +533,12 @@ watch(
           <div class="info-row">
             <span class="info-label">{{ $t("settings.noOverwrites") }}</span>
             <n-switch v-model:value="settingStore.noOverwrites" />
+          </div>
+        </div>
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">{{ $t("settings.confirmClearCompleted") }}</span>
+            <n-switch v-model:value="settingStore.confirmClearCompleted" />
           </div>
         </div>
       </n-flex>

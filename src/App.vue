@@ -132,9 +132,27 @@ const checkAppUpdate = async () => {
   }
 };
 
+/**
+ * 将持久化设置同步到后端全局状态（yt-dlp 路径解析模式 / YouTube 提取器参数 / FFmpeg 目录）。
+ * 必须在应用启动时执行一次，而非仅在用户打开设置页时，否则用户绕过设置页直接下载时这些设置不会生效。
+ */
+const applyPersistedBackendSettings = async () => {
+  try {
+    await invoke("set_binary_path_resolve_mode", { mode: settingStore.binaryPathResolveMode });
+    await invoke("set_youtube_extractor_args", {
+      poToken: settingStore.youtubePoToken,
+      visitorData: settingStore.youtubeVisitorData,
+    });
+    await invoke("set_ffmpeg_dir", { dir: settingStore.ffmpegDir });
+  } catch {
+    // 静默失败，不打扰用户；设置页仍可重试（其内部 watcher 会展示错误提示）
+  }
+};
+
 onMounted(async () => {
   win.show();
   syncTrayMenu();
+  applyPersistedBackendSettings();
   if (settingStore.autoCheckUpdate) {
     checkAppUpdate();
   }

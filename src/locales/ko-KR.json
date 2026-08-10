@@ -133,6 +133,7 @@
     "systemNotification": "시스템 알림",
     "all": "모두",
     "noOverwrites": "기존 파일을 덮어쓰지 않음",
+    "confirmClearCompleted": "완료된 작업을 지우기 전에 확인",
     "about": "정보",
     "aboutDesc": "Tauri 2 + Vue 3 + Naive UI로 제작된 yt-dlp GUI 도구",
     "license": "라이선스",
@@ -233,6 +234,12 @@
     "title": "다운로드 경로",
     "notSet": "다운로드 경로가 설정되지 않았습니다",
     "selectDir": "다운로드 경로 선택"
+  },
+  "ffmpegDir": {
+    "title": "FFmpeg 디렉터리",
+    "desc": "선택 사항입니다. yt-dlp가 사용할 ffmpeg/ffprobe가 있는 디렉터리를 지정합니다. 비워두면 시스템 PATH의 ffmpeg를 사용합니다.",
+    "notSet": "설정되지 않음(시스템 PATH의 ffmpeg 사용)",
+    "selectDir": "FFmpeg 디렉터리 선택"
   },
   "toolbox": {
     "browserExtTitle": "브라우저 확장 프로그램",
