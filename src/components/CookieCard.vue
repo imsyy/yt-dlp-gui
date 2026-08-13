@@ -15,18 +15,25 @@ const cookieModeOptions = computed(() => [
   { label: t("cookie.browser"), value: "browser" },
 ]);
 
-const browserOptions = [
+const platform = ref("");
+const browserOptions = computed(() => [
   { label: "Chrome", value: "chrome" },
   { label: "Edge", value: "edge" },
   { label: "Firefox", value: "firefox" },
-  { label: "Waterfox", value: "waterfox" },
   { label: "Brave", value: "brave" },
   { label: "Opera", value: "opera" },
   { label: "Vivaldi", value: "vivaldi" },
   { label: "Chromium", value: "chromium" },
-  { label: "Safari", value: "safari" },
   { label: "Whale", value: "whale" },
-];
+  ...(platform.value === "macos" ? [{ label: "Safari", value: "safari" }] : []),
+]);
+
+onMounted(async () => {
+  platform.value = await invoke<string>("get_platform");
+  if (!browserOptions.value.some((option) => option.value === settingStore.cookieBrowser)) {
+    settingStore.cookieBrowser = "chrome";
+  }
+});
 
 /** 从剪贴板粘贴 Cookie 文本 */
 const handlePasteCookie = async () => {
@@ -56,7 +63,12 @@ const handleSaveCookieText = async () => {
     });
     window.$message.success(t("cookie.savedTo", { path }));
   } catch (e: unknown) {
-    window.$message.error(t("common.saveFailed", { e }));
+    const error = String(e);
+    if (/err_invalid_cookie|err_empty_cookie/.test(error)) {
+      window.$message.error(t("cookie.invalidFormat"));
+    } else {
+      window.$message.error(t("common.saveFailed", { e }));
+    }
   }
 };
 
@@ -142,9 +154,9 @@ const handleSelectFile = async () => {
       </template>
 
       <template v-if="settingStore.cookieMode === 'browser'">
-        <n-text depth="3" style="font-size: 12px">
+        <n-alert type="warning" :bordered="false">
           {{ $t("cookie.browserDesc") }}
-        </n-text>
+        </n-alert>
         <n-select
           v-model:value="settingStore.cookieBrowser"
           :options="browserOptions"

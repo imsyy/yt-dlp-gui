@@ -10,7 +10,7 @@ import IconMdiPlaylistPlay from "~icons/mdi/playlist-play";
 import IconMdiDownload from "~icons/mdi/download";
 import IconMdiToolbox from "~icons/mdi/toolbox";
 import type { Component } from "vue";
-import type { CliOpenRequest } from "@/types";
+import type { BrowserExtensionImport, CliOpenRequest } from "@/types";
 import { useThemeVars } from "naive-ui";
 import { useI18n } from "vue-i18n";
 import { useSettingStore } from "@/stores/setting";
@@ -116,15 +116,6 @@ const handleDeepLink = (deepLinkUrl: string) => {
     if (url.host !== "download") return;
     const videoUrl = url.searchParams.get("url");
     if (!videoUrl) return;
-    const cookies = url.searchParams.get("cookies");
-    if (cookies) {
-      try {
-        settingStore.cookieText = decodeURIComponent(atob(cookies));
-        settingStore.cookieMode = "text";
-      } catch {
-        // Cookie 解码失败，忽略
-      }
-    }
     router.push({ name: "home", query: { url: normalizeDeepLinkVideoUrl(videoUrl) } });
   } catch {
     // 无效的深链接 URL，忽略
@@ -138,6 +129,19 @@ const handleCliOpenRequest = (request: CliOpenRequest) => {
   }
   if (request.downloadDir) settingStore.downloadDir = request.downloadDir;
   if (request.url) router.push({ name: "home", query: { url: request.url } });
+};
+
+const handleBrowserExtensionImport = (imported: BrowserExtensionImport) => {
+  if (imported.cookieFile) {
+    settingStore.cookieFile = imported.cookieFile;
+    settingStore.cookieMode = "file";
+  }
+  router.push({ name: "home", query: { url: normalizeDeepLinkVideoUrl(imported.url) } });
+};
+
+const consumeBrowserExtensionImports = async () => {
+  const pending = await invoke<BrowserExtensionImport[]>("take_browser_extension_imports");
+  pending.forEach(handleBrowserExtensionImport);
 };
 
 /** 启动时自动检查应用更新 */
@@ -157,6 +161,8 @@ const checkAppUpdate = async () => {
 
 onMounted(async () => {
   await applyToolSources();
+  await listen("browser-extension-import-ready", () => void consumeBrowserExtensionImports());
+  await consumeBrowserExtensionImports();
   await listen<CliOpenRequest>("cli-open-request", (event) => {
     handleCliOpenRequest(event.payload);
   });

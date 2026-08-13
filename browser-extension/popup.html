@@ -7,7 +7,11 @@
 <body>
   <header class="hd">
     <img class="hd-logo" src="icons/app-icon.svg" alt="" aria-hidden="true">
-    <h1 class="hd-title" data-i18n="extName"></h1>
+    <h1 class="hd-title">YDL GUI Helper</h1>
+    <select id="language" class="language" aria-label="Language">
+      <option value="en">English</option>
+      <option value="zh_CN">中文</option>
+    </select>
   </header>
 
   <main class="body">
@@ -46,13 +50,6 @@
     </div>
   </main>
 
-  <footer class="ft">
-    <details>
-      <summary data-i18n="popupSupportedSites"></summary>
-      <div id="sites" class="sites"></div>
-    </details>
-  </footer>
-
-  <script src="popup.js"></script>
+  <script type="module" src="popup.js"></script>
 </body>
 </html>

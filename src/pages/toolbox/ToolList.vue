@@ -20,8 +20,6 @@ interface ToolItem {
   titleKey: string;
   descKey: string;
   tagKey?: string;
-  /** "route" 跳转工具子页（默认）；"modal" 在当前页弹出说明 */
-  kind?: "route" | "modal";
 }
 
 const tools: ToolItem[] = [
@@ -83,17 +81,10 @@ const tools: ToolItem[] = [
     titleKey: "toolbox.browserExtTitle",
     descKey: "toolbox.browserExtDesc",
     tagKey: "browserExt.tagBeta",
-    kind: "modal",
   },
 ];
 
-const showBrowserExtModal = ref(false);
-
 const handleToolClick = (tool: ToolItem) => {
-  if (tool.kind === "modal") {
-    if (tool.key === "browser-extension") showBrowserExtModal.value = true;
-    return;
-  }
   router.push({ name: `toolbox-${tool.key}` });
 };
 </script>
@@ -130,8 +121,6 @@ const handleToolClick = (tool: ToolItem) => {
         </n-flex>
       </n-card>
     </div>
-
-    <BrowserExtensionModal v-model:show="showBrowserExtModal" />
   </div>
 </template>
 

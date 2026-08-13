@@ -6,6 +6,13 @@ export interface CliOpenRequest {
   downloadDir: string | null;
 }
 
+export interface BrowserExtensionImport {
+  url: string;
+  requestId: string;
+  cookieFile: string | null;
+  cookieCount: number;
+}
+
 export interface ToolStatus {
   installed: boolean;
   version: string;

@@ -6,10 +6,10 @@
     "message": "Send video URLs and cookies from your browser to the YDL GUI desktop app."
   },
   "popupSupported": {
-    "message": "Supported video site"
+    "message": "This page can be sent to yt-dlp"
   },
   "popupUnsupported": {
-    "message": "This page is not a supported video site"
+    "message": "Only HTTP and HTTPS pages can be sent"
   },
   "popupChecking": {
     "message": "Checking page…"
@@ -40,9 +40,6 @@
   },
   "popupDownload": {
     "message": "Download YDL GUI"
-  },
-  "popupSupportedSites": {
-    "message": "Supported sites"
   },
   "menuSendPage": {
     "message": "Send page to YDL GUI"

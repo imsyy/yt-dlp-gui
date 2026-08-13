@@ -12,7 +12,6 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AppStatusBar: typeof import('./src/components/AppStatusBar.vue')['default']
-    BrowserExtensionModal: typeof import('./src/components/BrowserExtensionModal.vue')['default']
     CookieCard: typeof import('./src/components/CookieCard.vue')['default']
     CookieModal: typeof import('./src/components/CookieModal.vue')['default']
     DownloadBar: typeof import('./src/components/home/DownloadBar.vue')['default']
@@ -66,8 +65,6 @@ declare module 'vue' {
     NCollapseTransition: typeof import('naive-ui')['NCollapseTransition']
     NConfigProvider: typeof import('naive-ui')['NConfigProvider']
     NDataTable: typeof import('naive-ui')['NDataTable']
-    NDescriptions: typeof import('naive-ui')['NDescriptions']
-    NDescriptionsItem: typeof import('naive-ui')['NDescriptionsItem']
     NDialogProvider: typeof import('naive-ui')['NDialogProvider']
     NDivider: typeof import('naive-ui')['NDivider']
     NDrawer: typeof import('naive-ui')['NDrawer']
@@ -76,6 +73,8 @@ declare module 'vue' {
     NEmpty: typeof import('naive-ui')['NEmpty']
     NFlex: typeof import('naive-ui')['NFlex']
     NGlobalStyle: typeof import('naive-ui')['NGlobalStyle']
+    NGrid: typeof import('naive-ui')['NGrid']
+    NGridItem: typeof import('naive-ui')['NGridItem']
     NH2: typeof import('naive-ui')['NH2']
     NIcon: typeof import('naive-ui')['NIcon']
     NImage: typeof import('naive-ui')['NImage']

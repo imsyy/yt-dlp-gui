@@ -82,9 +82,21 @@ body {
   letter-spacing: 0.2px;
 }
 
+.language {
+  margin-left: auto;
+  height: 26px;
+  padding: 0 6px;
+  color: var(--text-soft);
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 12px;
+}
+
 /* ---------- Body ---------- */
 .body {
-  padding: 14px 16px 4px;
+  padding: 14px 16px 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -268,45 +280,3 @@ body {
   font-weight: 500;
 }
 .fallback-link:hover { text-decoration: underline; }
-
-/* ---------- Footer ---------- */
-.ft {
-  margin-top: 6px;
-  padding: 8px 16px 14px;
-  border-top: 1px solid var(--border);
-  font-size: 11.5px;
-  color: var(--text-mute);
-}
-.ft details > summary {
-  list-style: none;
-  cursor: pointer;
-  user-select: none;
-  padding: 4px 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.ft details > summary::-webkit-details-marker { display: none; }
-.ft details > summary::after {
-  content: "▾";
-  font-size: 10px;
-  color: var(--text-mute);
-  transition: transform 0.15s;
-}
-.ft details[open] > summary::after { transform: rotate(180deg); }
-
-.sites {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-}
-.site-chip {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--bg-soft);
-  border: 1px solid var(--border-soft);
-  font-size: 11px;
-  color: var(--text-soft);
-}

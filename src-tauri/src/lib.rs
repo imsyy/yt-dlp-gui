@@ -19,14 +19,7 @@ pub fn run() {
     let initial_request = (!initial_cli.request.is_empty()).then_some(initial_cli.request);
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_clipboard_manager::init())
-        .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_process::init())
-        .plugin(tauri_plugin_deep_link::init())
+        // 必须最先注册，确保协议唤醒产生的第二实例参数不会被其他插件抢先处理。
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             let cli_options = app::cli::parse_cli_args(args.iter().cloned());
             if let Some(path) = cli_options.ytdlp_path {
@@ -50,13 +43,26 @@ pub fn run() {
                 let _ = w.set_focus();
             }
         }))
-        .setup(app::setup_tray)
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_deep_link::init())
+        .setup(|app| {
+            app::browser_bridge::start(app.handle().clone());
+            app::setup_tray(app)
+        })
         .manage(app::commands::CliRequestState::new(initial_request))
+        .manage(app::browser_bridge::BrowserBridgeState::default())
         .manage(commands::DownloadState::default())
         .invoke_handler(tauri::generate_handler![
             app::commands::update_tray_menu,
             app::commands::reveal_browser_extension,
             app::commands::take_cli_open_request,
+            app::browser_bridge::take_browser_extension_imports,
             commands::get_platform,
             commands::set_tool_sources,
             commands::set_youtube_extractor_args,

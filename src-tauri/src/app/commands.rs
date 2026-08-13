@@ -28,18 +28,18 @@ pub(crate) fn take_cli_open_request(
         .map_err(|e| format!("err_cli_request_state:{}", e))
 }
 
-/// 在系统文件管理器中显示随应用分发的浏览器扩展目录。
+/// 打开随应用分发的浏览器扩展源码目录，供浏览器直接加载。
 #[tauri::command]
 pub(crate) fn reveal_browser_extension(app: tauri::AppHandle) -> Result<String, String> {
-    let path = app
+    let target = app
         .path()
         .resolve("browser-extension", BaseDirectory::Resource)
-        .map_err(|e| e.to_string())?;
-    let path_str = path.to_string_lossy().into_owned();
+        .map_err(|error| format!("err_extension_resource:{error}"))?;
+    let path = target.to_string_lossy().into_owned();
     app.opener()
-        .open_path(path_str.clone(), None::<&str>)
-        .map_err(|e| e.to_string())?;
-    Ok(path_str)
+        .open_path(path.clone(), None::<&str>)
+        .map_err(|error| format!("err_open_extension:{error}"))?;
+    Ok(path)
 }
 
 #[tauri::command]

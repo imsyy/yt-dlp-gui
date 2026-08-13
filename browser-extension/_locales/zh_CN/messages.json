@@ -6,10 +6,10 @@
     "message": "把视频网址和浏览器 Cookie 一键发送到 YDL GUI 桌面应用进行下载。"
   },
   "popupSupported": {
-    "message": "已识别为支持的视频网站"
+    "message": "可将此页面发送给 yt-dlp 尝试解析"
   },
   "popupUnsupported": {
-    "message": "当前页面不在支持列表中"
+    "message": "仅支持发送 HTTP 和 HTTPS 页面"
   },
   "popupChecking": {
     "message": "正在识别页面…"
@@ -40,9 +40,6 @@
   },
   "popupDownload": {
     "message": "下载 YDL GUI"
-  },
-  "popupSupportedSites": {
-    "message": "支持的网站"
   },
   "menuSendPage": {
     "message": "把当前页面发送到 YDL GUI"
