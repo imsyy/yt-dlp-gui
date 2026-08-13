@@ -134,7 +134,10 @@ pub fn build_youtube_extractor_args() -> Vec<String> {
     };
     let mut parts: Vec<String> = Vec::new();
     if !guard.po_token.is_empty() {
-        parts.push(format!("po_token={}", guard.po_token));
+        // 当前 yt-dlp 要求 PO Token 明确绑定到播放器客户端和请求上下文。
+        // GVS 是实际媒体流请求；未绑定的旧写法可能能列出格式，却在下载时返回 403。
+        parts.push("player_client=mweb".to_string());
+        parts.push(format!("po_token=mweb.gvs+{}", guard.po_token));
     }
     if !guard.visitor_data.is_empty() {
         parts.push(format!("visitor_data={}", guard.visitor_data));

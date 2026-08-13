@@ -17,6 +17,8 @@ pub struct DownloadProcessInfo {
     pub filepath_file: Option<String>,
     /// 时间裁剪的片段时长（秒），用于计算 ffmpeg 处理进度
     pub clip_duration: Option<f64>,
+    /// yt-dlp 输出的最后一条 ERROR，用于替代无意义的退出码错误。
+    pub last_error: Option<String>,
 }
 
 /// 下载状态管理（全局共享）

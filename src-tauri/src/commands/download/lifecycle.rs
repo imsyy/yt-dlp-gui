@@ -81,6 +81,7 @@ pub async fn start_download(
                 download_dir: params.download_dir.clone(),
                 filepath_file: Some(filepath_file),
                 clip_duration,
+                last_error: None,
             },
         );
     }

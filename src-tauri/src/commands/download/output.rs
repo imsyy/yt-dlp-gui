@@ -27,6 +27,14 @@ fn process_output_line(
     processes: &Arc<Mutex<HashMap<String, DownloadProcessInfo>>>,
     line: &str,
 ) {
+    if line.starts_with("ERROR:") {
+        if let Ok(mut map) = processes.lock() {
+            if let Some(info) = map.get_mut(task_id) {
+                info.last_error = Some(line.to_string());
+            }
+        }
+    }
+
     // 解析 --progress-template 输出的 JSON 进度
     if let Some(info) = parser::parse_progress_json(line) {
         let _ = app.emit(
@@ -199,10 +207,16 @@ pub(super) fn spawn_completion_handler(
         } else if !was_cancelled {
             // 失败时仍清理 --print-to-file 临时文件，避免遗留
             let _ = resolve_output_file(&processes, &task_id);
-            let error_msg = status
-                .as_ref()
-                .map(|s| format!("err_exit_code:{}", s.code().unwrap_or(-1)))
-                .unwrap_or_else(|e| e.to_string());
+            let error_msg = processes
+                .lock()
+                .ok()
+                .and_then(|map| map.get(&task_id).and_then(|info| info.last_error.clone()))
+                .unwrap_or_else(|| {
+                    status
+                        .as_ref()
+                        .map(|s| format!("err_exit_code:{}", s.code().unwrap_or(-1)))
+                        .unwrap_or_else(|e| e.to_string())
+                });
             let _ = app.emit(
                 "download-error",
                 serde_json::json!({

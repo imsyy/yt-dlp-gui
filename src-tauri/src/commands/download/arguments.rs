@@ -67,11 +67,11 @@ pub(super) fn build_download_args(
                 }
                 (Some(v), None) => {
                     args.push("-f".to_string());
-                    args.push(format!("{}+bestaudio", v));
+                    args.push(format!("{}+bestaudio/{}", v, v));
                 }
                 (None, Some(a)) => {
                     args.push("-f".to_string());
-                    args.push(format!("bestvideo+{}", a));
+                    args.push(format!("bestvideo+{0}/{0}", a));
                 }
                 _ => {}
             }

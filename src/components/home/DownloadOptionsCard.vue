@@ -55,6 +55,11 @@ const filteredAudioFormats = computed(() =>
       ),
 );
 
+const formatsIncomplete = computed(() => {
+  if (props.audioFormats.length > 0 || props.videoFormats.length === 0) return false;
+  return Math.max(...props.videoFormats.map((format) => format.height || 0)) <= 360;
+});
+
 /** 视频格式下拉选项 */
 const videoFormatOptions = computed(() =>
   filteredVideoFormats.value.map((f) => ({
@@ -140,6 +145,18 @@ watch(
         <n-radio-button value="audio">{{ $t("detail.audioOnly") }}</n-radio-button>
       </n-radio-group>
 
+      <n-text
+        v-if="videoFormatOptions.length === 0 && audioFormatOptions.length === 0"
+        depth="3"
+        class="auto-format-hint"
+      >
+        {{ $t("detail.autoFormatHint") }}
+      </n-text>
+
+      <n-alert v-if="formatsIncomplete" type="warning" :bordered="false">
+        {{ $t("detail.incompleteFormatsHint") }}
+      </n-alert>
+
       <n-flex v-if="downloadMode !== 'audio' && videoFormatOptions.length" align="center" :size="8">
         <n-text depth="3" style="font-size: 13px; flex-shrink: 0">
           {{ $t("detail.video") }}
@@ -182,3 +199,10 @@ watch(
     </n-flex>
   </n-card>
 </template>
+
+<style scoped>
+.auto-format-hint {
+  font-size: 13px;
+  text-wrap: pretty;
+}
+</style>

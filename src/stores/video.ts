@@ -61,12 +61,33 @@ export const useVideoStore = defineStore("video", () => {
     fetching.value = true;
     try {
       const { cookieFile, cookieBrowser } = await getCookieArgs();
-      const info = await invoke<VideoInfo>("fetch_video_info", {
-        url: targetUrl,
-        cookieFile,
-        cookieBrowser,
-        proxy: settingStore.proxy || null,
-      });
+      const fetchInfo = () =>
+        invoke<VideoInfo>("fetch_video_info", {
+          url: targetUrl,
+          cookieFile,
+          cookieBrowser,
+          proxy: settingStore.proxy || null,
+        });
+      let info = await fetchInfo();
+      const getFormats = (value: VideoInfo) => value.formats || value.entries?.[0]?.formats || [];
+      const hasIncompleteYoutubeFormats = (value: VideoInfo) => {
+        const formats = getFormats(value);
+        const audioOnly = formats.some(
+          (format) =>
+            format.acodec &&
+            format.acodec !== "none" &&
+            (!format.vcodec || format.vcodec === "none"),
+        );
+        const videoHeights = formats
+          .filter((format) => format.vcodec && format.vcodec !== "none")
+          .map((format) => format.height || 0);
+        return formats.length === 0 || (!audioOnly && Math.max(0, ...videoHeights) <= 360);
+      };
+      // YouTube 的 JS challenge 未完成时常只返回一个 360p 合并流。重试一次，
+      // 但仍保留退化结果供页面明确提示，避免把它伪装成完整格式列表。
+      if (/youtube\.com|youtu\.be/i.test(targetUrl) && hasIncompleteYoutubeFormats(info)) {
+        info = await fetchInfo();
+      }
 
       let videoInfo: VideoInfo;
       let isPlaylist = false;
@@ -100,9 +121,20 @@ export const useVideoStore = defineStore("video", () => {
       }
 
       const formats: VideoFormat[] = videoInfo.formats || [];
-      const videoFormats = formats
+      const videoOnlyFormats = formats
         .filter((f) => f.vcodec && f.vcodec !== "none" && (!f.acodec || f.acodec === "none"))
         .sort((a, b) => (b.height || 0) - (a.height || 0));
+      const combinedFormats = formats
+        .filter(
+          (f) =>
+            f.vcodec &&
+            f.vcodec !== "none" &&
+            f.acodec &&
+            f.acodec !== "none",
+        )
+        .sort((a, b) => (b.height || 0) - (a.height || 0));
+      // 部分站点只提供已封装音视频的单文件格式；没有纯视频流时不能把这些格式全部过滤掉。
+      const videoFormats = videoOnlyFormats.length ? videoOnlyFormats : combinedFormats;
       const audioFormats = formats
         .filter((f) => f.acodec && f.acodec !== "none" && (!f.vcodec || f.vcodec === "none"))
         .sort(compareAudioFormats);
