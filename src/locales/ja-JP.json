@@ -250,7 +250,6 @@
     "settings": "Cookie 設定",
     "invalidFormat": "Cookie が完全な Netscape 形式ではありません。ヘッダーと各フィールドを確認してください",
     "desc": "一部の動画はログインが必要です。Cookieで認証情報を設定できます",
-    "none": "使用しない",
     "manual": "手動入力",
     "file": "Cookieファイル",
     "browser": "ブラウザから取得",
@@ -260,7 +259,7 @@
     "cookieFiles": "Cookieファイル",
     "allFiles": "すべてのファイル",
     "emptyContent": "Cookieの内容が空です",
-    "savedTo": "Cookieを {path} に保存しました",
+    "savedTo": "Cookieを保存しました",
     "selectFile": "Cookieファイルを選択",
     "verificationRequired": "Cookie認証が必要です",
     "verificationDesc": "対象サイトでログインが求められています。Cookieを設定してから再試行してください"

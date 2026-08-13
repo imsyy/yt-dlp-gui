@@ -264,7 +264,6 @@
     "settings": "Cookie 设置",
     "invalidFormat": "Cookie 内容不是完整的 Netscape 格式，请检查文件头和字段",
     "desc": "部分视频需要登录后才能下载，可通过 Cookie 实现身份验证",
-    "none": "不使用",
     "manual": "手动输入",
     "file": "Cookie 文件",
     "browser": "从浏览器获取",
@@ -274,7 +273,7 @@
     "cookieFiles": "Cookie 文件",
     "allFiles": "所有文件",
     "emptyContent": "Cookie 内容为空",
-    "savedTo": "Cookie 已保存至 {path}",
+    "savedTo": "Cookie 已保存",
     "selectFile": "选择 Cookie 文件",
     "verificationRequired": "需要 Cookie 验证",
     "verificationDesc": "目标网站要求登录验证，请配置 Cookie 后重试"

@@ -264,7 +264,6 @@
     "settings": "Cookie Settings",
     "invalidFormat": "The cookie content is not a complete Netscape cookie file; check its header and fields",
     "desc": "Some videos require login to download. Use cookies for authentication",
-    "none": "None",
     "manual": "Manual Input",
     "file": "Cookie File",
     "browser": "From Browser",
@@ -274,7 +273,7 @@
     "cookieFiles": "Cookie Files",
     "allFiles": "All Files",
     "emptyContent": "Cookie content is empty",
-    "savedTo": "Cookie saved to {path}",
+    "savedTo": "Cookie saved",
     "selectFile": "Select Cookie File",
     "verificationRequired": "Cookie Verification Required",
     "verificationDesc": "The target website requires login. Please configure cookies and try again"

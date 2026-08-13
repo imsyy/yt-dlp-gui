@@ -80,7 +80,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       await sendToApp(pageUrl, sendCookies.checked, tab?.id);
       btnText.textContent = t("popupSent");
       setStatus("ok", "popupSent");
-    } catch {
+    } catch (err) {
+      console.error("[YDL GUI] send failed:", err);
       btnText.textContent = t("popupFailed");
       setStatus("bad", "popupFailed");
       fallback.hidden = false;

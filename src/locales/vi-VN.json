@@ -250,7 +250,6 @@
     "settings": "Cài đặt cookie",
     "invalidFormat": "Nội dung không phải tệp cookie Netscape hoàn chỉnh; hãy kiểm tra phần đầu và các trường",
     "desc": "Một số video yêu cầu đăng nhập để tải. Dùng cookie để xác thực",
-    "none": "Không",
     "manual": "Nhập thủ công",
     "file": "Tệp cookie",
     "browser": "Từ trình duyệt",
@@ -260,7 +259,7 @@
     "cookieFiles": "Tệp cookie",
     "allFiles": "Tất cả tệp",
     "emptyContent": "Nội dung cookie trống",
-    "savedTo": "Cookie đã lưu vào {path}",
+    "savedTo": "Cookie đã được lưu",
     "selectFile": "Chọn tệp cookie",
     "verificationRequired": "Cần xác thực cookie",
     "verificationDesc": "Trang web yêu cầu đăng nhập. Vui lòng cấu hình cookie và thử lại"

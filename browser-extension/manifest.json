@@ -4,9 +4,8 @@
   "description": "Send video URLs and cookies to the YDL GUI desktop app.",
   "default_locale": "en",
   "version": "2.0.0",
-  "permissions": ["cookies", "activeTab", "contextMenus", "notifications", "tabs", "storage"],
-  "host_permissions": ["http://127.0.0.1:17654/*"],
-  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "permissions": ["cookies", "contextMenus", "notifications", "tabs", "storage"],
+  "host_permissions": ["http://127.0.0.1:17654/*", "http://*/*", "https://*/*"],
   "background": {
     "service_worker": "background.js",
     "type": "module"

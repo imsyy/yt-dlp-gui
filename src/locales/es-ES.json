@@ -250,7 +250,6 @@
     "settings": "Configuración de cookies",
     "invalidFormat": "El contenido no es un archivo de cookies Netscape completo; comprueba la cabecera y los campos",
     "desc": "Algunos vídeos requieren inicio de sesión. Usa cookies para la autenticación",
-    "none": "No usar",
     "manual": "Entrada manual",
     "file": "Archivo de cookies",
     "browser": "Desde el navegador",
@@ -260,7 +259,7 @@
     "cookieFiles": "Archivos de cookies",
     "allFiles": "Todos los archivos",
     "emptyContent": "El contenido de cookies está vacío",
-    "savedTo": "Cookies guardadas en {path}",
+    "savedTo": "Cookies guardadas",
     "selectFile": "Seleccionar archivo de cookies",
     "verificationRequired": "Se requiere verificación por cookies",
     "verificationDesc": "El sitio web requiere inicio de sesión. Configura las cookies e inténtalo de nuevo"

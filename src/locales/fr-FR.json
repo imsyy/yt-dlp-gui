@@ -250,7 +250,6 @@
     "settings": "Paramètres des cookies",
     "invalidFormat": "Le contenu n’est pas un fichier de cookies Netscape complet ; vérifiez l’en-tête et les champs",
     "desc": "Certaines vidéos nécessitent une connexion. Utilisez des cookies pour vous authentifier",
-    "none": "Aucun",
     "manual": "Saisie manuelle",
     "file": "Fichier de cookies",
     "browser": "Depuis le navigateur",
@@ -260,7 +259,7 @@
     "cookieFiles": "Fichiers de cookies",
     "allFiles": "Tous les fichiers",
     "emptyContent": "Le contenu des cookies est vide",
-    "savedTo": "Cookies enregistrés dans {path}",
+    "savedTo": "Cookies enregistrés",
     "selectFile": "Sélectionner un fichier de cookies",
     "verificationRequired": "Vérification des cookies requise",
     "verificationDesc": "Le site cible nécessite une connexion. Veuillez configurer les cookies et réessayer"

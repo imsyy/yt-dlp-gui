@@ -250,7 +250,6 @@
     "settings": "Cookie-Einstellungen",
     "invalidFormat": "Der Cookie-Inhalt ist keine vollständige Netscape-Cookie-Datei; Kopfzeile und Felder prüfen",
     "desc": "Manche Videos erfordern eine Anmeldung. Verwende Cookies zur Authentifizierung",
-    "none": "Keine",
     "manual": "Manuelle Eingabe",
     "file": "Cookie-Datei",
     "browser": "Aus Browser",
@@ -260,7 +259,7 @@
     "cookieFiles": "Cookie-Dateien",
     "allFiles": "Alle Dateien",
     "emptyContent": "Cookie-Inhalt ist leer",
-    "savedTo": "Cookies gespeichert in {path}",
+    "savedTo": "Cookies gespeichert",
     "selectFile": "Cookie-Datei auswählen",
     "verificationRequired": "Cookie-Verifizierung erforderlich",
     "verificationDesc": "Die Zielwebsite erfordert eine Anmeldung. Bitte Cookies konfigurieren und erneut versuchen"

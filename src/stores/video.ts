@@ -6,13 +6,7 @@ import { compareAudioFormats } from "@/utils/formats";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import i18n from "@/locales";
-import type {
-  VideoInfo,
-  VideoFormat,
-  PlaylistEntry,
-  DenoStatus,
-  FetchedVideoData,
-} from "@/types";
+import type { VideoInfo, VideoFormat, PlaylistEntry, DenoStatus, FetchedVideoData } from "@/types";
 
 type SubtitleMap = NonNullable<PlaylistEntry["subtitles"]>;
 
@@ -125,13 +119,7 @@ export const useVideoStore = defineStore("video", () => {
         .filter((f) => f.vcodec && f.vcodec !== "none" && (!f.acodec || f.acodec === "none"))
         .sort((a, b) => (b.height || 0) - (a.height || 0));
       const combinedFormats = formats
-        .filter(
-          (f) =>
-            f.vcodec &&
-            f.vcodec !== "none" &&
-            f.acodec &&
-            f.acodec !== "none",
-        )
+        .filter((f) => f.vcodec && f.vcodec !== "none" && f.acodec && f.acodec !== "none")
         .sort((a, b) => (b.height || 0) - (a.height || 0));
       // 部分站点只提供已封装音视频的单文件格式；没有纯视频流时不能把这些格式全部过滤掉。
       const videoFormats = videoOnlyFormats.length ? videoOnlyFormats : combinedFormats;

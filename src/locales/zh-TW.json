@@ -250,7 +250,6 @@
     "settings": "Cookie 設定",
     "invalidFormat": "Cookie 內容不是完整的 Netscape 格式，請檢查檔案標頭與欄位",
     "desc": "部分影片需要登入後才能下載，可透過 Cookie 進行身分驗證",
-    "none": "不使用",
     "manual": "手動輸入",
     "file": "Cookie 檔案",
     "browser": "從瀏覽器取得",
@@ -260,7 +259,7 @@
     "cookieFiles": "Cookie 檔案",
     "allFiles": "所有檔案",
     "emptyContent": "Cookie 內容為空",
-    "savedTo": "Cookie 已儲存至 {path}",
+    "savedTo": "Cookie 已儲存",
     "selectFile": "選擇 Cookie 檔案",
     "verificationRequired": "需要 Cookie 驗證",
     "verificationDesc": "目標網站要求登入驗證，請設定 Cookie 後重試"

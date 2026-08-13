@@ -169,7 +169,9 @@ const handleToolClick = (tool: ToolItem) => {
 .tool-arrow {
   flex-shrink: 0;
   opacity: 0.4;
-  transition: opacity 0.15s, transform 0.15s;
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
 }
 
 .tool-card:hover .tool-arrow {

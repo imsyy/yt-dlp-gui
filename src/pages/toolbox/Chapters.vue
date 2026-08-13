@@ -195,7 +195,9 @@ const handleSave = async () => {
               {{ i + 1 }}
             </n-text>
             <n-flex vertical :size="2" style="flex: 1; min-width: 0">
-              <n-text strong class="chapter-title">{{ chapter.title || $t("common.unknown") }}</n-text>
+              <n-text strong class="chapter-title">
+                {{ chapter.title || $t("common.unknown") }}
+              </n-text>
               <n-text depth="3" style="font-size: 12px">
                 {{ formatTime(chapter.start_time) }} - {{ formatTime(chapter.end_time) }}
                 ·

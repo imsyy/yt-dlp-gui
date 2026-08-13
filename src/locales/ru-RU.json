@@ -250,7 +250,6 @@
     "settings": "Настройки cookies",
     "invalidFormat": "Содержимое не является полным файлом cookies Netscape; проверьте заголовок и поля",
     "desc": "Для некоторых видео требуется авторизация. Используйте cookies для аутентификации",
-    "none": "Не использовать",
     "manual": "Ввести вручную",
     "file": "Файл cookies",
     "browser": "Из браузера",
@@ -260,7 +259,7 @@
     "cookieFiles": "Файлы cookies",
     "allFiles": "Все файлы",
     "emptyContent": "Содержимое cookies пустое",
-    "savedTo": "Cookies сохранены в {path}",
+    "savedTo": "Cookies сохранены",
     "selectFile": "Выбрать файл cookies",
     "verificationRequired": "Требуется проверка через cookies",
     "verificationDesc": "Сайт требует авторизации. Настройте cookies и повторите попытку"

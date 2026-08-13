@@ -9,9 +9,7 @@ export const normalizeDeepLinkVideoUrl = (value: string): string => {
     const url = new URL(value);
     const hostname = url.hostname.toLowerCase();
     const isYoutubeHost =
-      hostname === "youtu.be" ||
-      hostname === "youtube.com" ||
-      hostname.endsWith(".youtube.com");
+      hostname === "youtu.be" || hostname === "youtube.com" || hostname.endsWith(".youtube.com");
     const isSingleVideo =
       (hostname === "youtu.be" && url.pathname.length > 1) ||
       (url.pathname === "/watch" && url.searchParams.has("v"));

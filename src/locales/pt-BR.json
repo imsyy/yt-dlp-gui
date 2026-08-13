@@ -250,7 +250,6 @@
     "settings": "Configurações de cookies",
     "invalidFormat": "O conteúdo não é um arquivo de cookies Netscape completo; verifique o cabeçalho e os campos",
     "desc": "Alguns vídeos exigem login para baixar. Use cookies para autenticação",
-    "none": "Nenhum",
     "manual": "Entrada manual",
     "file": "Arquivo de cookies",
     "browser": "Do navegador",
@@ -260,7 +259,7 @@
     "cookieFiles": "Arquivos de cookies",
     "allFiles": "Todos os arquivos",
     "emptyContent": "O conteúdo dos cookies está vazio",
-    "savedTo": "Cookies salvos em {path}",
+    "savedTo": "Cookies salvos",
     "selectFile": "Selecionar arquivo de cookies",
     "verificationRequired": "Verificação de cookies necessária",
     "verificationDesc": "O site exige login. Configure os cookies e tente novamente"

@@ -40,6 +40,7 @@ struct BrowserCookie {
     host_only: bool,
     path: String,
     secure: bool,
+    #[allow(dead_code)]
     http_only: bool,
     expiration_date: Option<f64>,
     name: String,
@@ -156,11 +157,7 @@ async fn persist_import(
         if !seen.insert(key) {
             continue;
         }
-        let domain = if cookie.http_only {
-            format!("#HttpOnly_{}", cookie.domain)
-        } else {
-            cookie.domain
-        };
+        let domain = &cookie.domain;
         lines.push(format!(
             "{}\t{}\t{}\t{}\t{}\t{}\t{}",
             domain,

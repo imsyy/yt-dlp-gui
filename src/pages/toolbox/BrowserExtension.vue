@@ -30,22 +30,30 @@ const prepareExtension = async () => {
     <n-flex align="center" justify="space-between" :wrap="false">
       <n-flex align="center" :size="8">
         <n-button strong secondary size="small" @click="$router.back()">
-          <template #icon><n-icon><icon-mdi-arrow-left /></n-icon></template>
+          <template #icon>
+            <n-icon><icon-mdi-arrow-left /></n-icon>
+          </template>
           {{ $t("common.back") }}
         </n-button>
         <n-text strong style="font-size: 15px">{{ $t("browserExt.title") }}</n-text>
       </n-flex>
       <n-flex :size="8" :wrap="false">
         <n-button text size="small" @click="openExternal(SUPPORTED_SITES_URL)">
-          <template #icon><n-icon><icon-mdi-open-in-new /></n-icon></template>
+          <template #icon>
+            <n-icon><icon-mdi-open-in-new /></n-icon>
+          </template>
           {{ $t("browserExt.supportedHeading") }}
         </n-button>
         <n-button text size="small" @click="openExternal(REPO_URL)">
-          <template #icon><n-icon><icon-mdi-open-in-new /></n-icon></template>
+          <template #icon>
+            <n-icon><icon-mdi-open-in-new /></n-icon>
+          </template>
           {{ $t("browserExt.viewSource") }}
         </n-button>
         <n-button type="primary" size="small" :loading="preparing" @click="prepareExtension">
-          <template #icon><n-icon><icon-mdi-folder-open-outline /></n-icon></template>
+          <template #icon>
+            <n-icon><icon-mdi-folder-open-outline /></n-icon>
+          </template>
           {{ $t("browserExt.openLocalFolder") }}
         </n-button>
       </n-flex>
@@ -56,7 +64,9 @@ const prepareExtension = async () => {
     <n-grid cols="1 720:2" :x-gap="12" :y-gap="12">
       <n-grid-item>
         <n-card size="small" :title="$t('browserExt.installHeading')">
-          <template #header-extra><n-icon><icon-mdi-download-outline /></n-icon></template>
+          <template #header-extra>
+            <n-icon><icon-mdi-download-outline /></n-icon>
+          </template>
           <ol class="steps">
             <li v-for="index in 4" :key="index">{{ $t(`browserExt.install${index}`) }}</li>
           </ol>
@@ -64,14 +74,15 @@ const prepareExtension = async () => {
       </n-grid-item>
       <n-grid-item>
         <n-card size="small" :title="$t('browserExt.usageHeading')">
-          <template #header-extra><n-icon><icon-mdi-cursor-default-click /></n-icon></template>
+          <template #header-extra>
+            <n-icon><icon-mdi-cursor-default-click /></n-icon>
+          </template>
           <ul class="steps">
             <li v-for="index in 3" :key="index">{{ $t(`browserExt.usage${index}`) }}</li>
           </ul>
         </n-card>
       </n-grid-item>
     </n-grid>
-
   </n-flex>
 </template>
 

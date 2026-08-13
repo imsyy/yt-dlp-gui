@@ -250,7 +250,6 @@
     "settings": "Cookie 설정",
     "invalidFormat": "Cookie 내용이 완전한 Netscape 형식이 아닙니다. 헤더와 필드를 확인하세요",
     "desc": "일부 영상은 로그인이 필요합니다. 쿠키로 인증 정보를 설정할 수 있습니다",
-    "none": "사용 안 함",
     "manual": "직접 입력",
     "file": "쿠키 파일",
     "browser": "브라우저에서 가져오기",
@@ -260,7 +259,7 @@
     "cookieFiles": "쿠키 파일",
     "allFiles": "모든 파일",
     "emptyContent": "쿠키 내용이 비어 있습니다",
-    "savedTo": "쿠키가 {path}에 저장되었습니다",
+    "savedTo": "쿠키가 저장되었습니다",
     "selectFile": "쿠키 파일 선택",
     "verificationRequired": "쿠키 인증 필요",
     "verificationDesc": "대상 사이트에서 로그인을 요구합니다. 쿠키를 설정한 후 다시 시도해 주세요"

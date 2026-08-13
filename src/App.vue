@@ -132,6 +132,7 @@ const handleCliOpenRequest = (request: CliOpenRequest) => {
 };
 
 const handleBrowserExtensionImport = (imported: BrowserExtensionImport) => {
+  console.log("[YDL GUI] browser extension import received:", imported);
   if (imported.cookieFile) {
     settingStore.cookieFile = imported.cookieFile;
     settingStore.cookieMode = "file";

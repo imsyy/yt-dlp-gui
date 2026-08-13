@@ -9,7 +9,6 @@ const { t } = useI18n();
 const settingStore = useSettingStore();
 
 const cookieModeOptions = computed(() => [
-  { label: t("cookie.none"), value: "none" },
   { label: t("cookie.manual"), value: "text" },
   { label: t("cookie.file"), value: "file" },
   { label: t("cookie.browser"), value: "browser" },
@@ -58,10 +57,10 @@ const handleSaveCookieText = async () => {
     return;
   }
   try {
-    const path = await invoke<string>("save_cookie_text", {
+    await invoke<string>("save_cookie_text", {
       text: settingStore.cookieText,
     });
-    window.$message.success(t("cookie.savedTo", { path }));
+    window.$message.success(t("cookie.savedTo"));
   } catch (e: unknown) {
     const error = String(e);
     if (/err_invalid_cookie|err_empty_cookie/.test(error)) {

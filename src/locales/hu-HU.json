@@ -257,7 +257,6 @@
     "settings": "Cookie-beállítások",
     "invalidFormat": "A tartalom nem teljes Netscape cookie-fájl; ellenőrizze a fejlécet és a mezőket",
     "desc": "Bizonyos videók letöltéséhez bejelentkezés szükséges. A hitelesítés sütikkel végezhető el",
-    "none": "Nincs",
     "manual": "Megadás kézileg",
     "file": "Sütifájl társítása",
     "browser": "Beolvasás böngészőből",
@@ -267,7 +266,7 @@
     "cookieFiles": "Sütifájlok",
     "allFiles": "Minden fájl",
     "emptyContent": "Üres süti",
-    "savedTo": "A süti a következő helyre van elmentve: {path}",
+    "savedTo": "A süti elmentve",
     "selectFile": "Sütifájl társítása",
     "verificationRequired": "Sütis hitelesítés szükséges",
     "verificationDesc": "A megadott webhelyhez bejelentkezés szükséges. Állítson be sütiket, majd próbálja újra"
