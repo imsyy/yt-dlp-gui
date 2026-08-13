@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { formatFileSize } from "@/utils/format";
+import { composeOutputTemplate } from "@/utils/output-template";
 import { useSettingStore } from "@/stores/setting";
 import { useDownloadStore } from "@/stores/download";
 import { useVideoStore } from "@/stores/video";
@@ -134,7 +135,11 @@ const handleDownload = async () => {
     cookieFile,
     cookieBrowser,
     proxy: settingStore.proxy || null,
-    outputTemplate: settingStore.outputTemplate || null,
+    outputTemplate: composeOutputTemplate(
+      settingStore.outputTemplate,
+      settingStore.filenamePrefix,
+      settingStore.filenameSuffix,
+    ),
     concurrentFragments: settingStore.concurrentFragments || null,
     noOverwrites: settingStore.noOverwrites,
     embedSubs: item.embedSubs,
@@ -283,9 +288,7 @@ const handleDownload = async () => {
                 size="tiny"
                 secondary
                 @click="
-                  activeItem.selectedPlaylistItems = activeItem.playlistEntries.map(
-                    (_, i) => i + 1,
-                  )
+                  activeItem.selectedPlaylistItems = activeItem.playlistEntries.map((_, i) => i + 1)
                 "
               >
                 {{ $t("common.selectAll") }}

@@ -202,6 +202,8 @@
     "unknownSize": "未知大小",
     "extraOptions": "额外选项",
     "filename": "文件名",
+    "filenamePrefix": "可选前缀",
+    "filenameSuffix": "可选后缀",
     "titleQuality": "标题 + 画质",
     "authorTitle": "作者 - 标题",
     "dateTitle": "日期 - 标题",

@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { setI18nLocale, resolveLocale } from "@/locales";
+import { DEFAULT_OUTPUT_TEMPLATE } from "@/utils/output-template";
 
 export const useSettingStore = defineStore(
   "setting",
@@ -33,7 +34,11 @@ export const useSettingStore = defineStore(
     const proxy = ref("");
 
     /** 文件名输出模板 */
-    const outputTemplate = ref("%(title).200s [%(id)s].%(ext)s");
+    const outputTemplate = ref(DEFAULT_OUTPUT_TEMPLATE);
+
+    /** 文件名静态前缀/后缀（后缀插入扩展名前） */
+    const filenamePrefix = ref("");
+    const filenameSuffix = ref("");
 
     /** 并发分片数，0 = 不启用 */
     const concurrentFragments = ref(0);
@@ -80,6 +85,8 @@ export const useSettingStore = defineStore(
       cookieBrowser,
       proxy,
       outputTemplate,
+      filenamePrefix,
+      filenameSuffix,
       concurrentFragments,
       noOverwrites,
       defaultFfmpegArgs,

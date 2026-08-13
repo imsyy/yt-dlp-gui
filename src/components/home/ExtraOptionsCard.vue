@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useSettingStore } from "@/stores/setting";
+import { DEFAULT_OUTPUT_TEMPLATE } from "@/utils/output-template";
 import { useI18n } from "vue-i18n";
 
 const { t } = useI18n();
@@ -35,9 +36,8 @@ const recodeFormat = defineModel<string>("recodeFormat", { required: true });
 const limitRate = defineModel<string>("limitRate", { required: true });
 const ffmpegArgs = defineModel<string>("ffmpegArgs", { required: true });
 
-const DEFAULT_TEMPLATE = "%(title).200s.%(ext)s";
 const outputTemplatePresets = computed(() => [
-  { label: t("common.default"), value: DEFAULT_TEMPLATE },
+  { label: t("common.default"), value: DEFAULT_OUTPUT_TEMPLATE },
   { label: t("detail.titleQuality"), value: "%(title).200s [%(height)sp].%(ext)s" },
   { label: t("detail.authorTitle"), value: "%(uploader)s - %(title).200s.%(ext)s" },
   { label: t("detail.dateTitle"), value: "%(upload_date)s - %(title).200s.%(ext)s" },
@@ -86,7 +86,7 @@ const templateBase = computed({
 });
 
 const resetTemplate = () => {
-  settingStore.outputTemplate = DEFAULT_TEMPLATE;
+  settingStore.outputTemplate = DEFAULT_OUTPUT_TEMPLATE;
 };
 
 const insertVar = (v: string) => {
@@ -181,6 +181,20 @@ watch(endTime, (val) => {
               </n-tag>
             </n-flex>
           </template>
+          <n-input-group>
+            <n-input
+              v-model:value="settingStore.filenamePrefix"
+              :placeholder="$t('detail.filenamePrefix')"
+              size="small"
+              clearable
+            />
+            <n-input
+              v-model:value="settingStore.filenameSuffix"
+              :placeholder="$t('detail.filenameSuffix')"
+              size="small"
+              clearable
+            />
+          </n-input-group>
         </n-flex>
       </n-flex>
 

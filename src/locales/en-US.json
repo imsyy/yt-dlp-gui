@@ -202,6 +202,8 @@
     "unknownSize": "Unknown size",
     "extraOptions": "Extra Options",
     "filename": "Filename",
+    "filenamePrefix": "Optional prefix",
+    "filenameSuffix": "Optional suffix",
     "titleQuality": "Title + Quality",
     "authorTitle": "Author - Title",
     "dateTitle": "Date - Title",
