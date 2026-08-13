@@ -6,6 +6,7 @@ import { useSettingStore } from "@/stores/setting";
 import type { ToolOperationProgress, ToolSource, ToolStatus } from "@/types";
 
 type ToolKey = "yt-dlp" | "deno" | "ffmpeg";
+type SelectableToolSource = Exclude<ToolSource, "custom">;
 
 interface ToolDefinition {
   key: ToolKey;
@@ -74,13 +75,13 @@ const sourceOptions = computed(() => [
   { label: t("settings.sourceSystem"), value: "system" },
 ]);
 
-const getSource = (tool: ToolKey): ToolSource => {
+const getSource = (tool: ToolKey): SelectableToolSource => {
   if (tool === "yt-dlp") return settingStore.ytdlpSource;
   if (tool === "deno") return settingStore.denoSource;
   return settingStore.ffmpegSource;
 };
 
-const setSource = (tool: ToolKey, value: ToolSource) => {
+const setSource = (tool: ToolKey, value: SelectableToolSource) => {
   if (tool === "yt-dlp") settingStore.ytdlpSource = value;
   else if (tool === "deno") settingStore.denoSource = value;
   else settingStore.ffmpegSource = value;
@@ -109,7 +110,7 @@ const refreshAll = async () => {
   await Promise.all(tools.value.map(refreshTool));
 };
 
-const handleSourceChange = async (tool: ToolDefinition, value: ToolSource) => {
+const handleSourceChange = async (tool: ToolDefinition, value: SelectableToolSource) => {
   setSource(tool.key, value);
   await applySources();
   await refreshTool(tool);
@@ -179,7 +180,9 @@ onUnmounted(() => unlistenProgress?.());
   <n-card :title="$t('settings.toolManager')" size="small" class="tool-manager section-card">
     <template #header-extra>
       <n-button size="small" strong secondary class="tool-action" @click="refreshAll">
-        <template #icon><n-icon><icon-mdi-refresh /></n-icon></template>
+        <template #icon>
+          <n-icon><icon-mdi-refresh /></n-icon>
+        </template>
         {{ $t("common.refresh") }}
       </n-button>
     </template>
@@ -238,12 +241,12 @@ onUnmounted(() => unlistenProgress?.());
             :value="getSource(tool.key)"
             :options="sourceOptions"
             size="small"
-            :disabled="operations[tool.key].active"
+            :disabled="operations[tool.key].active || statuses[tool.key]?.source === 'custom'"
             class="source-select"
-            @update:value="(value: ToolSource) => handleSourceChange(tool, value)"
+            @update:value="(value: SelectableToolSource) => handleSourceChange(tool, value)"
           />
           <n-button
-            v-if="!statuses[tool.key]?.installed"
+            v-if="!statuses[tool.key]?.installed && statuses[tool.key]?.source !== 'custom'"
             type="primary"
             strong
             secondary
@@ -272,10 +275,18 @@ onUnmounted(() => unlistenProgress?.());
           <n-tooltip v-else>
             <template #trigger>
               <n-button size="small" secondary disabled class="tool-action">
-                {{ $t("settings.systemManaged") }}
+                {{
+                  statuses[tool.key]?.source === "custom"
+                    ? $t("settings.cliManaged")
+                    : $t("settings.systemManaged")
+                }}
               </n-button>
             </template>
-            {{ $t("settings.systemManagedHint") }}
+            {{
+              statuses[tool.key]?.source === "custom"
+                ? $t("settings.cliManagedHint")
+                : $t("settings.systemManagedHint")
+            }}
           </n-tooltip>
         </div>
       </section>

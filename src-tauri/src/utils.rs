@@ -43,6 +43,7 @@ impl Default for ToolSources {
 }
 
 static TOOL_SOURCES: OnceLock<RwLock<ToolSources>> = OnceLock::new();
+static CLI_TOOL_PATHS: OnceLock<RwLock<(Option<PathBuf>, Option<PathBuf>)>> = OnceLock::new();
 
 fn tool_sources_lock() -> &'static RwLock<ToolSources> {
     TOOL_SOURCES.get_or_init(|| RwLock::new(ToolSources::default()))
@@ -70,6 +71,31 @@ pub fn get_tool_source(tool: &str) -> Result<ToolSource, String> {
         "deno" => Ok(guard.deno),
         "ffmpeg" => Ok(guard.ffmpeg),
         _ => Err(format!("err_unknown_tool:{}", tool)),
+    }
+}
+
+fn cli_tool_paths_lock() -> &'static RwLock<(Option<PathBuf>, Option<PathBuf>)> {
+    CLI_TOOL_PATHS.get_or_init(|| RwLock::new((None, None)))
+}
+
+pub fn set_cli_tool_path(tool: &str, path: PathBuf) -> Result<(), String> {
+    let mut guard = cli_tool_paths_lock()
+        .write()
+        .map_err(|e| format!("err_set_cli_tool_path:{}", e))?;
+    match tool {
+        "yt-dlp" => guard.0 = Some(path),
+        "deno" => guard.1 = Some(path),
+        _ => return Err(format!("err_unknown_tool:{}", tool)),
+    }
+    Ok(())
+}
+
+pub fn get_cli_tool_path(tool: &str) -> Option<PathBuf> {
+    let guard = cli_tool_paths_lock().read().ok()?;
+    match tool {
+        "yt-dlp" => guard.0.clone(),
+        "deno" => guard.1.clone(),
+        _ => None,
     }
 }
 
@@ -183,6 +209,9 @@ pub fn get_managed_ytdlp_path(app: &AppHandle) -> Result<PathBuf, String> {
 
 /// 获取 yt-dlp 可执行文件路径
 pub fn get_ytdlp_path(app: &AppHandle) -> Result<PathBuf, String> {
+    if let Some(path) = get_cli_tool_path("yt-dlp") {
+        return Ok(path);
+    }
     let managed_path = get_managed_ytdlp_path(app)?;
     Ok(resolve_executable_path(
         managed_path,
@@ -202,6 +231,9 @@ pub fn get_managed_deno_path(app: &AppHandle) -> Result<PathBuf, String> {
 
 /// 获取 Deno 可执行文件路径
 pub fn get_deno_path(app: &AppHandle) -> Result<PathBuf, String> {
+    if let Some(path) = get_cli_tool_path("deno") {
+        return Ok(path);
+    }
     let managed_path = get_managed_deno_path(app)?;
     Ok(resolve_executable_path(
         managed_path,

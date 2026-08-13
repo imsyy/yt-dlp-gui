@@ -108,6 +108,8 @@
     "updateNow": "立即更新",
     "systemManaged": "由系统管理",
     "systemManagedHint": "系统 FFmpeg 请通过 Homebrew 或操作系统包管理器更新。",
+    "cliManaged": "命令行路径",
+    "cliManagedHint": "此可执行文件由本次启动的命令行参数指定，应用不会修改它。",
     "ffmpegDesc": "用于合并音视频、转换格式、嵌入元数据和处理字幕",
     "toolStatusFailed": "检查 {tool} 失败：{e}",
     "toolInstallComplete": "{tool} 安装完成",

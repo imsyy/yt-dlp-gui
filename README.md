@@ -109,6 +109,20 @@ If FUSE cannot be enabled in your environment, run the same file with `--appimag
 > [!TIP]
 > If you encounter login-required videos, configure Cookie in settings using Netscape format text or a cookie file.
 
+### Command-line automation
+
+An installed YDL GUI instance can be opened from scripts with session-specific inputs:
+
+```bash
+yt-dlp-gui --url "https://example.com/video" \
+  --cookies "/path/to/cookies.txt" \
+  --dir "/path/to/downloads" \
+  --yt-dlp-path "/path/to/yt-dlp" \
+  --deno-path "/path/to/deno"
+```
+
+`--flag=value` is also accepted, and an HTTP(S) URL may be passed without `--url`. Tool path overrides apply only to the current app session and are never updated or replaced by the app. Re-running the command forwards the request to an already-open instance.
+
 ## Browser Extension
 
 A companion **YDL GUI Helper** browser extension lives in [`browser-extension/`](./browser-extension/). It sends the current tab's URL and required cookies straight to the desktop app via a local protocol handler (`ytdlp-gui://`) — no copy-paste, no extra cookie export.

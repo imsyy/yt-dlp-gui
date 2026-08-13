@@ -1,4 +1,10 @@
-export type ToolSource = "managed" | "system";
+export type ToolSource = "managed" | "system" | "custom";
+
+export interface CliOpenRequest {
+  url: string | null;
+  cookieFile: string | null;
+  downloadDir: string | null;
+}
 
 export interface ToolStatus {
   installed: boolean;

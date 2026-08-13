@@ -109,15 +109,21 @@ async fn build_tool_status(
     managed_path: PathBuf,
     version_arg: &str,
 ) -> Result<ToolStatus, String> {
-    let source = utils::get_tool_source(tool)?;
+    let configured_source = utils::get_tool_source(tool)?;
+    let has_cli_override = utils::get_cli_tool_path(tool).is_some();
+    let source = if has_cli_override {
+        "custom"
+    } else {
+        configured_source.as_str()
+    };
     let installed = path.exists();
     if !installed {
         return Ok(ToolStatus {
             installed: false,
             version: String::new(),
             path: path.to_string_lossy().to_string(),
-            source: source.as_str().to_string(),
-            is_managed: source == utils::ToolSource::Managed,
+            source: source.to_string(),
+            is_managed: !has_cli_override && configured_source == utils::ToolSource::Managed,
             can_update: false,
         });
     }
@@ -164,9 +170,10 @@ async fn build_tool_status(
         installed: output.status.success(),
         version,
         path: path.to_string_lossy().to_string(),
-        source: source.as_str().to_string(),
+        source: source.to_string(),
         is_managed: path == managed_path,
-        can_update: source == utils::ToolSource::Managed || tool != "ffmpeg",
+        can_update: !has_cli_override
+            && (configured_source == utils::ToolSource::Managed || tool != "ffmpeg"),
     })
 }
 

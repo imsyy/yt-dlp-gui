@@ -1,3 +1,4 @@
+use std::sync::Mutex;
 use tauri::menu::{Menu, MenuItem};
 use tauri::path::BaseDirectory;
 use tauri::tray::TrayIconEvent;
@@ -5,10 +6,25 @@ use tauri::Emitter;
 use tauri::Manager;
 use tauri_plugin_opener::OpenerExt;
 
+mod cli;
 mod commands;
 mod parser;
 mod process;
 mod utils;
+
+#[derive(Default)]
+struct CliRequestState(Mutex<Option<cli::CliOpenRequest>>);
+
+#[tauri::command]
+fn take_cli_open_request(
+    state: tauri::State<'_, CliRequestState>,
+) -> Result<Option<cli::CliOpenRequest>, String> {
+    state
+        .0
+        .lock()
+        .map(|mut request| request.take())
+        .map_err(|e| format!("err_cli_request_state:{}", e))
+}
 
 /// Reveal the bundled browser-extension folder in the OS file manager
 /// and return the absolute path.
@@ -44,6 +60,17 @@ fn update_tray_menu(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let initial_cli = cli::parse_cli_args(
+        std::env::args_os().map(|argument| argument.to_string_lossy().to_string()),
+    );
+    if let Some(path) = initial_cli.ytdlp_path.clone() {
+        let _ = utils::set_cli_tool_path("yt-dlp", path);
+    }
+    if let Some(path) = initial_cli.deno_path.clone() {
+        let _ = utils::set_cli_tool_path("deno", path);
+    }
+    let initial_request = (!initial_cli.request.is_empty()).then_some(initial_cli.request);
+
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
@@ -54,6 +81,16 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            let cli_options = cli::parse_cli_args(args.iter().cloned());
+            if let Some(path) = cli_options.ytdlp_path {
+                let _ = utils::set_cli_tool_path("yt-dlp", path);
+            }
+            if let Some(path) = cli_options.deno_path {
+                let _ = utils::set_cli_tool_path("deno", path);
+            }
+            if !cli_options.request.is_empty() {
+                let _ = app.emit("cli-open-request", cli_options.request);
+            }
             // 将深链接 URL 转发到前端
             for arg in &args {
                 if arg.starts_with("ytdlp-gui://") {
@@ -107,10 +144,12 @@ pub fn run() {
 
             Ok(())
         })
+        .manage(CliRequestState(Mutex::new(initial_request)))
         .manage(commands::DownloadState::default())
         .invoke_handler(tauri::generate_handler![
             update_tray_menu,
             reveal_browser_extension,
+            take_cli_open_request,
             commands::get_platform,
             commands::set_tool_sources,
             commands::set_youtube_extractor_args,

@@ -10,6 +10,7 @@ import IconMdiPlaylistPlay from "~icons/mdi/playlist-play";
 import IconMdiDownload from "~icons/mdi/download";
 import IconMdiToolbox from "~icons/mdi/toolbox";
 import type { Component } from "vue";
+import type { CliOpenRequest } from "@/types";
 import { useThemeVars } from "naive-ui";
 import { useI18n } from "vue-i18n";
 import { useSettingStore } from "@/stores/setting";
@@ -130,6 +131,15 @@ const handleDeepLink = (deepLinkUrl: string) => {
   }
 };
 
+const handleCliOpenRequest = (request: CliOpenRequest) => {
+  if (request.cookieFile) {
+    settingStore.cookieFile = request.cookieFile;
+    settingStore.cookieMode = "file";
+  }
+  if (request.downloadDir) settingStore.downloadDir = request.downloadDir;
+  if (request.url) router.push({ name: "home", query: { url: request.url } });
+};
+
 /** 启动时自动检查应用更新 */
 const checkAppUpdate = async () => {
   try {
@@ -147,6 +157,11 @@ const checkAppUpdate = async () => {
 
 onMounted(async () => {
   await applyToolSources();
+  await listen<CliOpenRequest>("cli-open-request", (event) => {
+    handleCliOpenRequest(event.payload);
+  });
+  const cliRequest = await invoke<CliOpenRequest | null>("take_cli_open_request");
+  if (cliRequest) handleCliOpenRequest(cliRequest);
   win.show();
   syncTrayMenu();
   if (settingStore.autoCheckUpdate) {

@@ -108,6 +108,8 @@
     "updateNow": "Update",
     "systemManaged": "System managed",
     "systemManagedHint": "Update this system FFmpeg installation with Homebrew or your operating system package manager.",
+    "cliManaged": "CLI path",
+    "cliManagedHint": "This executable was supplied for the current session with a command-line flag and is not modified by the app.",
     "ffmpegDesc": "Required to merge audio and video, convert formats, embed metadata, and process subtitles",
     "toolStatusFailed": "Failed to inspect {tool}: {e}",
     "toolInstallComplete": "{tool} installation complete",

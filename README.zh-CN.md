@@ -109,6 +109,20 @@ chmod +x YDL.GUI_*.AppImage
 > [!TIP]
 > 如果遇到需要登录的视频，请在设置中配置 Cookie（支持 Netscape 格式文本或 Cookie 文件）。
 
+### 命令行自动化
+
+已安装的 YDL GUI 可从脚本中携带本次会话所需的参数启动：
+
+```bash
+yt-dlp-gui --url "https://example.com/video" \
+  --cookies "/path/to/cookies.txt" \
+  --dir "/path/to/downloads" \
+  --yt-dlp-path "/path/to/yt-dlp" \
+  --deno-path "/path/to/deno"
+```
+
+同时支持 `--参数=值` 写法，也可直接传入 HTTP(S) URL 而省略 `--url`。工具路径仅覆盖当前应用会话，应用不会更新或替换这些文件；应用已经运行时，再次执行命令会把请求转发到现有窗口。
+
 ## 浏览器扩展
 
 仓库中的 [`browser-extension/`](./browser-extension/) 目录提供配套的 **YDL GUI 助手** 浏览器扩展，可通过本地协议（`ytdlp-gui://`）把当前标签页的链接和所需 Cookie 直接发送到桌面应用 — 无需复制粘贴，也不必单独导出 Cookie。
