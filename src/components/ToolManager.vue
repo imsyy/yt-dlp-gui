@@ -479,21 +479,20 @@ onUnmounted(() => unlistenProgress?.());
 }
 
 .tool-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px 8px;
   margin: 8px 0 0;
   font-size: 12px;
 }
 
 .tool-meta-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: contents;
 
   dt {
-    flex: 0 0 40px;
+    align-self: center;
     margin: 0;
+    white-space: nowrap;
   }
 
   dd {
