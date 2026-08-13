@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { invoke } from "@tauri-apps/api/core";
 import { showErrorDialog } from "@/utils/format";
 import { filterPlaylistEntries } from "@/utils/playlist";
+import { compareAudioFormats } from "@/utils/formats";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import type {
@@ -103,7 +104,7 @@ export const useVideoStore = defineStore("video", () => {
         .sort((a, b) => (b.height || 0) - (a.height || 0));
       const audioFormats = formats
         .filter((f) => f.acodec && f.acodec !== "none" && (!f.vcodec || f.vcodec === "none"))
-        .sort((a, b) => (b.abr || 0) - (a.abr || 0));
+        .sort(compareAudioFormats);
 
       // YouTube URL 且 Deno 未安装时提示
       if (/youtube\.com|youtu\.be/i.test(targetUrl)) {

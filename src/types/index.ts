@@ -28,6 +28,7 @@ export interface DownloadProgress {
 
 export interface VideoFormat {
   format_id: string;
+  format?: string;
   ext: string;
   resolution: string;
   height: number | null;
@@ -38,6 +39,10 @@ export interface VideoFormat {
   filesize: number | null;
   filesize_approx: number | null;
   format_note: string;
+  language?: string;
+  /** yt-dlp 提取器计算的语言优先级，数值越高越优先。 */
+  language_preference?: number | null;
+  audio_channels?: number | null;
   tbr: number | null;
   abr: number | null;
 }

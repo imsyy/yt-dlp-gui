@@ -31,7 +31,20 @@ const videoFormatOptions = computed(() =>
 /** 音频格式下拉选项 */
 const audioFormatOptions = computed(() =>
   props.audioFormats.map((f) => ({
-    label: `${f.abr ? f.abr + "kbps" : f.format_note} · ${f.ext} · ${f.filesize || f.filesize_approx ? formatFileSize(f.filesize || f.filesize_approx || 0) : t("detail.unknownSize")}`,
+    label: [
+      f.language ? `[${f.language}]` : "",
+      f.format_note,
+      f.abr ? `${f.abr}kbps` : "",
+      f.acodec,
+      f.audio_channels ? `${f.audio_channels}ch` : "",
+      f.ext,
+      f.filesize || f.filesize_approx
+        ? formatFileSize(f.filesize || f.filesize_approx || 0)
+        : t("detail.unknownSize"),
+    ]
+      .filter(Boolean)
+      .filter((part, index, parts) => parts.indexOf(part) === index)
+      .join(" · "),
     value: f.format_id,
   })),
 );
