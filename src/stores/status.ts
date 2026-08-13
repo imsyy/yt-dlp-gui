@@ -15,6 +15,9 @@ export const useStatusStore = defineStore("status", () => {
   /** Deno 未安装提示弹窗 */
   const showDenoSetupModal = ref(false);
 
+  /** FFmpeg 缺失导致无法合并音视频 */
+  const showFfmpegSetupModal = ref(false);
+
   return {
     showCookieModal,
     showUpdateModal,
@@ -22,5 +25,6 @@ export const useStatusStore = defineStore("status", () => {
     updateNotes,
     showYtdlpSetupModal,
     showDenoSetupModal,
+    showFfmpegSetupModal,
   };
 });

@@ -29,6 +29,19 @@ fn format_duration(secs: f64) -> String {
     }
 }
 
+fn requires_ffmpeg_merge(params: &DownloadParams) -> bool {
+    params.download_mode == "default"
+        && params
+            .video_format
+            .as_deref()
+            .is_some_and(|format| !format.is_empty())
+        && params
+            .audio_format
+            .as_deref()
+            .is_some_and(|format| !format.is_empty())
+        && !params.no_merge
+}
+
 // ========== 输出处理 ==========
 
 /// 处理 yt-dlp 的一行输出：解析进度并发送事件到前端
@@ -147,6 +160,11 @@ pub async fn start_download(
     let ytdlp_path = utils::get_ytdlp_path(&app)?;
     if !ytdlp_path.exists() {
         return Err("err_ytdlp_not_installed".to_string());
+    }
+    if requires_ffmpeg_merge(&params)
+        && (!utils::get_ffmpeg_path(&app)?.exists() || !utils::get_ffprobe_path(&app)?.exists())
+    {
+        return Err("err_ffmpeg_required_for_merge".to_string());
     }
 
     let args = build_download_args(&app, &params)?;
@@ -480,6 +498,56 @@ mod subtitle_arg_tests {
             args,
             ["--write-subs", "--write-auto-subs", "--sub-langs", "en,ja"]
         );
+    }
+}
+
+#[cfg(test)]
+mod ffmpeg_requirement_tests {
+    use super::{requires_ffmpeg_merge, DownloadParams};
+
+    fn params() -> DownloadParams {
+        DownloadParams {
+            id: "test".to_string(),
+            url: "https://example.com/video".to_string(),
+            download_dir: ".".to_string(),
+            download_mode: "default".to_string(),
+            video_format: Some("137".to_string()),
+            audio_format: Some("140".to_string()),
+            cookie_file: None,
+            cookie_browser: None,
+            proxy: None,
+            output_template: None,
+            concurrent_fragments: None,
+            no_overwrites: false,
+            embed_subs: false,
+            embed_thumbnail: false,
+            embed_metadata: false,
+            embed_chapters: false,
+            sponsorblock_remove: false,
+            extract_audio: false,
+            audio_convert_format: None,
+            no_merge: false,
+            recode_format: None,
+            limit_rate: None,
+            ffmpeg_args: None,
+            subtitles: Vec::new(),
+            start_time: None,
+            end_time: None,
+            no_playlist: false,
+            playlist_items: None,
+        }
+    }
+
+    #[test]
+    fn separate_video_and_audio_require_ffmpeg_for_default_download() {
+        assert!(requires_ffmpeg_merge(&params()));
+    }
+
+    #[test]
+    fn explicit_no_merge_allows_separate_output_files() {
+        let mut value = params();
+        value.no_merge = true;
+        assert!(!requires_ffmpeg_merge(&value));
     }
 }
 

@@ -6,8 +6,9 @@ import { useSettingStore } from "@/stores/setting";
 import { useDownloadStore } from "@/stores/download";
 import { useVideoStore } from "@/stores/video";
 import { usePendingStore } from "@/stores/pending";
+import { useStatusStore } from "@/stores/status";
 import { useI18n } from "vue-i18n";
-import type { VideoInfo } from "@/types";
+import type { FfmpegStatus, VideoInfo } from "@/types";
 import VideoInfoCard from "@/components/home/VideoInfoCard.vue";
 import DownloadOptionsCard from "@/components/home/DownloadOptionsCard.vue";
 import ExtraOptionsCard from "@/components/home/ExtraOptionsCard.vue";
@@ -21,6 +22,7 @@ const settingStore = useSettingStore();
 const downloadStore = useDownloadStore();
 const videoStore = useVideoStore();
 const pendingStore = usePendingStore();
+const statusStore = useStatusStore();
 
 const activeItem = computed(() => pendingStore.activeItem);
 
@@ -99,6 +101,24 @@ const handleDownload = async () => {
     window.$message.warning(t("detail.setDownloadDirFirst"));
     dirCardRef.value?.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
+  }
+
+  const requiresFfmpegMerge =
+    item.downloadMode === "default" &&
+    Boolean(item.selectedVideoFormat) &&
+    Boolean(item.selectedAudioFormat) &&
+    !item.noMerge;
+  if (requiresFfmpegMerge) {
+    try {
+      const ffmpegStatus = await invoke<FfmpegStatus>("get_ffmpeg_status");
+      if (!ffmpegStatus.installed) {
+        statusStore.showFfmpegSetupModal = true;
+        return;
+      }
+    } catch {
+      statusStore.showFfmpegSetupModal = true;
+      return;
+    }
   }
 
   const taskId = `dl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;

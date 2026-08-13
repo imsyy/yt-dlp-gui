@@ -456,6 +456,9 @@
     "denoTitle": "建议安装 Deno 运行时",
     "denoDesc": "检测到你正在下载 YouTube 视频，但尚未安装 Deno JS 运行时。缺少它可能导致部分视频格式缺失或无法下载。",
     "denoHint": "Deno 是 yt-dlp 解析 YouTube 视频信息所需的 JavaScript 运行时。安装后可获取完整的格式列表，包括更高画质的选项。",
+    "ffmpegTitle": "合并音视频需要 FFmpeg",
+    "ffmpegDesc": "当前找不到可用的 FFmpeg 或 FFprobe，所选视频流与音频流无法合并。",
+    "ffmpegHint": "请前往设置选择系统安装版，或安装应用管理的 FFmpeg，然后重新开始下载。",
     "goToSettings": "前往设置",
     "later": "稍后再说"
   }

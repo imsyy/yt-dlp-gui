@@ -456,6 +456,9 @@
     "denoTitle": "Deno Runtime Recommended",
     "denoDesc": "You are downloading a YouTube video, but Deno JS runtime is not installed. Some video formats may be missing or unavailable without it.",
     "denoHint": "Deno is a JavaScript runtime required by yt-dlp to parse YouTube video info. Installing it enables the full format list, including higher quality options.",
+    "ffmpegTitle": "FFmpeg Required for Merging",
+    "ffmpegDesc": "The selected video and audio streams cannot be combined because FFmpeg or FFprobe is unavailable.",
+    "ffmpegHint": "Go to Settings to use a system installation or install the app-managed FFmpeg bundle, then start the download again.",
     "goToSettings": "Go to Settings",
     "later": "Later"
   }
