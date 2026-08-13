@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { formatFileSize } from "@/utils/format";
+import { getCodecKey, getCodecLabel } from "@/utils/formats";
 import { useI18n } from "vue-i18n";
 import type { VideoFormat } from "@/types";
 
@@ -20,33 +21,113 @@ const selectedAudioFormat = defineModel<string>("selectedAudioFormat", {
   required: true,
 });
 
+const selectedVideoCodec = ref("all");
+const selectedAudioCodec = ref("all");
+
+const createCodecOptions = (formats: VideoFormat[]) => {
+  const codecs = new Map<string, string>();
+  for (const format of formats) {
+    const codec = format.vcodec !== "none" ? format.vcodec : format.acodec;
+    codecs.set(getCodecKey(codec), getCodecLabel(codec));
+  }
+  return [
+    { label: t("detail.allCodecs"), value: "all" },
+    ...Array.from(codecs, ([value, label]) => ({ value, label })),
+  ];
+};
+
+const videoCodecOptions = computed(() => createCodecOptions(props.videoFormats));
+const audioCodecOptions = computed(() => createCodecOptions(props.audioFormats));
+
+const filteredVideoFormats = computed(() =>
+  selectedVideoCodec.value === "all"
+    ? props.videoFormats
+    : props.videoFormats.filter(
+        (format) => getCodecKey(format.vcodec) === selectedVideoCodec.value,
+      ),
+);
+
+const filteredAudioFormats = computed(() =>
+  selectedAudioCodec.value === "all"
+    ? props.audioFormats
+    : props.audioFormats.filter(
+        (format) => getCodecKey(format.acodec) === selectedAudioCodec.value,
+      ),
+);
+
 /** 视频格式下拉选项 */
 const videoFormatOptions = computed(() =>
-  props.videoFormats.map((f) => ({
-    label: `${f.height}p${f.fps ? ` ${f.fps}fps` : ""} · ${f.ext} · ${f.filesize || f.filesize_approx ? formatFileSize(f.filesize || f.filesize_approx || 0) : t("detail.unknownSize")}`,
+  filteredVideoFormats.value.map((f) => ({
+    label: [
+      `${f.height}p${f.fps ? ` ${f.fps}fps` : ""}`,
+      getCodecLabel(f.vcodec),
+      f.dynamic_range,
+      f.ext,
+      f.filesize || f.filesize_approx
+        ? formatFileSize(f.filesize || f.filesize_approx || 0)
+        : t("detail.unknownSize"),
+      `#${f.format_id}`,
+    ]
+      .filter(Boolean)
+      .join(" · "),
     value: f.format_id,
   })),
 );
 
 /** 音频格式下拉选项 */
 const audioFormatOptions = computed(() =>
-  props.audioFormats.map((f) => ({
+  filteredAudioFormats.value.map((f) => ({
     label: [
       f.language ? `[${f.language}]` : "",
       f.format_note,
       f.abr ? `${f.abr}kbps` : "",
-      f.acodec,
+      getCodecLabel(f.acodec),
       f.audio_channels ? `${f.audio_channels}ch` : "",
       f.ext,
       f.filesize || f.filesize_approx
         ? formatFileSize(f.filesize || f.filesize_approx || 0)
         : t("detail.unknownSize"),
+      `#${f.format_id}`,
     ]
       .filter(Boolean)
       .filter((part, index, parts) => parts.indexOf(part) === index)
       .join(" · "),
     value: f.format_id,
   })),
+);
+
+const handleVideoCodecChange = (value: string) => {
+  selectedVideoCodec.value = value;
+  const currentIsVisible = filteredVideoFormats.value.some(
+    (format) => format.format_id === selectedVideoFormat.value,
+  );
+  if (!currentIsVisible) selectedVideoFormat.value = filteredVideoFormats.value[0]?.format_id || "";
+};
+
+const handleAudioCodecChange = (value: string) => {
+  selectedAudioCodec.value = value;
+  const currentIsVisible = filteredAudioFormats.value.some(
+    (format) => format.format_id === selectedAudioFormat.value,
+  );
+  if (!currentIsVisible) selectedAudioFormat.value = filteredAudioFormats.value[0]?.format_id || "";
+};
+
+watch(
+  () => props.videoFormats,
+  () => {
+    if (!videoCodecOptions.value.some((option) => option.value === selectedVideoCodec.value)) {
+      selectedVideoCodec.value = "all";
+    }
+  },
+);
+
+watch(
+  () => props.audioFormats,
+  () => {
+    if (!audioCodecOptions.value.some((option) => option.value === selectedAudioCodec.value)) {
+      selectedAudioCodec.value = "all";
+    }
+  },
 );
 </script>
 
@@ -63,14 +144,40 @@ const audioFormatOptions = computed(() =>
         <n-text depth="3" style="font-size: 13px; flex-shrink: 0">
           {{ $t("detail.video") }}
         </n-text>
-        <n-select v-model:value="selectedVideoFormat" :options="videoFormatOptions" size="small" />
+        <n-select
+          :value="selectedVideoCodec"
+          :options="videoCodecOptions"
+          size="small"
+          style="width: 118px; flex-shrink: 0"
+          :aria-label="$t('detail.codec')"
+          @update:value="handleVideoCodecChange"
+        />
+        <n-select
+          v-model:value="selectedVideoFormat"
+          :options="videoFormatOptions"
+          size="small"
+          style="min-width: 0"
+        />
       </n-flex>
 
       <n-flex v-if="downloadMode !== 'video' && audioFormatOptions.length" align="center" :size="8">
         <n-text depth="3" style="font-size: 13px; flex-shrink: 0">
           {{ $t("detail.audio") }}
         </n-text>
-        <n-select v-model:value="selectedAudioFormat" :options="audioFormatOptions" size="small" />
+        <n-select
+          :value="selectedAudioCodec"
+          :options="audioCodecOptions"
+          size="small"
+          style="width: 118px; flex-shrink: 0"
+          :aria-label="$t('detail.codec')"
+          @update:value="handleAudioCodecChange"
+        />
+        <n-select
+          v-model:value="selectedAudioFormat"
+          :options="audioFormatOptions"
+          size="small"
+          style="min-width: 0"
+        />
       </n-flex>
     </n-flex>
   </n-card>

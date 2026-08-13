@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { VideoFormat } from "../src/types/index.ts";
-import { compareAudioFormats } from "../src/utils/formats.ts";
+import { compareAudioFormats, getCodecKey, getCodecLabel } from "../src/utils/formats.ts";
 
 const audioFormat = (overrides: Partial<VideoFormat>): VideoFormat => ({
   format_id: "251",
@@ -52,4 +52,10 @@ test("uses original marker and non-DRC audio as stable fallbacks", () => {
     formats.map((format) => format.format_id),
     ["original", "drc", "dub"],
   );
+});
+
+test("normalizes common yt-dlp codec identifiers", () => {
+  assert.equal(getCodecKey("avc1.640028"), "h264");
+  assert.equal(getCodecLabel("av01.0.08M.08"), "AV1");
+  assert.equal(getCodecLabel("mp4a.40.2"), "AAC");
 });

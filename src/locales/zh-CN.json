@@ -197,6 +197,8 @@
     "downloadMethod": "下载方式",
     "video": "视频",
     "audio": "音频",
+    "codec": "编码器",
+    "allCodecs": "全部编码",
     "unknownSize": "未知大小",
     "extraOptions": "额外选项",
     "filename": "文件名",

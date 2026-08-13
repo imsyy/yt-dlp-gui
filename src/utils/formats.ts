@@ -1,5 +1,41 @@
 import type { VideoFormat } from "@/types";
 
+export const getCodecKey = (codec: string): string => {
+  const normalized = codec.toLowerCase();
+  if (/^(avc1|avc3|h264)/.test(normalized)) return "h264";
+  if (/^(hev1|hvc1|h265|hevc)/.test(normalized)) return "hevc";
+  if (/^(av01|av1)/.test(normalized)) return "av1";
+  if (/^(vp09|vp9)/.test(normalized)) return "vp9";
+  if (/^vp8/.test(normalized)) return "vp8";
+  if (/^(mp4a|aac)/.test(normalized)) return "aac";
+  if (/^(opus)/.test(normalized)) return "opus";
+  if (/^(vorbis)/.test(normalized)) return "vorbis";
+  if (/^(mp3)/.test(normalized)) return "mp3";
+  if (/^(ec-3|eac3)/.test(normalized)) return "eac3";
+  if (/^(ac-3|ac3)/.test(normalized)) return "ac3";
+  return normalized.split(".")[0] || "unknown";
+};
+
+const CODEC_LABELS: Record<string, string> = {
+  h264: "H.264",
+  hevc: "H.265 / HEVC",
+  av1: "AV1",
+  vp9: "VP9",
+  vp8: "VP8",
+  aac: "AAC",
+  opus: "Opus",
+  vorbis: "Vorbis",
+  mp3: "MP3",
+  eac3: "E-AC-3",
+  ac3: "AC-3",
+  unknown: "Unknown",
+};
+
+export const getCodecLabel = (codec: string): string => {
+  const key = getCodecKey(codec);
+  return CODEC_LABELS[key] || key.toUpperCase();
+};
+
 const audioRoleRank = (format: VideoFormat): number => {
   const description = `${format.format_note || ""} ${format.format || ""}`.toLowerCase();
   if (description.includes("original")) return 3;

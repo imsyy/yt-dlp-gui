@@ -43,6 +43,7 @@ export interface VideoFormat {
   /** yt-dlp 提取器计算的语言优先级，数值越高越优先。 */
   language_preference?: number | null;
   audio_channels?: number | null;
+  dynamic_range?: string | null;
   tbr: number | null;
   abr: number | null;
 }

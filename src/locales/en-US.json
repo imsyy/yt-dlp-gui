@@ -197,6 +197,8 @@
     "downloadMethod": "Download Method",
     "video": "Video",
     "audio": "Audio",
+    "codec": "Codec",
+    "allCodecs": "All codecs",
     "unknownSize": "Unknown size",
     "extraOptions": "Extra Options",
     "filename": "Filename",
