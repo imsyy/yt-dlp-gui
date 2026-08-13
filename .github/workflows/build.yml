@@ -44,9 +44,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          # 钉到 v10：v11 把 onlyBuiltDependencies 校验改到 lockfile 层，
-          # 单独配置 package.json 不再生效，会导致 ERR_PNPM_IGNORED_BUILDS。
-          version: 10
+          version: 11.12.0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -55,7 +53,7 @@ jobs:
           cache: pnpm
 
       - name: Install frontend dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build
         uses: tauri-apps/tauri-action@v0

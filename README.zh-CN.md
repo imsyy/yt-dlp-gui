@@ -142,7 +142,7 @@ yt-dlp 功能强大，但命令行操作门槛较高。**yt-dlp GUI** 将其封�
 ### 环境要求
 
 - [Node.js](https://nodejs.org/) >= 22
-- [pnpm](https://pnpm.io/)
+- [pnpm](https://pnpm.io/) >= 11
 - [Rust](https://www.rust-lang.org/tools/install)
 
 ### 开始开发

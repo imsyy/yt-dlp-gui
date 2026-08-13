@@ -142,7 +142,7 @@ The extension is bundled with the app — no separate download required.
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) >= 22
-- [pnpm](https://pnpm.io/)
+- [pnpm](https://pnpm.io/) >= 11
 - [Rust](https://www.rust-lang.org/tools/install)
 
 ### Setup
