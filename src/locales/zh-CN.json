@@ -158,6 +158,8 @@
     "systemNotification": "系统通知",
     "all": "全部",
     "noOverwrites": "文件已存在时不覆盖",
+    "defaultFfmpegArgs": "默认 FFmpeg 参数",
+    "defaultFfmpegArgsHint": "自动应用到之后新解析的视频，每个下载任务仍可单独修改。",
     "about": "关于",
     "aboutDesc": "基于 Tauri 2 + Vue 3 + Naive UI 构建的 yt-dlp 图形界面工具",
     "license": "开源协议",

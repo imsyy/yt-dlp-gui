@@ -231,6 +231,23 @@ watch(
             <n-switch v-model:value="settingStore.noOverwrites" />
           </div>
         </div>
+        <div class="info-list">
+          <div class="info-row">
+            <n-tooltip placement="right" :style="{ maxWidth: '320px' }">
+              <template #trigger>
+                <span class="info-label">{{ $t("settings.defaultFfmpegArgs") }}</span>
+              </template>
+              {{ $t("settings.defaultFfmpegArgsHint") }}
+            </n-tooltip>
+            <n-input
+              v-model:value="settingStore.defaultFfmpegArgs"
+              :placeholder="$t('detail.ffmpegArgsPlaceholder')"
+              size="small"
+              clearable
+              style="width: min(480px, 64vw)"
+            />
+          </div>
+        </div>
       </n-flex>
     </n-card>
 

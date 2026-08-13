@@ -41,6 +41,9 @@ export const useSettingStore = defineStore(
     /** 文件已存在时不覆盖 */
     const noOverwrites = ref(false);
 
+    /** 新下载任务默认使用的 FFmpeg 后处理参数 */
+    const defaultFfmpegArgs = ref("");
+
     /** 最大同时下载数，0 = 不限制 */
     const maxConcurrentDownloads = ref(0);
 
@@ -79,6 +82,7 @@ export const useSettingStore = defineStore(
       outputTemplate,
       concurrentFragments,
       noOverwrites,
+      defaultFfmpegArgs,
       maxConcurrentDownloads,
       notifyMode,
       closeToTray,

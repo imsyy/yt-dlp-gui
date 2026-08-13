@@ -158,6 +158,8 @@
     "systemNotification": "System",
     "all": "All",
     "noOverwrites": "Don't overwrite existing files",
+    "defaultFfmpegArgs": "Default FFmpeg args",
+    "defaultFfmpegArgsHint": "Applied to every newly parsed video. You can still override the value for an individual task.",
     "about": "About",
     "aboutDesc": "A yt-dlp GUI built with Tauri 2 + Vue 3 + Naive UI",
     "license": "License",
