@@ -374,11 +374,7 @@ fn build_download_args(app: &AppHandle, params: &DownloadParams) -> Result<Vec<S
     }
 
     // 字幕
-    if !params.subtitles.is_empty() {
-        args.push("--write-subs".to_string());
-        args.push("--sub-langs".to_string());
-        args.push(params.subtitles.join(","));
-    }
+    append_subtitle_args(&mut args, &params.subtitles);
 
     // 时间范围裁剪（仅在有实际裁剪范围时添加，避免 *0-inf 触发不必要的 ffmpeg 处理）
     // 前端已将 time picker 值转换为秒数
@@ -408,6 +404,83 @@ fn build_download_args(app: &AppHandle, params: &DownloadParams) -> Result<Vec<S
     args.push(params.url.clone());
 
     Ok(args)
+}
+
+/// 将前端的 `sub:<lang>` / `auto:<lang>` 选择转换为 yt-dlp 参数。
+/// `--sub-langs` 对普通和自动字幕共用，因此语言只需去重后传递一次。
+fn append_subtitle_args(args: &mut Vec<String>, selections: &[String]) {
+    let mut write_manual = false;
+    let mut write_auto = false;
+    let mut languages: Vec<&str> = Vec::new();
+
+    for selection in selections {
+        let language = match selection.split_once(':') {
+            Some(("sub", language)) => {
+                write_manual = true;
+                language
+            }
+            Some(("auto", language)) => {
+                write_auto = true;
+                language
+            }
+            // 兼容旧版本持久化的无前缀字幕值。
+            _ => {
+                write_manual = true;
+                selection.as_str()
+            }
+        };
+        if !language.is_empty() && !languages.contains(&language) {
+            languages.push(language);
+        }
+    }
+
+    if languages.is_empty() {
+        return;
+    }
+    if write_manual {
+        args.push("--write-subs".to_string());
+    }
+    if write_auto {
+        args.push("--write-auto-subs".to_string());
+    }
+    args.push("--sub-langs".to_string());
+    args.push(languages.join(","));
+}
+
+#[cfg(test)]
+mod subtitle_arg_tests {
+    use super::append_subtitle_args;
+
+    #[test]
+    fn manual_subtitles_strip_source_prefix() {
+        let mut args = Vec::new();
+        append_subtitle_args(&mut args, &["sub:en".to_string()]);
+        assert_eq!(args, ["--write-subs", "--sub-langs", "en"]);
+    }
+
+    #[test]
+    fn automatic_subtitles_enable_auto_caption_download() {
+        let mut args = Vec::new();
+        append_subtitle_args(&mut args, &["auto:zh-Hans".to_string()]);
+        assert_eq!(args, ["--write-auto-subs", "--sub-langs", "zh-Hans"]);
+    }
+
+    #[test]
+    fn mixed_subtitles_enable_both_sources_and_deduplicate_languages() {
+        let mut args = Vec::new();
+        append_subtitle_args(
+            &mut args,
+            &[
+                "sub:en".to_string(),
+                "auto:ja".to_string(),
+                "auto:en".to_string(),
+            ],
+        );
+        assert_eq!(
+            args,
+            ["--write-subs", "--write-auto-subs", "--sub-langs", "en,ja"]
+        );
+    }
 }
 
 /// 启动异步任务读取子进程输出流
