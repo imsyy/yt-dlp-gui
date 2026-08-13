@@ -17,6 +17,7 @@ import { useDownloadStore } from "@/stores/download";
 import { usePendingStore } from "@/stores/pending";
 import { useStatusStore } from "@/stores/status";
 import { localeEntries } from "@/locales";
+import { normalizeDeepLinkVideoUrl } from "@/utils/url";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -123,7 +124,7 @@ const handleDeepLink = (deepLinkUrl: string) => {
         // Cookie 解码失败，忽略
       }
     }
-    router.push({ name: "home", query: { url: videoUrl } });
+    router.push({ name: "home", query: { url: normalizeDeepLinkVideoUrl(videoUrl) } });
   } catch {
     // 无效的深链接 URL，忽略
   }
