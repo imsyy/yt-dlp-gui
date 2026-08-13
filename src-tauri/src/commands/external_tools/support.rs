@@ -1,6 +1,8 @@
 //! 外部工具管理共用的状态探测、进度通知与原子替换逻辑。
 
-use crate::{commands::CREATE_NO_WINDOW, utils};
+use crate::utils;
+#[cfg(target_os = "windows")]
+use crate::commands::CREATE_NO_WINDOW;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter};

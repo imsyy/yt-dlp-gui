@@ -1,6 +1,8 @@
 //! Deno 的探测、安装和升级。
 
-use crate::{commands::CREATE_NO_WINDOW, utils};
+use crate::utils;
+#[cfg(target_os = "windows")]
+use crate::commands::CREATE_NO_WINDOW;
 use futures_util::StreamExt;
 use tauri::{AppHandle, Emitter};
 

@@ -1,9 +1,11 @@
 //! 工具箱命令共用的 yt-dlp 执行器。
 
 use crate::{
-    commands::{support::append_cookie_proxy_args, support::extract_ytdlp_error, CREATE_NO_WINDOW},
+    commands::{support::append_cookie_proxy_args, support::extract_ytdlp_error},
     utils,
 };
+#[cfg(target_os = "windows")]
+use crate::commands::CREATE_NO_WINDOW;
 use tauri::AppHandle;
 
 /// 通用工具命令执行器（--skip-download 模式，不下载视频本身）

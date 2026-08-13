@@ -1,9 +1,11 @@
 //! 直播聊天下载与解析。
 
 use crate::{
-    commands::{support::append_cookie_proxy_args, support::extract_ytdlp_error, CREATE_NO_WINDOW},
+    commands::{support::append_cookie_proxy_args, support::extract_ytdlp_error},
     utils,
 };
+#[cfg(target_os = "windows")]
+use crate::commands::CREATE_NO_WINDOW;
 use serde_json::Value;
 use tauri::AppHandle;
 
