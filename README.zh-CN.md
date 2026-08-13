@@ -84,7 +84,19 @@ yt-dlp 功能强大，但命令行操作门槛较高。**yt-dlp GUI** 将其封�
 |------|------|
 | Windows | `.exe` 安装包 |
 | macOS | `.dmg` |
-| Linux | `.AppImage` / `.deb` |
+| Linux | `.AppImage` / `.deb` / `.rpm` |
+
+#### Arch Linux
+
+请从 Releases 下载 x86_64 AppImage。Arch 上的 AppImage 需要 FUSE 2 兼容包，首次使用时安装依赖并赋予执行权限：
+
+```bash
+sudo pacman -S fuse2
+chmod +x YDL.GUI_*.AppImage
+./YDL.GUI_*.AppImage
+```
+
+如果当前环境无法启用 FUSE，可改用 `./YDL.GUI_*.AppImage --appimage-extract-and-run`。AppImage 是便携版本，无需安装系统级软件包。
 
 ### 首次使用
 

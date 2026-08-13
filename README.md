@@ -84,7 +84,19 @@ Grab the latest release for your platform from [**Releases**](https://github.com
 |----------|------|
 | Windows  | `.exe` installer |
 | macOS    | `.dmg` |
-| Linux    | `.AppImage` / `.deb` |
+| Linux    | `.AppImage` / `.deb` / `.rpm` |
+
+#### Arch Linux
+
+Use the x86_64 AppImage from the release page. AppImage uses FUSE 2 on Arch, so install the compatibility package once, make the download executable, and run it:
+
+```bash
+sudo pacman -S fuse2
+chmod +x YDL.GUI_*.AppImage
+./YDL.GUI_*.AppImage
+```
+
+If FUSE cannot be enabled in your environment, run the same file with `--appimage-extract-and-run` instead. The AppImage is portable and does not require a system-wide package installation.
 
 ### First Launch
 
