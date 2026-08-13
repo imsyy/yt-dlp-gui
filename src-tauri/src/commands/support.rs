@@ -1,4 +1,4 @@
-//! 命令模块共享辅助函数
+//! 命令处理器共享的 yt-dlp、HTTP 与路径辅助函数
 
 use crate::utils;
 use serde_json::Value;

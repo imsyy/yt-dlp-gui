@@ -4,7 +4,7 @@ use crate::utils;
 use serde_json::Value;
 use tauri::AppHandle;
 
-use super::common;
+use super::support;
 
 // ========== Cookie 管理 ==========
 
@@ -29,7 +29,7 @@ pub async fn fetch_video_info(
     cookie_browser: Option<String>,
     proxy: Option<String>,
 ) -> Result<Value, String> {
-    common::run_ytdlp_json(
+    support::run_ytdlp_json(
         &app,
         &url,
         &[],
