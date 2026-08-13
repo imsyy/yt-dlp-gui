@@ -366,8 +366,6 @@ const handleDownload = async () => {
           <DownloadDirCard />
         </div>
 
-        <div style="height: 64px" />
-
         <DownloadBar :estimated-size-text="estimatedSizeText" @download="handleDownload" />
       </div>
     </template>
@@ -404,6 +402,10 @@ const handleDownload = async () => {
 
   .section-card {
     margin-bottom: 16px;
+  }
+
+  .pending-content {
+    padding-bottom: 96px;
   }
 
   .empty-state {

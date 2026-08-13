@@ -33,7 +33,7 @@ const emit = defineEmits<{
 <style scoped lang="scss">
 .bottom-bar {
   position: fixed;
-  bottom: 0;
+  bottom: 32px;
   left: 0;
   right: 0;
   padding: 16px 24px;
@@ -49,6 +49,7 @@ const emit = defineEmits<{
 
   .size-info {
     font-size: 13px;
+    font-variant-numeric: tabular-nums;
   }
 }
 
