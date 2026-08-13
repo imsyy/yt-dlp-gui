@@ -498,7 +498,6 @@ onUnmounted(() => unlistenProgress?.());
   dd {
     display: flex;
     align-items: center;
-    flex: 1;
     gap: 4px;
     min-width: 0;
     margin: 0;
@@ -507,7 +506,7 @@ onUnmounted(() => unlistenProgress?.());
 
 .tool-value {
   display: block;
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
 }
 
