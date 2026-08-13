@@ -1,5 +1,15 @@
 //! 各平台外部工具的官方发行下载地址。
 
+/// 获取工具的最新稳定发行页；请求完成后的重定向 URL 包含实际版本标签。
+pub fn get_tool_latest_release_url(tool: &str) -> Option<&'static str> {
+    match tool {
+        "yt-dlp" => Some("https://github.com/yt-dlp/yt-dlp/releases/latest"),
+        "deno" => Some("https://github.com/denoland/deno/releases/latest"),
+        "ffmpeg" => Some("https://github.com/eugeneware/ffmpeg-static/releases/latest"),
+        _ => None,
+    }
+}
+
 /// 获取 yt-dlp 下载地址（根据平台）
 pub fn get_ytdlp_download_url() -> &'static str {
     if cfg!(target_os = "windows") {

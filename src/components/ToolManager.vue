@@ -4,7 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { useI18n } from "vue-i18n";
 import { useSettingStore } from "@/stores/setting";
-import type { ToolOperationProgress, ToolSource, ToolStatus } from "@/types";
+import type { ToolOperationProgress, ToolSource, ToolStatus, ToolUpdateCheck } from "@/types";
 
 type ToolKey = "yt-dlp" | "deno" | "ffmpeg";
 type SelectableToolSource = Exclude<ToolSource, "custom">;
@@ -66,6 +66,11 @@ const checking = reactive<Record<ToolKey, boolean>>({
   ffmpeg: true,
 });
 const refreshing = ref(false);
+const checkingUpdates = reactive<Record<ToolKey, boolean>>({
+  "yt-dlp": false,
+  deno: false,
+  ffmpeg: false,
+});
 const operations = reactive<Record<ToolKey, OperationState>>({
   "yt-dlp": { active: false, operation: "install", stage: "downloading", percent: null },
   deno: { active: false, operation: "install", stage: "downloading", percent: null },
@@ -174,6 +179,33 @@ const handleInstall = async (tool: ToolDefinition) => {
 const handleUpdate = (tool: ToolDefinition) => {
   const command = tool.updateCommand || tool.installCommand;
   return runOperation(tool, "update", command);
+};
+
+const handleCheckUpdate = async (tool: ToolDefinition) => {
+  checkingUpdates[tool.key] = true;
+  try {
+    const result = await invoke<ToolUpdateCheck>("check_tool_update", { tool: tool.key });
+    if (!result.updateAvailable) {
+      window.$message.success(t("settings.alreadyLatest"));
+      return;
+    }
+    window.$dialog.warning({
+      title: t("settings.toolUpdateAvailable", { tool: tool.title }),
+      content: t("settings.toolUpdateConfirm", {
+        current: result.currentVersion,
+        latest: result.latestVersion,
+      }),
+      positiveText: t("settings.updateNow"),
+      negativeText: t("common.cancel"),
+      onPositiveClick: () => {
+        void handleUpdate(tool);
+      },
+    });
+  } catch (e: unknown) {
+    window.$message.error(t("settings.toolUpdateCheckFailed", { tool: tool.title, e }));
+  } finally {
+    checkingUpdates[tool.key] = false;
+  }
 };
 
 const stageLabel = (state: OperationState) => {
@@ -370,10 +402,11 @@ onUnmounted(() => unlistenProgress?.());
               strong
               secondary
               size="small"
+              :loading="checkingUpdates[tool.key]"
               :disabled="checking[tool.key] || operations[tool.key].active"
-              @click="handleUpdate(tool)"
+              @click="handleCheckUpdate(tool)"
             >
-              {{ $t("settings.updateNow") }}
+              {{ $t("settings.checkUpdate") }}
             </n-button>
             <n-tooltip v-else>
               <template #trigger>

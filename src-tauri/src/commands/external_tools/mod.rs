@@ -5,12 +5,14 @@ mod ffmpeg;
 mod plugins;
 mod settings;
 mod support;
+mod updates;
 mod ytdlp;
 
 pub use deno::*;
 pub use ffmpeg::*;
 pub use plugins::*;
 pub use settings::*;
+pub use updates::*;
 pub use ytdlp::*;
 
 /// 外部工具安装状态。

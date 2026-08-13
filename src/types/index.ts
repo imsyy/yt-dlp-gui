@@ -15,6 +15,12 @@ export interface ToolStatus {
   canUpdate: boolean;
 }
 
+export interface ToolUpdateCheck {
+  updateAvailable: boolean;
+  currentVersion: string;
+  latestVersion: string;
+}
+
 export type YtdlpStatus = ToolStatus;
 export type DenoStatus = ToolStatus;
 export type FfmpegStatus = ToolStatus;

@@ -101,7 +101,7 @@
     "title": "Settings",
     "installed": "Installed",
     "notInstalled": "Not Installed",
-    "checkUpdate": "Check Update",
+    "checkUpdate": "Check for updates",
     "toolManager": "External Tools",
     "sourceManaged": "App-managed",
     "sourceSystem": "System PATH",
@@ -115,6 +115,9 @@
     "toolStatusFailed": "Failed to inspect {tool}: {e}",
     "toolInstallComplete": "{tool} installation complete",
     "toolUpdateComplete": "{tool} update complete",
+    "toolUpdateAvailable": "Update available for {tool}",
+    "toolUpdateConfirm": "Current version: {current}. Latest version: {latest}. Update now?",
+    "toolUpdateCheckFailed": "Failed to check {tool} for updates: {e}",
     "toolOperationFailed": "{tool} operation failed: {e}",
     "toolValueCopied": "{label} copied",
     "toolStage": {

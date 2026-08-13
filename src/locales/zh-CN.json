@@ -101,7 +101,7 @@
     "title": "设置",
     "installed": "已安装",
     "notInstalled": "未安装",
-    "checkUpdate": "检查更新",
+    "checkUpdate": "检测更新",
     "toolManager": "外部工具",
     "sourceManaged": "应用管理",
     "sourceSystem": "系统 PATH",
@@ -115,6 +115,9 @@
     "toolStatusFailed": "检查 {tool} 失败：{e}",
     "toolInstallComplete": "{tool} 安装完成",
     "toolUpdateComplete": "{tool} 更新完成",
+    "toolUpdateAvailable": "{tool} 有可用更新",
+    "toolUpdateConfirm": "当前版本 {current}，最新版本 {latest}。是否立即更新？",
+    "toolUpdateCheckFailed": "检查 {tool} 更新失败：{e}",
     "toolOperationFailed": "{tool} 操作失败：{e}",
     "toolValueCopied": "已复制{label}",
     "toolStage": {
