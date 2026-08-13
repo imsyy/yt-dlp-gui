@@ -102,7 +102,7 @@
     "installed": "Installed",
     "notInstalled": "Not Installed",
     "checkUpdate": "Check for updates",
-    "toolManager": "External Tools",
+    "toolManager": "Required Setup",
     "sourceManaged": "App-managed",
     "sourceSystem": "System PATH",
     "installManaged": "Install app copy",
