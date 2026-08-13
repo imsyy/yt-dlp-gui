@@ -65,6 +65,7 @@ const checking = reactive<Record<ToolKey, boolean>>({
   deno: true,
   ffmpeg: true,
 });
+const refreshing = ref(false);
 const operations = reactive<Record<ToolKey, OperationState>>({
   "yt-dlp": { active: false, operation: "install", stage: "downloading", percent: null },
   deno: { active: false, operation: "install", stage: "downloading", percent: null },
@@ -107,14 +108,34 @@ const refreshTool = async (tool: ToolDefinition) => {
 };
 
 const refreshAll = async () => {
-  await applySources();
-  await Promise.all(tools.value.map(refreshTool));
+  refreshing.value = true;
+  tools.value.forEach((tool) => {
+    checking[tool.key] = true;
+  });
+  try {
+    await applySources();
+    await Promise.all(tools.value.map(refreshTool));
+  } catch (e: unknown) {
+    window.$message.error(t("settings.toolStatusFailed", { tool: t("settings.toolManager"), e }));
+  } finally {
+    tools.value.forEach((tool) => {
+      checking[tool.key] = false;
+    });
+    refreshing.value = false;
+  }
 };
 
 const handleSourceChange = async (tool: ToolDefinition, value: SelectableToolSource) => {
-  setSource(tool.key, value);
-  await applySources();
-  await refreshTool(tool);
+  checking[tool.key] = true;
+  try {
+    setSource(tool.key, value);
+    await applySources();
+    await refreshTool(tool);
+  } catch (e: unknown) {
+    window.$message.error(t("settings.toolStatusFailed", { tool: tool.title, e }));
+  } finally {
+    checking[tool.key] = false;
+  }
 };
 
 const runOperation = async (
@@ -196,7 +217,7 @@ onUnmounted(() => unlistenProgress?.());
 <template>
   <n-card :title="$t('settings.toolManager')" size="small" class="tool-manager section-card">
     <template #header-extra>
-      <n-button size="small" strong secondary @click="refreshAll">
+      <n-button size="small" strong secondary :loading="refreshing" @click="refreshAll">
         <template #icon>
           <n-icon><icon-mdi-refresh /></n-icon>
         </template>
@@ -205,162 +226,174 @@ onUnmounted(() => unlistenProgress?.());
     </template>
 
     <div class="tool-list">
-      <section v-for="tool in tools" :key="tool.key" class="tool-row">
-        <div class="tool-main">
-          <div class="tool-heading">
-            <n-text strong>{{ tool.title }}</n-text>
-            <n-tag
-              v-if="!checking[tool.key]"
+      <n-spin
+        v-for="tool in tools"
+        :key="tool.key"
+        :show="checking[tool.key]"
+        size="small"
+        class="tool-row"
+      >
+        <section class="tool-row-content">
+          <div class="tool-main">
+            <div class="tool-heading">
+              <n-text strong>{{ tool.title }}</n-text>
+              <n-tag
+                v-if="statuses[tool.key]"
+                size="small"
+                round
+                :type="statuses[tool.key]?.installed ? 'success' : 'error'"
+              >
+                {{
+                  statuses[tool.key]?.installed
+                    ? $t("settings.installed")
+                    : $t("settings.notInstalled")
+                }}
+              </n-tag>
+            </div>
+            <n-text depth="3" class="tool-description">{{ tool.description }}</n-text>
+
+            <dl class="tool-meta">
+              <div class="tool-meta-row">
+                <dt>
+                  <n-text depth="3">{{ $t("settings.version") }}</n-text>
+                </dt>
+                <dd>
+                  <n-ellipsis :line-clamp="1" :tooltip="{ width: 480 }" class="tool-value">
+                    <n-text strong>{{ statuses[tool.key]?.version || "—" }}</n-text>
+                  </n-ellipsis>
+                  <n-tooltip>
+                    <template #trigger>
+                      <n-button
+                        quaternary
+                        circle
+                        size="tiny"
+                        :disabled="!statuses[tool.key]?.version"
+                        :aria-label="$t('common.copy')"
+                        @click="
+                          copyToolValue($t('settings.version'), statuses[tool.key]?.version || '')
+                        "
+                      >
+                        <template #icon>
+                          <n-icon><icon-mdi-content-copy /></n-icon>
+                        </template>
+                      </n-button>
+                    </template>
+                    {{ $t("common.copy") }}
+                  </n-tooltip>
+                </dd>
+              </div>
+              <div class="tool-meta-row">
+                <dt>
+                  <n-text depth="3">{{ $t("settings.path") }}</n-text>
+                </dt>
+                <dd>
+                  <n-ellipsis :line-clamp="1" :tooltip="{ width: 560 }" class="tool-value">
+                    {{ statuses[tool.key]?.path || "—" }}
+                  </n-ellipsis>
+                  <n-tooltip>
+                    <template #trigger>
+                      <n-button
+                        quaternary
+                        circle
+                        size="tiny"
+                        :disabled="!statuses[tool.key]?.path"
+                        :aria-label="$t('common.copy')"
+                        @click="copyToolValue($t('settings.path'), statuses[tool.key]?.path || '')"
+                      >
+                        <template #icon>
+                          <n-icon><icon-mdi-content-copy /></n-icon>
+                        </template>
+                      </n-button>
+                    </template>
+                    {{ $t("common.copy") }}
+                  </n-tooltip>
+                </dd>
+              </div>
+            </dl>
+
+            <n-collapse-transition :show="operations[tool.key].active">
+              <div class="operation-progress" aria-live="polite">
+                <div class="progress-label">
+                  <n-text depth="2">{{ stageLabel(operations[tool.key]) }}</n-text>
+                  <n-text v-if="operations[tool.key].percent != null" class="progress-number">
+                    {{ Math.round(operations[tool.key].percent || 0) }}%
+                  </n-text>
+                </div>
+                <n-progress
+                  type="line"
+                  :percentage="progressPercentage(operations[tool.key])"
+                  :processing="operations[tool.key].percent == null"
+                  :aria-valuenow="progressAriaValue(operations[tool.key])"
+                  :aria-valuetext="
+                    operations[tool.key].percent == null
+                      ? stageLabel(operations[tool.key])
+                      : undefined
+                  "
+                  :show-indicator="false"
+                  :height="8"
+                  :border-radius="4"
+                />
+              </div>
+            </n-collapse-transition>
+          </div>
+
+          <div class="tool-controls">
+            <n-select
+              :value="getSource(tool.key)"
+              :options="sourceOptions"
               size="small"
-              round
-              :type="statuses[tool.key]?.installed ? 'success' : 'error'"
+              :disabled="
+                checking[tool.key] ||
+                operations[tool.key].active ||
+                statuses[tool.key]?.source === 'custom'
+              "
+              class="source-select"
+              @update:value="(value: SelectableToolSource) => handleSourceChange(tool, value)"
+            />
+            <n-button
+              v-if="!statuses[tool.key]?.installed && statuses[tool.key]?.source !== 'custom'"
+              type="primary"
+              strong
+              secondary
+              size="small"
+              :disabled="checking[tool.key] || operations[tool.key].active"
+              @click="handleInstall(tool)"
             >
               {{
-                statuses[tool.key]?.installed
-                  ? $t("settings.installed")
-                  : $t("settings.notInstalled")
+                getSource(tool.key) === "system"
+                  ? $t("settings.installManaged")
+                  : $t("common.download")
               }}
-            </n-tag>
+            </n-button>
+            <n-button
+              v-else-if="statuses[tool.key]?.canUpdate"
+              strong
+              secondary
+              size="small"
+              :disabled="checking[tool.key] || operations[tool.key].active"
+              @click="handleUpdate(tool)"
+            >
+              {{ $t("settings.updateNow") }}
+            </n-button>
+            <n-tooltip v-else>
+              <template #trigger>
+                <n-button size="small" secondary disabled>
+                  {{
+                    statuses[tool.key]?.source === "custom"
+                      ? $t("settings.cliManaged")
+                      : $t("settings.systemManaged")
+                  }}
+                </n-button>
+              </template>
+              {{
+                statuses[tool.key]?.source === "custom"
+                  ? $t("settings.cliManagedHint")
+                  : $t("settings.systemManagedHint")
+              }}
+            </n-tooltip>
           </div>
-          <n-text depth="3" class="tool-description">{{ tool.description }}</n-text>
-
-          <dl class="tool-meta">
-            <div class="tool-meta-row">
-              <dt>
-                <n-text depth="3">{{ $t("settings.version") }}</n-text>
-              </dt>
-              <dd>
-                <n-ellipsis :line-clamp="1" :tooltip="{ width: 480 }" class="tool-value">
-                  <n-text strong>{{ statuses[tool.key]?.version || "—" }}</n-text>
-                </n-ellipsis>
-                <n-tooltip>
-                  <template #trigger>
-                    <n-button
-                      quaternary
-                      circle
-                      size="tiny"
-                      :disabled="!statuses[tool.key]?.version"
-                      :aria-label="$t('common.copy')"
-                      @click="
-                        copyToolValue($t('settings.version'), statuses[tool.key]?.version || '')
-                      "
-                    >
-                      <template #icon>
-                        <n-icon><icon-mdi-content-copy /></n-icon>
-                      </template>
-                    </n-button>
-                  </template>
-                  {{ $t("common.copy") }}
-                </n-tooltip>
-              </dd>
-            </div>
-            <div class="tool-meta-row">
-              <dt>
-                <n-text depth="3">{{ $t("settings.path") }}</n-text>
-              </dt>
-              <dd>
-                <n-ellipsis :line-clamp="1" :tooltip="{ width: 560 }" class="tool-value">
-                  {{ statuses[tool.key]?.path || "—" }}
-                </n-ellipsis>
-                <n-tooltip>
-                  <template #trigger>
-                    <n-button
-                      quaternary
-                      circle
-                      size="tiny"
-                      :disabled="!statuses[tool.key]?.path"
-                      :aria-label="$t('common.copy')"
-                      @click="copyToolValue($t('settings.path'), statuses[tool.key]?.path || '')"
-                    >
-                      <template #icon>
-                        <n-icon><icon-mdi-content-copy /></n-icon>
-                      </template>
-                    </n-button>
-                  </template>
-                  {{ $t("common.copy") }}
-                </n-tooltip>
-              </dd>
-            </div>
-          </dl>
-
-          <n-collapse-transition :show="operations[tool.key].active">
-            <div class="operation-progress" aria-live="polite">
-              <div class="progress-label">
-                <n-text depth="2">{{ stageLabel(operations[tool.key]) }}</n-text>
-                <n-text v-if="operations[tool.key].percent != null" class="progress-number">
-                  {{ Math.round(operations[tool.key].percent || 0) }}%
-                </n-text>
-              </div>
-              <n-progress
-                type="line"
-                :percentage="progressPercentage(operations[tool.key])"
-                :processing="operations[tool.key].percent == null"
-                :aria-valuenow="progressAriaValue(operations[tool.key])"
-                :aria-valuetext="
-                  operations[tool.key].percent == null
-                    ? stageLabel(operations[tool.key])
-                    : undefined
-                "
-                :show-indicator="false"
-                :height="8"
-                :border-radius="4"
-              />
-            </div>
-          </n-collapse-transition>
-        </div>
-
-        <div class="tool-controls">
-          <n-select
-            :value="getSource(tool.key)"
-            :options="sourceOptions"
-            size="small"
-            :disabled="operations[tool.key].active || statuses[tool.key]?.source === 'custom'"
-            class="source-select"
-            @update:value="(value: SelectableToolSource) => handleSourceChange(tool, value)"
-          />
-          <n-button
-            v-if="!statuses[tool.key]?.installed && statuses[tool.key]?.source !== 'custom'"
-            type="primary"
-            strong
-            secondary
-            size="small"
-            :disabled="operations[tool.key].active"
-            @click="handleInstall(tool)"
-          >
-            {{
-              getSource(tool.key) === "system"
-                ? $t("settings.installManaged")
-                : $t("common.download")
-            }}
-          </n-button>
-          <n-button
-            v-else-if="statuses[tool.key]?.canUpdate"
-            strong
-            secondary
-            size="small"
-            :disabled="operations[tool.key].active"
-            @click="handleUpdate(tool)"
-          >
-            {{ $t("settings.updateNow") }}
-          </n-button>
-          <n-tooltip v-else>
-            <template #trigger>
-              <n-button size="small" secondary disabled>
-                {{
-                  statuses[tool.key]?.source === "custom"
-                    ? $t("settings.cliManaged")
-                    : $t("settings.systemManaged")
-                }}
-              </n-button>
-            </template>
-            {{
-              statuses[tool.key]?.source === "custom"
-                ? $t("settings.cliManagedHint")
-                : $t("settings.systemManagedHint")
-            }}
-          </n-tooltip>
-        </div>
-      </section>
+        </section>
+      </n-spin>
     </div>
   </n-card>
 </template>
@@ -372,9 +405,6 @@ onUnmounted(() => unlistenProgress?.());
 }
 
 .tool-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 16px;
   padding: 12px 0;
 
   &:first-child {
@@ -388,6 +418,12 @@ onUnmounted(() => unlistenProgress?.());
   & + & {
     border-top: 1px solid var(--n-border-color);
   }
+}
+
+.tool-row-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
 }
 
 .tool-main {
@@ -468,7 +504,7 @@ onUnmounted(() => unlistenProgress?.());
 }
 
 @media (max-width: 720px) {
-  .tool-row {
+  .tool-row-content {
     grid-template-columns: 1fr;
   }
 
