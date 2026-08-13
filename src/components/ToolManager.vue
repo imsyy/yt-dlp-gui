@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { useI18n } from "vue-i18n";
 import { useSettingStore } from "@/stores/setting";
 import type { ToolOperationProgress, ToolSource, ToolStatus } from "@/types";
@@ -159,6 +160,22 @@ const stageLabel = (state: OperationState) => {
   return t(key);
 };
 
+const progressPercentage = (state: OperationState) =>
+  state.percent == null ? 100 : Math.round(state.percent);
+
+const progressAriaValue = (state: OperationState) =>
+  state.percent == null ? undefined : Math.round(state.percent);
+
+const copyToolValue = async (label: string, value: string) => {
+  if (!value) return;
+  try {
+    await writeText(value);
+    window.$message.success(t("settings.toolValueCopied", { label }));
+  } catch {
+    window.$message.error(t("clipboard.writeFailed"));
+  }
+};
+
 let unlistenProgress: (() => void) | null = null;
 
 onMounted(async () => {
@@ -179,7 +196,7 @@ onUnmounted(() => unlistenProgress?.());
 <template>
   <n-card :title="$t('settings.toolManager')" size="small" class="tool-manager section-card">
     <template #header-extra>
-      <n-button size="small" strong secondary class="tool-action" @click="refreshAll">
+      <n-button size="small" strong secondary @click="refreshAll">
         <template #icon>
           <n-icon><icon-mdi-refresh /></n-icon>
         </template>
@@ -187,7 +204,7 @@ onUnmounted(() => unlistenProgress?.());
       </n-button>
     </template>
 
-    <n-flex vertical :size="12">
+    <div class="tool-list">
       <section v-for="tool in tools" :key="tool.key" class="tool-row">
         <div class="tool-main">
           <div class="tool-heading">
@@ -207,17 +224,67 @@ onUnmounted(() => unlistenProgress?.());
           </div>
           <n-text depth="3" class="tool-description">{{ tool.description }}</n-text>
 
-          <div class="tool-meta">
-            <n-text depth="3">{{ $t("settings.version") }}</n-text>
-            <n-text code>{{ statuses[tool.key]?.version || "—" }}</n-text>
-            <n-text depth="3">{{ $t("settings.path") }}</n-text>
-            <n-ellipsis :line-clamp="1" :tooltip="{ width: 420 }" class="tool-path">
-              {{ statuses[tool.key]?.path || "—" }}
-            </n-ellipsis>
-          </div>
+          <dl class="tool-meta">
+            <div class="tool-meta-row">
+              <dt>
+                <n-text depth="3">{{ $t("settings.version") }}</n-text>
+              </dt>
+              <dd>
+                <n-ellipsis :line-clamp="1" :tooltip="{ width: 480 }" class="tool-value">
+                  <n-text strong>{{ statuses[tool.key]?.version || "—" }}</n-text>
+                </n-ellipsis>
+                <n-tooltip>
+                  <template #trigger>
+                    <n-button
+                      quaternary
+                      circle
+                      size="tiny"
+                      :disabled="!statuses[tool.key]?.version"
+                      :aria-label="$t('common.copy')"
+                      @click="
+                        copyToolValue($t('settings.version'), statuses[tool.key]?.version || '')
+                      "
+                    >
+                      <template #icon>
+                        <n-icon><icon-mdi-content-copy /></n-icon>
+                      </template>
+                    </n-button>
+                  </template>
+                  {{ $t("common.copy") }}
+                </n-tooltip>
+              </dd>
+            </div>
+            <div class="tool-meta-row">
+              <dt>
+                <n-text depth="3">{{ $t("settings.path") }}</n-text>
+              </dt>
+              <dd>
+                <n-ellipsis :line-clamp="1" :tooltip="{ width: 560 }" class="tool-value">
+                  {{ statuses[tool.key]?.path || "—" }}
+                </n-ellipsis>
+                <n-tooltip>
+                  <template #trigger>
+                    <n-button
+                      quaternary
+                      circle
+                      size="tiny"
+                      :disabled="!statuses[tool.key]?.path"
+                      :aria-label="$t('common.copy')"
+                      @click="copyToolValue($t('settings.path'), statuses[tool.key]?.path || '')"
+                    >
+                      <template #icon>
+                        <n-icon><icon-mdi-content-copy /></n-icon>
+                      </template>
+                    </n-button>
+                  </template>
+                  {{ $t("common.copy") }}
+                </n-tooltip>
+              </dd>
+            </div>
+          </dl>
 
           <n-collapse-transition :show="operations[tool.key].active">
-            <div class="operation-progress">
+            <div class="operation-progress" aria-live="polite">
               <div class="progress-label">
                 <n-text depth="2">{{ stageLabel(operations[tool.key]) }}</n-text>
                 <n-text v-if="operations[tool.key].percent != null" class="progress-number">
@@ -226,8 +293,14 @@ onUnmounted(() => unlistenProgress?.());
               </div>
               <n-progress
                 type="line"
-                :percentage="Math.round(operations[tool.key].percent || 0)"
+                :percentage="progressPercentage(operations[tool.key])"
                 :processing="operations[tool.key].percent == null"
+                :aria-valuenow="progressAriaValue(operations[tool.key])"
+                :aria-valuetext="
+                  operations[tool.key].percent == null
+                    ? stageLabel(operations[tool.key])
+                    : undefined
+                "
                 :show-indicator="false"
                 :height="8"
                 :border-radius="4"
@@ -251,7 +324,6 @@ onUnmounted(() => unlistenProgress?.());
             strong
             secondary
             size="small"
-            class="tool-action"
             :disabled="operations[tool.key].active"
             @click="handleInstall(tool)"
           >
@@ -266,7 +338,6 @@ onUnmounted(() => unlistenProgress?.());
             strong
             secondary
             size="small"
-            class="tool-action"
             :disabled="operations[tool.key].active"
             @click="handleUpdate(tool)"
           >
@@ -274,7 +345,7 @@ onUnmounted(() => unlistenProgress?.());
           </n-button>
           <n-tooltip v-else>
             <template #trigger>
-              <n-button size="small" secondary disabled class="tool-action">
+              <n-button size="small" secondary disabled>
                 {{
                   statuses[tool.key]?.source === "custom"
                     ? $t("settings.cliManaged")
@@ -290,21 +361,33 @@ onUnmounted(() => unlistenProgress?.());
           </n-tooltip>
         </div>
       </section>
-    </n-flex>
+    </div>
   </n-card>
 </template>
 
 <style scoped lang="scss">
+.tool-list {
+  display: flex;
+  flex-direction: column;
+}
+
 .tool-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 16px;
-  padding: 14px;
-  border-radius: 12px;
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.06),
-    0 1px 2px -1px rgba(0, 0, 0, 0.06),
-    0 2px 4px rgba(0, 0, 0, 0.04);
+  padding: 12px 0;
+
+  &:first-child {
+    padding-top: 0;
+  }
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+
+  & + & {
+    border-top: 1px solid var(--n-border-color);
+  }
 }
 
 .tool-main {
@@ -321,27 +404,49 @@ onUnmounted(() => unlistenProgress?.());
 
 .tool-description {
   display: block;
-  margin-top: 4px;
+  margin-top: 2px;
   font-size: 13px;
   text-wrap: pretty;
 }
 
 .tool-meta {
-  display: grid;
-  grid-template-columns: auto minmax(80px, auto) auto minmax(120px, 1fr);
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0 0;
   font-size: 12px;
 }
 
-.tool-path {
+.tool-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  dt {
+    flex: 0 0 40px;
+    margin: 0;
+  }
+
+  dd {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    gap: 4px;
+    min-width: 0;
+    margin: 0;
+  }
+}
+
+.tool-value {
+  display: block;
+  flex: 1;
   min-width: 0;
 }
 
 .tool-controls {
-  display: flex;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 132px max-content;
+  align-content: start;
   gap: 8px;
 }
 
@@ -349,19 +454,8 @@ onUnmounted(() => unlistenProgress?.());
   width: 132px;
 }
 
-.tool-action {
-  min-height: 40px;
-  transition-property: scale;
-  transition-duration: 150ms;
-  transition-timing-function: ease-out;
-
-  &:active:not(:disabled) {
-    scale: 0.96;
-  }
-}
-
 .operation-progress {
-  margin-top: 12px;
+  margin-top: 10px;
 }
 
 .progress-label {
@@ -379,11 +473,7 @@ onUnmounted(() => unlistenProgress?.());
   }
 
   .tool-controls {
-    flex-wrap: wrap;
-  }
-
-  .tool-meta {
-    grid-template-columns: auto 1fr;
+    justify-content: end;
   }
 }
 </style>

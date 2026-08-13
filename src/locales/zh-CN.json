@@ -23,6 +23,7 @@
     "empty": "剪贴板为空",
     "invalidUrl": "剪贴板内容不是有效的链接",
     "readFailed": "无法读取剪贴板",
+    "writeFailed": "无法写入剪贴板",
     "pasteSuccess": "已从剪贴板粘贴"
   },
   "tray": {
@@ -115,6 +116,7 @@
     "toolInstallComplete": "{tool} 安装完成",
     "toolUpdateComplete": "{tool} 更新完成",
     "toolOperationFailed": "{tool} 操作失败：{e}",
+    "toolValueCopied": "已复制{label}",
     "toolStage": {
       "downloading": "正在下载文件",
       "installing": "正在安装并验证",

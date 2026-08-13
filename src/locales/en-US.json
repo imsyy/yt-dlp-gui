@@ -23,6 +23,7 @@
     "empty": "Clipboard is empty",
     "invalidUrl": "Clipboard content is not a valid URL",
     "readFailed": "Cannot read clipboard",
+    "writeFailed": "Cannot write to clipboard",
     "pasteSuccess": "Pasted from clipboard"
   },
   "tray": {
@@ -115,6 +116,7 @@
     "toolInstallComplete": "{tool} installation complete",
     "toolUpdateComplete": "{tool} update complete",
     "toolOperationFailed": "{tool} operation failed: {e}",
+    "toolValueCopied": "{label} copied",
     "toolStage": {
       "downloading": "Downloading files",
       "installing": "Installing and validating",
