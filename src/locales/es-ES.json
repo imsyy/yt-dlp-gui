@@ -100,6 +100,30 @@
     "installed": "Instalado",
     "notInstalled": "No instalado",
     "checkUpdate": "Buscar actualizaciones",
+    "toolManager": "Configuración necesaria",
+    "sourceManaged": "Gestionado por la aplicación",
+    "sourceSystem": "PATH del sistema",
+    "installManaged": "Instalar versión de la aplicación",
+    "updateNow": "Actualizar ahora",
+    "systemManaged": "Gestionado por el sistema",
+    "systemManagedHint": "Actualiza FFmpeg del sistema mediante Homebrew o el gestor de paquetes del sistema operativo",
+    "cliManaged": "Ruta de línea de comandos",
+    "cliManagedHint": "Este ejecutable se indicó mediante un argumento al iniciar y la aplicación no lo modificará",
+    "ffmpegDesc": "Permite combinar audio y vídeo, convertir formatos y procesar metadatos y subtítulos",
+    "toolStatusFailed": "No se pudo comprobar {tool}: {e}",
+    "toolInstallComplete": "Instalación de {tool} completada",
+    "toolUpdateComplete": "Actualización de {tool} completada",
+    "toolUpdateAvailable": "Hay una actualización disponible para {tool}",
+    "toolUpdateConfirm": "Versión actual: {current}. Última versión: {latest}. ¿Actualizar ahora?",
+    "toolUpdateCheckFailed": "No se pudieron buscar actualizaciones de {tool}: {e}",
+    "toolOperationFailed": "Falló la operación de {tool}: {e}",
+    "toolValueCopied": "{label} copiado",
+    "toolStage": {
+      "downloading": "Descargando archivos",
+      "installing": "Instalando y verificando",
+      "updating": "Actualizando herramienta",
+      "complete": "Completado"
+    },
     "ytdlpDesc": "Herramienta esencial para esta aplicación",
     "version": "Versión",
     "path": "Ruta",
@@ -153,6 +177,14 @@
     "appUpdateFailed": "Error en la actualización: {e}",
     "appIsLatest": "Ya tienes la última versión",
     "systemBinaryNotice": "Estás usando el yt-dlp instalado en el sistema. «Buscar actualización» solo actualiza la copia gestionada por la app, lo que no afecta al binario en uso. Cambia «Prioridad de ruta de herramientas» arriba a «Solo app» o actualiza con el gestor de paquetes del sistema."
+  },
+  "statusBar": {
+    "title": "Estado de herramientas necesarias",
+    "checking": "Comprobando",
+    "notInstalled": "{tool} no está instalado",
+    "status": "Estado",
+    "source": "Origen",
+    "activeDownloads": "Descargando {count}"
   },
   "detail": {
     "videoLink": "Enlace del vídeo",
@@ -213,6 +245,7 @@
     "viewYi": "M"
   },
   "cookie": {
+    "settings": "Configuración de cookies",
     "desc": "Algunos vídeos requieren inicio de sesión. Usa cookies para la autenticación",
     "none": "No usar",
     "manual": "Entrada manual",

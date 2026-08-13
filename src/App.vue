@@ -272,7 +272,7 @@ onMounted(async () => {
       </n-layout-header>
       <n-layout
         position="absolute"
-        style="top: 56px"
+        style="top: 56px; bottom: 32px"
         content-style="padding: 16px; display: flex; flex-direction: column; min-height: 100%;"
         :native-scrollbar="false"
       >
@@ -310,6 +310,7 @@ onMounted(async () => {
           </n-text>
         </n-flex>
       </n-layout>
+      <AppStatusBar />
     </n-layout>
   </Provider>
 </template>

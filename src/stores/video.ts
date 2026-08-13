@@ -5,6 +5,7 @@ import { filterPlaylistEntries } from "@/utils/playlist";
 import { compareAudioFormats } from "@/utils/formats";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
+import i18n from "@/locales";
 import type {
   VideoInfo,
   VideoFormat,
@@ -135,6 +136,7 @@ export const useVideoStore = defineStore("video", () => {
       } else if (/Could not copy.*cookie database/i.test(raw)) {
         showErrorDialog(raw);
       } else if (/sign in|cookies/i.test(raw)) {
+        window.$message.warning(i18n.global.t("cookie.verificationDesc"));
         const statusStore = useStatusStore();
         statusStore.showCookieModal = true;
       } else {

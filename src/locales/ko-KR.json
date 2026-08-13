@@ -100,6 +100,30 @@
     "installed": "설치됨",
     "notInstalled": "미설치",
     "checkUpdate": "업데이트 확인",
+    "toolManager": "필수 설정",
+    "sourceManaged": "앱에서 관리",
+    "sourceSystem": "시스템 PATH",
+    "installManaged": "앱 버전 설치",
+    "updateNow": "지금 업데이트",
+    "systemManaged": "시스템에서 관리",
+    "systemManagedHint": "시스템 FFmpeg는 Homebrew 또는 운영 체제 패키지 관리자로 업데이트하세요",
+    "cliManaged": "명령줄 경로",
+    "cliManagedHint": "이 실행 파일은 시작 명령줄 인수로 지정되었으므로 앱에서 변경하지 않습니다",
+    "ffmpegDesc": "오디오와 비디오 병합, 형식 변환, 메타데이터 및 자막 처리에 사용합니다",
+    "toolStatusFailed": "{tool} 확인 실패: {e}",
+    "toolInstallComplete": "{tool} 설치 완료",
+    "toolUpdateComplete": "{tool} 업데이트 완료",
+    "toolUpdateAvailable": "{tool} 업데이트 사용 가능",
+    "toolUpdateConfirm": "현재 버전: {current}, 최신 버전: {latest}. 지금 업데이트할까요?",
+    "toolUpdateCheckFailed": "{tool} 업데이트 확인 실패: {e}",
+    "toolOperationFailed": "{tool} 작업 실패: {e}",
+    "toolValueCopied": "{label} 복사됨",
+    "toolStage": {
+      "downloading": "파일 다운로드 중",
+      "installing": "설치 및 확인 중",
+      "updating": "도구 업데이트 중",
+      "complete": "완료"
+    },
     "ytdlpDesc": "이 앱에 필요한 핵심 도구",
     "version": "버전",
     "path": "경로",
@@ -153,6 +177,14 @@
     "appUpdateFailed": "업데이트 실패: {e}",
     "appIsLatest": "최신 버전입니다",
     "systemBinaryNotice": "현재 시스템에 설치된 yt-dlp를 사용 중입니다. \"업데이트 확인\"은 앱이 관리하는 복사본만 업데이트하므로 실제로 사용 중인 바이너리에는 반영되지 않습니다. 위의 \"도구 경로 우선순위\"를 \"앱만\"으로 전환하거나 시스템 패키지 관리자로 업데이트하세요."
+  },
+  "statusBar": {
+    "title": "필수 도구 상태",
+    "checking": "확인 중",
+    "notInstalled": "{tool}이(가) 설치되지 않음",
+    "status": "상태",
+    "source": "소스",
+    "activeDownloads": "다운로드 중 {count}"
   },
   "detail": {
     "videoLink": "동영상 링크",
@@ -213,6 +245,7 @@
     "viewYi": "억"
   },
   "cookie": {
+    "settings": "Cookie 설정",
     "desc": "일부 영상은 로그인이 필요합니다. 쿠키로 인증 정보를 설정할 수 있습니다",
     "none": "사용 안 함",
     "manual": "직접 입력",

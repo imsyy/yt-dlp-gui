@@ -100,6 +100,30 @@
     "installed": "مثبت",
     "notInstalled": "غير مثبت",
     "checkUpdate": "التحقق من التحديثات",
+    "toolManager": "الإعدادات الضرورية",
+    "sourceManaged": "تديره التطبيق",
+    "sourceSystem": "PATH النظام",
+    "installManaged": "تثبيت نسخة التطبيق",
+    "updateNow": "التحديث الآن",
+    "systemManaged": "يديره النظام",
+    "systemManagedHint": "حدّث FFmpeg الخاص بالنظام عبر Homebrew أو مدير حزم نظام التشغيل",
+    "cliManaged": "مسار سطر الأوامر",
+    "cliManagedHint": "تم تحديد هذا الملف التنفيذي عبر وسيطة سطر أوامر عند التشغيل ولن يعدّله التطبيق",
+    "ffmpegDesc": "لدمج الصوت والفيديو وتحويل التنسيقات ومعالجة البيانات الوصفية والترجمات",
+    "toolStatusFailed": "تعذر فحص {tool}: {e}",
+    "toolInstallComplete": "اكتمل تثبيت {tool}",
+    "toolUpdateComplete": "اكتمل تحديث {tool}",
+    "toolUpdateAvailable": "يتوفر تحديث لـ {tool}",
+    "toolUpdateConfirm": "الإصدار الحالي: {current}. أحدث إصدار: {latest}. هل تريد التحديث الآن؟",
+    "toolUpdateCheckFailed": "تعذر التحقق من تحديثات {tool}: {e}",
+    "toolOperationFailed": "فشلت عملية {tool}: {e}",
+    "toolValueCopied": "تم نسخ {label}",
+    "toolStage": {
+      "downloading": "جارٍ تنزيل الملفات",
+      "installing": "جارٍ التثبيت والتحقق",
+      "updating": "جارٍ تحديث الأداة",
+      "complete": "اكتمل"
+    },
     "ytdlpDesc": "الأداة الأساسية المطلوبة لهذا التطبيق",
     "version": "الإصدار",
     "path": "المسار",
@@ -153,6 +177,14 @@
     "appUpdateFailed": "فشل التحديث: {e}",
     "appIsLatest": "أنت تستخدم أحدث إصدار",
     "systemBinaryNotice": "تستخدم حاليًا yt-dlp المثبَّت على النظام. \"التحقق من التحديثات\" يُحدّث نسخة التطبيق فقط، ولا يؤثر على الملف التنفيذي قيد الاستخدام. بدّل \"أولوية مسار الأدوات\" أعلاه إلى \"التطبيق فقط\"، أو حدّث من خلال مدير حزم النظام."
+  },
+  "statusBar": {
+    "title": "حالة الأدوات الضرورية",
+    "checking": "جارٍ الفحص",
+    "notInstalled": "{tool} غير مثبت",
+    "status": "الحالة",
+    "source": "المصدر",
+    "activeDownloads": "قيد التنزيل {count}"
   },
   "detail": {
     "videoLink": "رابط الفيديو",
@@ -213,6 +245,7 @@
     "viewYi": "مليار"
   },
   "cookie": {
+    "settings": "إعدادات ملفات تعريف الارتباط",
     "desc": "بعض الفيديوهات تتطلب تسجيل الدخول. استخدم الكوكيز للمصادقة",
     "none": "بدون",
     "manual": "إدخال يدوي",

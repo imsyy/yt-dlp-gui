@@ -188,6 +188,14 @@
     "appIsLatest": "You are on the latest version",
     "systemBinaryNotice": "Currently using the system-installed yt-dlp. \"Check Update\" only updates the app-managed copy. Switch the path mode to \"App Only\" for updates to take effect."
   },
+  "statusBar": {
+    "title": "Required tool status",
+    "checking": "Checking",
+    "notInstalled": "{tool} is not installed",
+    "status": "Status",
+    "source": "Source",
+    "activeDownloads": "Downloading {count}"
+  },
   "detail": {
     "videoLink": "Video URL",
     "playlist": "Playlist",
@@ -251,6 +259,7 @@
     "viewYi": "B"
   },
   "cookie": {
+    "settings": "Cookie Settings",
     "desc": "Some videos require login to download. Use cookies for authentication",
     "none": "None",
     "manual": "Manual Input",

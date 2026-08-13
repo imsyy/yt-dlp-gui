@@ -78,6 +78,7 @@ const handleFetch = async () => {
     if (/err_ytdlp_not_installed/.test(msg)) {
       statusStore.showYtdlpSetupModal = true;
     } else if (/sign in|cookies/i.test(msg)) {
+      window.$message.warning(t("cookie.verificationDesc"));
       statusStore.showCookieModal = true;
     } else {
       showErrorDialog(msg);

@@ -100,6 +100,30 @@
     "installed": "Installé",
     "notInstalled": "Non installé",
     "checkUpdate": "Vérifier les mises à jour",
+    "toolManager": "Configuration requise",
+    "sourceManaged": "Géré par l’application",
+    "sourceSystem": "PATH système",
+    "installManaged": "Installer la version de l’application",
+    "updateNow": "Mettre à jour",
+    "systemManaged": "Géré par le système",
+    "systemManagedHint": "Mettez à jour FFmpeg système avec Homebrew ou le gestionnaire de paquets du système",
+    "cliManaged": "Chemin de ligne de commande",
+    "cliManagedHint": "Cet exécutable a été indiqué au démarrage par un argument de ligne de commande et ne sera pas modifié par l’application",
+    "ffmpegDesc": "Permet de fusionner l’audio et la vidéo, convertir les formats et traiter les métadonnées et sous-titres",
+    "toolStatusFailed": "Impossible de vérifier {tool} : {e}",
+    "toolInstallComplete": "Installation de {tool} terminée",
+    "toolUpdateComplete": "Mise à jour de {tool} terminée",
+    "toolUpdateAvailable": "Une mise à jour est disponible pour {tool}",
+    "toolUpdateConfirm": "Version actuelle : {current}. Dernière version : {latest}. Mettre à jour maintenant ?",
+    "toolUpdateCheckFailed": "Impossible de rechercher les mises à jour de {tool} : {e}",
+    "toolOperationFailed": "L’opération sur {tool} a échoué : {e}",
+    "toolValueCopied": "{label} copié",
+    "toolStage": {
+      "downloading": "Téléchargement des fichiers",
+      "installing": "Installation et vérification",
+      "updating": "Mise à jour de l’outil",
+      "complete": "Terminé"
+    },
     "ytdlpDesc": "Outil principal requis par cette application",
     "version": "Version",
     "path": "Chemin",
@@ -153,6 +177,14 @@
     "appUpdateFailed": "Échec de la mise à jour : {e}",
     "appIsLatest": "Vous utilisez la dernière version",
     "systemBinaryNotice": "Vous utilisez actuellement le yt-dlp installé sur le système. « Vérifier les mises à jour » ne met à jour que la copie gérée par l'app, ce qui n'affecte pas le binaire utilisé. Changez « Priorité du chemin des outils » ci-dessus en « Application uniquement » ou mettez à jour via le gestionnaire de paquets du système."
+  },
+  "statusBar": {
+    "title": "État des outils requis",
+    "checking": "Vérification",
+    "notInstalled": "{tool} n’est pas installé",
+    "status": "État",
+    "source": "Source",
+    "activeDownloads": "Téléchargements {count}"
   },
   "detail": {
     "videoLink": "URL de la vidéo",
@@ -213,6 +245,7 @@
     "viewYi": "Md"
   },
   "cookie": {
+    "settings": "Paramètres des cookies",
     "desc": "Certaines vidéos nécessitent une connexion. Utilisez des cookies pour vous authentifier",
     "none": "Aucun",
     "manual": "Saisie manuelle",

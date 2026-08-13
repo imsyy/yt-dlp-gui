@@ -188,6 +188,14 @@
     "appIsLatest": "当前已是最新版本",
     "systemBinaryNotice": "当前使用的是系统安装的 yt-dlp，「检测更新」只会更新应用管理的副本，不会影响实际使用的版本；请将上方「工具路径优先级」切换为「仅应用」，或通过系统包管理器更新"
   },
+  "statusBar": {
+    "title": "必要工具状态",
+    "checking": "检测中",
+    "notInstalled": "未安装 {tool}",
+    "status": "状态",
+    "source": "来源",
+    "activeDownloads": "下载中 {count}"
+  },
   "detail": {
     "videoLink": "视频链接",
     "playlist": "播放列表",
@@ -251,6 +259,7 @@
     "viewYi": "亿"
   },
   "cookie": {
+    "settings": "Cookie 设置",
     "desc": "部分视频需要登录后才能下载，可通过 Cookie 实现身份验证",
     "none": "不使用",
     "manual": "手动输入",

@@ -100,6 +100,30 @@
     "installed": "Installiert",
     "notInstalled": "Nicht installiert",
     "checkUpdate": "Auf Update prüfen",
+    "toolManager": "Erforderliche Konfiguration",
+    "sourceManaged": "Von der App verwaltet",
+    "sourceSystem": "System-PATH",
+    "installManaged": "App-Version installieren",
+    "updateNow": "Jetzt aktualisieren",
+    "systemManaged": "Vom System verwaltet",
+    "systemManagedHint": "System-FFmpeg über Homebrew oder den Paketmanager des Betriebssystems aktualisieren",
+    "cliManaged": "Befehlszeilenpfad",
+    "cliManagedHint": "Diese ausführbare Datei wurde beim Start per Befehlszeilenargument angegeben und wird von der App nicht verändert",
+    "ffmpegDesc": "Zum Zusammenführen von Audio und Video, Konvertieren von Formaten sowie Verarbeiten von Metadaten und Untertiteln",
+    "toolStatusFailed": "{tool} konnte nicht geprüft werden: {e}",
+    "toolInstallComplete": "{tool} wurde installiert",
+    "toolUpdateComplete": "{tool} wurde aktualisiert",
+    "toolUpdateAvailable": "Für {tool} ist ein Update verfügbar",
+    "toolUpdateConfirm": "Aktuelle Version: {current}. Neueste Version: {latest}. Jetzt aktualisieren?",
+    "toolUpdateCheckFailed": "Updates für {tool} konnten nicht geprüft werden: {e}",
+    "toolOperationFailed": "Vorgang für {tool} fehlgeschlagen: {e}",
+    "toolValueCopied": "{label} kopiert",
+    "toolStage": {
+      "downloading": "Dateien werden heruntergeladen",
+      "installing": "Installation und Prüfung",
+      "updating": "Tool wird aktualisiert",
+      "complete": "Abgeschlossen"
+    },
     "ytdlpDesc": "Kernwerkzeug, das diese App benötigt",
     "version": "Version",
     "path": "Pfad",
@@ -153,6 +177,14 @@
     "appUpdateFailed": "Update fehlgeschlagen: {e}",
     "appIsLatest": "Du verwendest die neueste Version",
     "systemBinaryNotice": "Aktuell wird das systemweit installierte yt-dlp verwendet. \"Nach Update suchen\" aktualisiert nur die von der App verwaltete Kopie und wirkt sich nicht auf die genutzte Binärdatei aus. Stelle oben \"Tool-Pfadpriorität\" auf \"Nur App\" oder aktualisiere über deinen Paketmanager."
+  },
+  "statusBar": {
+    "title": "Status erforderlicher Tools",
+    "checking": "Wird geprüft",
+    "notInstalled": "{tool} ist nicht installiert",
+    "status": "Status",
+    "source": "Quelle",
+    "activeDownloads": "Downloads {count}"
   },
   "detail": {
     "videoLink": "Video-URL",
@@ -213,6 +245,7 @@
     "viewYi": "Mrd."
   },
   "cookie": {
+    "settings": "Cookie-Einstellungen",
     "desc": "Manche Videos erfordern eine Anmeldung. Verwende Cookies zur Authentifizierung",
     "none": "Keine",
     "manual": "Manuelle Eingabe",

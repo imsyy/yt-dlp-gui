@@ -100,6 +100,30 @@
     "installed": "Đã cài",
     "notInstalled": "Chưa cài",
     "checkUpdate": "Kiểm tra cập nhật",
+    "toolManager": "Cấu hình cần thiết",
+    "sourceManaged": "Ứng dụng quản lý",
+    "sourceSystem": "PATH hệ thống",
+    "installManaged": "Cài bản của ứng dụng",
+    "updateNow": "Cập nhật ngay",
+    "systemManaged": "Hệ thống quản lý",
+    "systemManagedHint": "Hãy cập nhật FFmpeg hệ thống bằng Homebrew hoặc trình quản lý gói của hệ điều hành",
+    "cliManaged": "Đường dẫn dòng lệnh",
+    "cliManagedHint": "Tệp thực thi này được chỉ định bằng tham số dòng lệnh khi khởi động nên ứng dụng sẽ không sửa đổi",
+    "ffmpegDesc": "Dùng để ghép âm thanh và video, chuyển đổi định dạng, xử lý siêu dữ liệu và phụ đề",
+    "toolStatusFailed": "Không thể kiểm tra {tool}: {e}",
+    "toolInstallComplete": "Đã cài đặt xong {tool}",
+    "toolUpdateComplete": "Đã cập nhật xong {tool}",
+    "toolUpdateAvailable": "Có bản cập nhật cho {tool}",
+    "toolUpdateConfirm": "Phiên bản hiện tại: {current}. Phiên bản mới nhất: {latest}. Cập nhật ngay?",
+    "toolUpdateCheckFailed": "Không thể kiểm tra cập nhật cho {tool}: {e}",
+    "toolOperationFailed": "Thao tác với {tool} thất bại: {e}",
+    "toolValueCopied": "Đã sao chép {label}",
+    "toolStage": {
+      "downloading": "Đang tải tệp",
+      "installing": "Đang cài đặt và xác minh",
+      "updating": "Đang cập nhật công cụ",
+      "complete": "Hoàn tất"
+    },
     "ytdlpDesc": "Công cụ cốt lõi mà ứng dụng này yêu cầu",
     "version": "Phiên bản",
     "path": "Đường dẫn",
@@ -153,6 +177,14 @@
     "appUpdateFailed": "Cập nhật thất bại: {e}",
     "appIsLatest": "Bạn đang dùng phiên bản mới nhất",
     "systemBinaryNotice": "Đang sử dụng yt-dlp cài đặt trên hệ thống. \"Kiểm tra cập nhật\" chỉ cập nhật bản do ứng dụng quản lý và không ảnh hưởng đến tệp đang dùng. Hãy chuyển \"Ưu tiên đường dẫn công cụ\" ở trên sang \"Chỉ ứng dụng\" hoặc cập nhật bằng trình quản lý gói của hệ thống."
+  },
+  "statusBar": {
+    "title": "Trạng thái công cụ cần thiết",
+    "checking": "Đang kiểm tra",
+    "notInstalled": "Chưa cài {tool}",
+    "status": "Trạng thái",
+    "source": "Nguồn",
+    "activeDownloads": "Đang tải {count}"
   },
   "detail": {
     "videoLink": "URL video",
@@ -213,6 +245,7 @@
     "viewYi": "Tỷ"
   },
   "cookie": {
+    "settings": "Cài đặt cookie",
     "desc": "Một số video yêu cầu đăng nhập để tải. Dùng cookie để xác thực",
     "none": "Không",
     "manual": "Nhập thủ công",

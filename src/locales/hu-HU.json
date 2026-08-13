@@ -101,6 +101,30 @@
     "installed": "Telepítve",
     "notInstalled": "Nincs telepítve",
     "checkUpdate": "Frissítések keresése",
+    "toolManager": "Szükséges beállítások",
+    "sourceManaged": "Az alkalmazás kezeli",
+    "sourceSystem": "Rendszer PATH",
+    "installManaged": "Alkalmazásverzió telepítése",
+    "updateNow": "Frissítés most",
+    "systemManaged": "A rendszer kezeli",
+    "systemManagedHint": "A rendszer FFmpeg-verzióját a Homebrew vagy az operációs rendszer csomagkezelője segítségével frissítse",
+    "cliManaged": "Parancssori elérési út",
+    "cliManagedHint": "Ezt a futtatható fájlt indítási parancssori argumentum adta meg, ezért az alkalmazás nem módosítja",
+    "ffmpegDesc": "Hang és videó egyesítésére, formátumok átalakítására, metaadatok és feliratok feldolgozására szolgál",
+    "toolStatusFailed": "A(z) {tool} ellenőrzése sikertelen: {e}",
+    "toolInstallComplete": "A(z) {tool} telepítése befejeződött",
+    "toolUpdateComplete": "A(z) {tool} frissítése befejeződött",
+    "toolUpdateAvailable": "Frissítés érhető el ehhez: {tool}",
+    "toolUpdateConfirm": "Jelenlegi verzió: {current}. Legújabb verzió: {latest}. Frissíti most?",
+    "toolUpdateCheckFailed": "A(z) {tool} frissítésének ellenőrzése sikertelen: {e}",
+    "toolOperationFailed": "A(z) {tool} művelete sikertelen: {e}",
+    "toolValueCopied": "{label} másolva",
+    "toolStage": {
+      "downloading": "Fájlok letöltése",
+      "installing": "Telepítés és ellenőrzés",
+      "updating": "Eszköz frissítése",
+      "complete": "Kész"
+    },
     "ytdlpDesc": "Az alkalmazás futtatásához szükséges eszköz",
     "version": "Verzió",
     "path": "Elérési út",
@@ -161,6 +185,14 @@
     "appIsLatest": "Nincs elérhető frissítés",
     "systemBinaryNotice": "A „Frissítések keresése” gomb csak az alkalmazás saját változatát frissíti és jelenleg a rendszerszintű yt-dlp van használatban. Állítsa az elérési utak prioritását alkalmazás szerintire, ha a frissített változatot kívánja használni."
   },
+  "statusBar": {
+    "title": "Szükséges eszközök állapota",
+    "checking": "Ellenőrzés",
+    "notInstalled": "A(z) {tool} nincs telepítve",
+    "status": "Állapot",
+    "source": "Forrás",
+    "activeDownloads": "Letöltés alatt: {count}"
+  },
   "detail": {
     "videoLink": "Hivatkozás",
     "playlist": "Lejátszási lista",
@@ -220,6 +252,7 @@
     "viewYi": " M"
   },
   "cookie": {
+    "settings": "Cookie-beállítások",
     "desc": "Bizonyos videók letöltéséhez bejelentkezés szükséges. A hitelesítés sütikkel végezhető el",
     "none": "Nincs",
     "manual": "Megadás kézileg",

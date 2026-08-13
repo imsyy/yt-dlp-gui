@@ -8,14 +8,11 @@ const statusStore = useStatusStore();
   <n-modal
     v-model:show="statusStore.showCookieModal"
     preset="card"
-    :title="$t('cookie.verificationRequired')"
+    :title="$t('cookie.settings')"
     size="small"
     :bordered="false"
     :style="{ width: '480px' }"
   >
-    <n-flex vertical :size="12">
-      <n-alert type="warning" :bordered="false">{{ $t("cookie.verificationDesc") }}</n-alert>
-      <CookieCard />
-    </n-flex>
+    <CookieCard />
   </n-modal>
 </template>
