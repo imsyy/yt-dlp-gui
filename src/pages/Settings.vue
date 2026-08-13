@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import type { YtdlpStatus, DenoStatus, DownloadProgress } from "@/types";
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
 import { check } from "@tauri-apps/plugin-updater";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
@@ -55,115 +53,11 @@ const notifyModeOptions = computed(() => [
   { label: t("settings.all"), value: "all" },
 ]);
 
-const binaryPathResolveModeOptions = computed(() => [
-  { label: t("settings.pathModeSystemPreferred"), value: "system-preferred" },
-  { label: t("settings.pathModeAppOnly"), value: "app-only" },
-]);
-
-const applyBinaryPathResolveMode = async () => {
-  await invoke("set_binary_path_resolve_mode", {
-    mode: settingStore.binaryPathResolveMode,
-  });
-};
-
 const applyYoutubeExtractorArgs = async () => {
   await invoke("set_youtube_extractor_args", {
     poToken: settingStore.youtubePoToken,
     visitorData: settingStore.youtubeVisitorData,
   });
-};
-
-const ytdlpStatus = ref<YtdlpStatus | null>(null);
-const ytdlpChecking = ref(true);
-const ytdlpDownloading = ref(false);
-const ytdlpDownloadPercent = ref(0);
-const ytdlpUpdating = ref(false);
-
-/** 检查 yt-dlp 安装状态与版本 */
-const checkYtdlpStatus = async () => {
-  ytdlpChecking.value = true;
-  try {
-    ytdlpStatus.value = await invoke<YtdlpStatus>("get_ytdlp_status");
-  } catch (e) {
-    // ignore
-  } finally {
-    ytdlpChecking.value = false;
-  }
-};
-
-/** 下载 yt-dlp 并监听进度事件 */
-const handleDownloadYtdlp = async () => {
-  ytdlpDownloading.value = true;
-  ytdlpDownloadPercent.value = 0;
-  const unlisten = await listen<DownloadProgress>("ytdlp-download-progress", (event) => {
-    ytdlpDownloadPercent.value = event.payload.percent;
-  });
-  try {
-    await invoke("download_ytdlp");
-    window.$message.success(t("settings.ytdlpDownloadComplete"));
-    await checkYtdlpStatus();
-  } catch (e: unknown) {
-    window.$message.error(t("common.downloadFailed", { e }));
-  } finally {
-    unlisten();
-    ytdlpDownloading.value = false;
-  }
-};
-
-/** 检查并更新 yt-dlp 到最新版本 */
-const handleUpdateYtdlp = async () => {
-  ytdlpUpdating.value = true;
-  try {
-    const result = await invoke<string>("update_ytdlp");
-    if (result.includes("up to date")) {
-      window.$message.success(t("settings.alreadyLatest"));
-    } else if (result.includes("Updated")) {
-      window.$message.success(t("settings.updatedToLatest"));
-      await checkYtdlpStatus();
-    } else {
-      window.$message.success(t("settings.alreadyLatest"));
-    }
-  } catch (e: unknown) {
-    window.$message.error(t("settings.updateFailed", { e }));
-  } finally {
-    ytdlpUpdating.value = false;
-  }
-};
-
-const denoStatus = ref<DenoStatus | null>(null);
-const denoChecking = ref(true);
-const denoDownloading = ref(false);
-const denoDownloadPercent = ref(0);
-
-/** 检查 Deno 安装状态与版本 */
-const checkDenoStatus = async () => {
-  denoChecking.value = true;
-  try {
-    denoStatus.value = await invoke<DenoStatus>("get_deno_status");
-  } catch (e) {
-    // ignore
-  } finally {
-    denoChecking.value = false;
-  }
-};
-
-/** 下载 Deno 并监听进度事件 */
-const handleDownloadDeno = async () => {
-  denoDownloading.value = true;
-  denoDownloadPercent.value = 0;
-  const unlisten = await listen<DownloadProgress>("deno-download-progress", (event) => {
-    denoDownloadPercent.value = event.payload.percent;
-  });
-  try {
-    await invoke("download_deno");
-    window.$message.success(t("settings.denoDownloadComplete"));
-    await checkDenoStatus();
-  } catch (e: unknown) {
-    window.$message.error(t("common.downloadFailed", { e }));
-  } finally {
-    unlisten();
-    denoDownloading.value = false;
-  }
 };
 
 /** 检查应用更新 */
@@ -187,27 +81,11 @@ const handleCheckAppUpdate = async () => {
   }
 };
 
-/** 刷新所有依赖状态 */
-const refreshAll = () => {
-  checkYtdlpStatus();
-  checkDenoStatus();
-};
-
 onMounted(async () => {
   platform.value = await invoke<string>("get_platform");
   appVersion.value = await getVersion();
-  await applyBinaryPathResolveMode();
   await applyYoutubeExtractorArgs();
-  refreshAll();
 });
-
-watch(
-  () => settingStore.binaryPathResolveMode,
-  async () => {
-    await applyBinaryPathResolveMode();
-    refreshAll();
-  },
-);
 
 // PO Token / visitor_data 变更时同步到后端；不刷新状态（无需重新探测 yt-dlp）。
 watch(
@@ -222,165 +100,9 @@ watch(
   <div class="settings-page">
     <n-flex align="center" justify="space-between" style="margin-bottom: 20px">
       <n-h2 style="margin: 0">{{ $t("settings.title") }}</n-h2>
-      <n-button size="small" strong secondary @click="refreshAll">
-        <template #icon>
-          <n-icon>
-            <icon-mdi-refresh />
-          </n-icon>
-        </template>
-        {{ $t("common.refresh") }}
-      </n-button>
     </n-flex>
 
-    <n-card size="small" class="section-card">
-      <div class="info-row">
-        <n-tooltip placement="right" :style="{ maxWidth: '320px' }">
-          <template #trigger>
-            <span class="info-label">{{ $t("settings.pathResolveMode") }}</span>
-          </template>
-          {{ $t("settings.pathResolveModeHint") }}
-        </n-tooltip>
-        <n-select
-          v-model:value="settingStore.binaryPathResolveMode"
-          :options="binaryPathResolveModeOptions"
-          style="width: 160px"
-          size="small"
-        />
-      </div>
-    </n-card>
-
-    <n-card title="yt-dlp" size="small" class="section-card">
-      <template #header-extra>
-        <n-flex align="center" :size="8">
-          <n-tag v-if="!ytdlpChecking" :type="ytdlpStatus?.installed ? 'success' : 'error'" round>
-            {{ ytdlpStatus?.installed ? $t("settings.installed") : $t("settings.notInstalled") }}
-          </n-tag>
-          <n-button
-            v-if="ytdlpStatus?.installed"
-            :loading="ytdlpUpdating"
-            strong
-            secondary
-            round
-            size="small"
-            @click="handleUpdateYtdlp"
-          >
-            {{ $t("settings.checkUpdate") }}
-          </n-button>
-          <n-button
-            v-if="ytdlpStatus && !ytdlpStatus.installed"
-            :loading="ytdlpDownloading"
-            :disabled="ytdlpDownloading"
-            type="primary"
-            size="small"
-            strong
-            secondary
-            round
-            @click="handleDownloadYtdlp"
-          >
-            {{ $t("common.download") }}
-          </n-button>
-        </n-flex>
-      </template>
-
-      <n-spin :show="ytdlpChecking">
-        <n-flex vertical :size="12">
-          <n-text depth="3" style="font-size: 13px">
-            {{ $t("settings.ytdlpDesc") }}
-          </n-text>
-
-          <n-alert
-            v-if="ytdlpStatus?.installed && ytdlpStatus.isManaged === false"
-            type="warning"
-            :bordered="false"
-            :show-icon="false"
-            style="font-size: 12px"
-          >
-            {{ $t("settings.systemBinaryNotice") }}
-          </n-alert>
-
-          <div class="info-list">
-            <div class="info-row">
-              <span class="info-label">{{ $t("settings.version") }}</span>
-              <n-text code>{{ ytdlpStatus?.version || "—" }}</n-text>
-            </div>
-            <div class="info-row">
-              <span class="info-label">{{ $t("settings.path") }}</span>
-              <n-ellipsis :line-clamp="1" :tooltip="{ width: 360 }">
-                {{ ytdlpStatus?.path || "—" }}
-              </n-ellipsis>
-            </div>
-          </div>
-
-          <n-collapse-transition :show="ytdlpDownloading">
-            <n-progress
-              type="line"
-              :percentage="Math.round(ytdlpDownloadPercent)"
-              :processing="true"
-              indicator-placement="inside"
-              :height="20"
-              :border-radius="4"
-              style="margin-top: 4px"
-            />
-          </n-collapse-transition>
-        </n-flex>
-      </n-spin>
-    </n-card>
-
-    <n-card :title="$t('settings.denoTitle')" size="small" class="section-card">
-      <template #header-extra>
-        <n-flex align="center" :size="8">
-          <n-tag v-if="!denoChecking" :type="denoStatus?.installed ? 'success' : 'error'" round>
-            {{ denoStatus?.installed ? $t("settings.installed") : $t("settings.notInstalled") }}
-          </n-tag>
-          <n-button
-            v-if="denoStatus && !denoStatus.installed"
-            :loading="denoDownloading"
-            :disabled="denoDownloading"
-            type="primary"
-            size="small"
-            strong
-            secondary
-            round
-            @click="handleDownloadDeno"
-          >
-            {{ $t("common.download") }}
-          </n-button>
-        </n-flex>
-      </template>
-
-      <n-spin :show="denoChecking">
-        <n-flex vertical :size="12">
-          <n-text depth="3" style="font-size: 13px">
-            {{ $t("settings.denoDesc") }}
-          </n-text>
-
-          <div class="info-list">
-            <div class="info-row">
-              <span class="info-label">{{ $t("settings.version") }}</span>
-              <n-text code>{{ denoStatus?.version || "—" }}</n-text>
-            </div>
-            <div class="info-row">
-              <span class="info-label">{{ $t("settings.path") }}</span>
-              <n-ellipsis :line-clamp="1" :tooltip="{ width: 360 }">
-                {{ denoStatus?.path || "—" }}
-              </n-ellipsis>
-            </div>
-          </div>
-
-          <n-collapse-transition :show="denoDownloading">
-            <n-progress
-              type="line"
-              :percentage="Math.round(denoDownloadPercent)"
-              :processing="true"
-              indicator-placement="inside"
-              :height="20"
-              :border-radius="4"
-              style="margin-top: 4px"
-            />
-          </n-collapse-transition>
-        </n-flex>
-      </n-spin>
-    </n-card>
+    <ToolManager />
 
     <n-card :title="$t('settings.youtubeAdvanced')" size="small" class="section-card">
       <n-flex vertical :size="12">

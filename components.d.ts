@@ -95,7 +95,6 @@ declare module 'vue' {
     NScrollbar: typeof import('naive-ui')['NScrollbar']
     NSelect: typeof import('naive-ui')['NSelect']
     NSkeleton: typeof import('naive-ui')['NSkeleton']
-    NSpin: typeof import('naive-ui')['NSpin']
     NSwitch: typeof import('naive-ui')['NSwitch']
     NTabPane: typeof import('naive-ui')['NTabPane']
     NTabs: typeof import('naive-ui')['NTabs']
@@ -108,6 +107,7 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     SetupModal: typeof import('./src/components/SetupModal.vue')['default']
     SubtitleCard: typeof import('./src/components/home/SubtitleCard.vue')['default']
+    ToolManager: typeof import('./src/components/ToolManager.vue')['default']
     UpdateModal: typeof import('./src/components/UpdateModal.vue')['default']
     VideoInfoCard: typeof import('./src/components/home/VideoInfoCard.vue')['default']
   }

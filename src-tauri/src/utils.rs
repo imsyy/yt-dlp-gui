@@ -2,39 +2,75 @@ use std::path::PathBuf;
 use std::sync::{OnceLock, RwLock};
 use tauri::{AppHandle, Manager};
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ToolSource {
+    Managed,
+    System,
+}
+
+impl ToolSource {
+    fn parse(value: &str) -> Result<Self, String> {
+        match value {
+            "managed" => Ok(Self::Managed),
+            "system" => Ok(Self::System),
+            _ => Err(format!("err_invalid_tool_source:{}", value)),
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Managed => "managed",
+            Self::System => "system",
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
-enum BinaryPathResolveMode {
-    SystemPreferred,
-    AppOnly,
+struct ToolSources {
+    ytdlp: ToolSource,
+    deno: ToolSource,
+    ffmpeg: ToolSource,
 }
 
-static BINARY_PATH_RESOLVE_MODE: OnceLock<RwLock<BinaryPathResolveMode>> = OnceLock::new();
-
-fn get_path_resolve_mode() -> BinaryPathResolveMode {
-    let lock = BINARY_PATH_RESOLVE_MODE
-        .get_or_init(|| RwLock::new(BinaryPathResolveMode::AppOnly));
-    lock.read()
-        .map(|v| *v)
-        .unwrap_or(BinaryPathResolveMode::AppOnly)
+impl Default for ToolSources {
+    fn default() -> Self {
+        Self {
+            ytdlp: ToolSource::Managed,
+            deno: ToolSource::Managed,
+            ffmpeg: ToolSource::System,
+        }
+    }
 }
 
-/// 设置二进制路径解析模式
-/// - app-only: 仅使用应用管理路径（默认；保证「检测更新」始终对实际使用的副本生效）
-/// - system-preferred: 优先系统安装路径，其次应用管理路径
-pub fn set_binary_path_resolve_mode(mode: &str) -> Result<(), String> {
-    let parsed = match mode {
-        "system-preferred" => BinaryPathResolveMode::SystemPreferred,
-        "app-only" => BinaryPathResolveMode::AppOnly,
-        _ => return Err(format!("err_invalid_path_mode:{}", mode)),
+static TOOL_SOURCES: OnceLock<RwLock<ToolSources>> = OnceLock::new();
+
+fn tool_sources_lock() -> &'static RwLock<ToolSources> {
+    TOOL_SOURCES.get_or_init(|| RwLock::new(ToolSources::default()))
+}
+
+pub fn set_tool_sources(ytdlp: &str, deno: &str, ffmpeg: &str) -> Result<(), String> {
+    let sources = ToolSources {
+        ytdlp: ToolSource::parse(ytdlp)?,
+        deno: ToolSource::parse(deno)?,
+        ffmpeg: ToolSource::parse(ffmpeg)?,
     };
-
-    let lock = BINARY_PATH_RESOLVE_MODE
-        .get_or_init(|| RwLock::new(BinaryPathResolveMode::AppOnly));
-    let mut guard = lock
+    let mut guard = tool_sources_lock()
         .write()
-        .map_err(|e| format!("err_set_path_mode:{}", e))?;
-    *guard = parsed;
+        .map_err(|e| format!("err_set_tool_sources:{}", e))?;
+    *guard = sources;
     Ok(())
+}
+
+pub fn get_tool_source(tool: &str) -> Result<ToolSource, String> {
+    let guard = tool_sources_lock()
+        .read()
+        .map_err(|e| format!("err_get_tool_sources:{}", e))?;
+    match tool {
+        "yt-dlp" => Ok(guard.ytdlp),
+        "deno" => Ok(guard.deno),
+        "ffmpeg" => Ok(guard.ffmpeg),
+        _ => Err(format!("err_unknown_tool:{}", tool)),
+    }
 }
 
 // ========== YouTube extractor 参数（po_token / visitor_data）==========
@@ -99,17 +135,39 @@ fn get_managed_executable_path(app: &AppHandle, file_name: &str) -> Result<PathB
 /// 使用 `which` crate 而非派生子进程，避免 Windows 控制台代码页（GBK 等）
 /// 输出非 UTF-8 时解析失败；同时自动处理 PATHEXT 等平台细节。
 fn find_system_executable(name: &str) -> Option<PathBuf> {
-    which::which(name).ok().filter(|path| path.exists())
+    if let Some(path) = which::which(name).ok().filter(|path| path.exists()) {
+        return Some(path);
+    }
+
+    // GUI 应用在 macOS 上通常拿不到 shell 初始化后的 PATH，需要显式探测包管理器目录。
+    #[cfg(target_os = "macos")]
+    for dir in ["/opt/homebrew/bin", "/usr/local/bin", "/opt/local/bin"] {
+        let candidate = PathBuf::from(dir).join(name);
+        if candidate.exists() {
+            return Some(candidate);
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    for dir in ["/usr/local/bin", "/usr/bin", "/snap/bin"] {
+        let candidate = PathBuf::from(dir).join(name);
+        if candidate.exists() {
+            return Some(candidate);
+        }
+    }
+
+    None
 }
 
-/// 解析可执行文件路径
-/// - system-preferred: 优先系统安装路径，其次应用管理路径
-/// - app-only: 仅应用管理路径
-fn resolve_executable_path(managed_path: PathBuf, system_name: &str) -> PathBuf {
-    match get_path_resolve_mode() {
-        BinaryPathResolveMode::AppOnly => managed_path,
-        BinaryPathResolveMode::SystemPreferred => {
-            find_system_executable(system_name).unwrap_or(managed_path)
+fn resolve_executable_path(
+    managed_path: PathBuf,
+    system_name: &str,
+    source: ToolSource,
+) -> PathBuf {
+    match source {
+        ToolSource::Managed => managed_path,
+        ToolSource::System => {
+            find_system_executable(system_name).unwrap_or_else(|| PathBuf::from(system_name))
         }
     }
 }
@@ -126,7 +184,11 @@ pub fn get_managed_ytdlp_path(app: &AppHandle) -> Result<PathBuf, String> {
 /// 获取 yt-dlp 可执行文件路径
 pub fn get_ytdlp_path(app: &AppHandle) -> Result<PathBuf, String> {
     let managed_path = get_managed_ytdlp_path(app)?;
-    Ok(resolve_executable_path(managed_path, "yt-dlp"))
+    Ok(resolve_executable_path(
+        managed_path,
+        "yt-dlp",
+        get_tool_source("yt-dlp")?,
+    ))
 }
 
 /// 获取应用管理的 Deno 路径（应用数据目录）
@@ -141,7 +203,71 @@ pub fn get_managed_deno_path(app: &AppHandle) -> Result<PathBuf, String> {
 /// 获取 Deno 可执行文件路径
 pub fn get_deno_path(app: &AppHandle) -> Result<PathBuf, String> {
     let managed_path = get_managed_deno_path(app)?;
-    Ok(resolve_executable_path(managed_path, "deno"))
+    Ok(resolve_executable_path(
+        managed_path,
+        "deno",
+        get_tool_source("deno")?,
+    ))
+}
+
+pub fn get_managed_ffmpeg_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    let app_data = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("err_app_data_dir:{}", e))?;
+    let dir = app_data.join("ffmpeg");
+    std::fs::create_dir_all(&dir).map_err(|e| format!("err_create_dir:{}", e))?;
+    Ok(dir)
+}
+
+pub fn get_managed_ffmpeg_path(app: &AppHandle) -> Result<PathBuf, String> {
+    let name = if cfg!(target_os = "windows") {
+        "ffmpeg.exe"
+    } else {
+        "ffmpeg"
+    };
+    Ok(get_managed_ffmpeg_dir(app)?.join(name))
+}
+
+pub fn get_managed_ffprobe_path(app: &AppHandle) -> Result<PathBuf, String> {
+    let name = if cfg!(target_os = "windows") {
+        "ffprobe.exe"
+    } else {
+        "ffprobe"
+    };
+    Ok(get_managed_ffmpeg_dir(app)?.join(name))
+}
+
+pub fn get_ffmpeg_path(app: &AppHandle) -> Result<PathBuf, String> {
+    Ok(resolve_executable_path(
+        get_managed_ffmpeg_path(app)?,
+        "ffmpeg",
+        get_tool_source("ffmpeg")?,
+    ))
+}
+
+pub fn get_ffprobe_path(app: &AppHandle) -> Result<PathBuf, String> {
+    Ok(resolve_executable_path(
+        get_managed_ffprobe_path(app)?,
+        "ffprobe",
+        get_tool_source("ffmpeg")?,
+    ))
+}
+
+/// 将当前选择的 FFmpeg 目录显式交给 yt-dlp，解决 GUI 进程 PATH 不完整的问题。
+pub fn build_ffmpeg_location_args(app: &AppHandle) -> Vec<String> {
+    let Ok(ffmpeg_path) = get_ffmpeg_path(app) else {
+        return vec![];
+    };
+    if !ffmpeg_path.exists() {
+        return vec![];
+    }
+    let location = ffmpeg_path
+        .parent()
+        .unwrap_or(&ffmpeg_path)
+        .to_string_lossy()
+        .to_string();
+    vec!["--ffmpeg-location".to_string(), location]
 }
 
 /// 获取 Cookie 文件路径（存放在应用数据目录下）
@@ -202,7 +328,11 @@ pub fn build_js_runtime_args(app: &AppHandle) -> Vec<String> {
 /// 获取 Deno 下载地址（根据平台和架构）
 pub fn get_deno_download_url() -> &'static str {
     if cfg!(target_os = "windows") {
-        "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip"
+        if cfg!(target_arch = "aarch64") {
+            "https://github.com/denoland/deno/releases/latest/download/deno-aarch64-pc-windows-msvc.zip"
+        } else {
+            "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-pc-windows-msvc.zip"
+        }
     } else if cfg!(target_os = "macos") {
         if cfg!(target_arch = "aarch64") {
             "https://github.com/denoland/deno/releases/latest/download/deno-aarch64-apple-darwin.zip"
@@ -210,6 +340,55 @@ pub fn get_deno_download_url() -> &'static str {
             "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-apple-darwin.zip"
         }
     } else {
-        "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-unknown-linux-gnu.zip"
+        if cfg!(target_arch = "aarch64") {
+            "https://github.com/denoland/deno/releases/latest/download/deno-aarch64-unknown-linux-gnu.zip"
+        } else {
+            "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-unknown-linux-gnu.zip"
+        }
+    }
+}
+
+pub fn get_ffmpeg_download_urls() -> [(&'static str, &'static str); 2] {
+    let platform = if cfg!(target_os = "windows") {
+        "win32-x64"
+    } else if cfg!(target_os = "macos") {
+        if cfg!(target_arch = "aarch64") {
+            "darwin-arm64"
+        } else {
+            "darwin-x64"
+        }
+    } else if cfg!(target_arch = "aarch64") {
+        "linux-arm64"
+    } else if cfg!(target_arch = "arm") {
+        "linux-arm"
+    } else {
+        "linux-x64"
+    };
+
+    match platform {
+        "darwin-arm64" => [
+            ("ffmpeg", "https://github.com/eugeneware/ffmpeg-static/releases/latest/download/ffmpeg-darwin-arm64"),
+            ("ffprobe", "https://github.com/eugeneware/ffmpeg-static/releases/latest/download/ffprobe-darwin-arm64"),
+        ],
+        "darwin-x64" => [
+            ("ffmpeg", "https://github.com/eugeneware/ffmpeg-static/releases/latest/download/ffmpeg-darwin-x64"),
+            ("ffprobe", "https://github.com/eugeneware/ffmpeg-static/releases/latest/download/ffprobe-darwin-x64"),
+        ],
+        "linux-arm64" => [
+            ("ffmpeg", "https://github.com/eugeneware/ffmpeg-static/releases/latest/download/ffmpeg-linux-arm64"),
+            ("ffprobe", "https://github.com/eugeneware/ffmpeg-static/releases/latest/download/ffprobe-linux-arm64"),
+        ],
+        "linux-arm" => [
+            ("ffmpeg", "https://github.com/eugeneware/ffmpeg-static/releases/latest/download/ffmpeg-linux-arm"),
+            ("ffprobe", "https://github.com/eugeneware/ffmpeg-static/releases/latest/download/ffprobe-linux-arm"),
+        ],
+        "win32-x64" => [
+            ("ffmpeg", "https://github.com/eugeneware/ffmpeg-static/releases/latest/download/ffmpeg-win32-x64"),
+            ("ffprobe", "https://github.com/eugeneware/ffmpeg-static/releases/latest/download/ffprobe-win32-x64"),
+        ],
+        _ => [
+            ("ffmpeg", "https://github.com/eugeneware/ffmpeg-static/releases/latest/download/ffmpeg-linux-x64"),
+            ("ffprobe", "https://github.com/eugeneware/ffmpeg-static/releases/latest/download/ffprobe-linux-x64"),
+        ],
     }
 }

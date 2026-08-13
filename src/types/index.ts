@@ -1,16 +1,23 @@
-export interface YtdlpStatus {
+export type ToolSource = "managed" | "system";
+
+export interface ToolStatus {
   installed: boolean;
   version: string;
   path: string;
-  /** 当前实际使用的是应用管理副本（true）还是系统安装版本（false） */
+  source: ToolSource;
   isManaged: boolean;
+  canUpdate: boolean;
 }
 
-export interface DenoStatus {
-  installed: boolean;
-  version: string;
-  path: string;
-  isManaged: boolean;
+export type YtdlpStatus = ToolStatus;
+export type DenoStatus = ToolStatus;
+export type FfmpegStatus = ToolStatus;
+
+export interface ToolOperationProgress {
+  tool: "yt-dlp" | "deno" | "ffmpeg";
+  operation: "install" | "update";
+  stage: "downloading" | "installing" | "updating" | "complete";
+  percent: number | null;
 }
 
 export interface DownloadProgress {

@@ -9,7 +9,7 @@ use tauri::{AppHandle, Emitter};
 use tokio::io::AsyncBufReadExt;
 
 use super::common;
-use super::{DenoStatus, YtdlpStatus};
+use super::{ToolProgress, ToolStatus};
 
 /// HTTP 下载超时时间（30 分钟，用于大文件下载）
 const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(1800);
@@ -71,10 +71,10 @@ pub fn get_platform() -> String {
     }
 }
 
-/// 设置 yt-dlp / Deno 路径解析模式
+/// 设置三个外部工具各自的来源；选择是严格的，不再隐式回退到另一来源。
 #[tauri::command]
-pub fn set_binary_path_resolve_mode(mode: String) -> Result<(), String> {
-    utils::set_binary_path_resolve_mode(&mode)
+pub fn set_tool_sources(ytdlp: String, deno: String, ffmpeg: String) -> Result<(), String> {
+    utils::set_tool_sources(&ytdlp, &deno, &ffmpeg)
 }
 
 /// 设置 YouTube 提取器参数（PO Token / visitor_data），用于绕过 YouTube 403 / 限流
@@ -83,49 +83,105 @@ pub fn set_youtube_extractor_args(po_token: String, visitor_data: String) -> Res
     utils::set_youtube_extractor_args(&po_token, &visitor_data)
 }
 
-// ========== yt-dlp 管理 ==========
+// ========== 工具状态与进度 ==========
 
-/// 获取 yt-dlp 安装状态和版本
-#[tauri::command]
-pub async fn get_ytdlp_status(app: AppHandle) -> Result<YtdlpStatus, String> {
-    let ytdlp_path = utils::get_ytdlp_path(&app)?;
-    let managed_path = utils::get_managed_ytdlp_path(&app)?;
-    let is_managed = ytdlp_path == managed_path;
+fn emit_tool_progress(
+    app: &AppHandle,
+    tool: &str,
+    operation: &str,
+    stage: &str,
+    percent: Option<f64>,
+) {
+    let _ = app.emit(
+        "tool-operation-progress",
+        ToolProgress {
+            tool: tool.to_string(),
+            operation: operation.to_string(),
+            stage: stage.to_string(),
+            percent,
+        },
+    );
+}
 
-    if !ytdlp_path.exists() {
-        return Ok(YtdlpStatus {
+async fn build_tool_status(
+    tool: &str,
+    path: PathBuf,
+    managed_path: PathBuf,
+    version_arg: &str,
+) -> Result<ToolStatus, String> {
+    let source = utils::get_tool_source(tool)?;
+    let installed = path.exists();
+    if !installed {
+        return Ok(ToolStatus {
             installed: false,
             version: String::new(),
-            path: ytdlp_path.to_string_lossy().to_string(),
-            is_managed,
+            path: path.to_string_lossy().to_string(),
+            source: source.as_str().to_string(),
+            is_managed: source == utils::ToolSource::Managed,
+            can_update: false,
         });
     }
 
-    let mut cmd = tokio::process::Command::new(&ytdlp_path);
-    cmd.arg("--version")
+    let mut cmd = tokio::process::Command::new(&path);
+    cmd.arg(version_arg)
         .env("PYTHONUTF8", "1")
         .env("PYTHONIOENCODING", "utf-8");
     #[cfg(target_os = "windows")]
     cmd.creation_flags(CREATE_NO_WINDOW);
-
     let output = cmd
         .output()
         .await
-        .map_err(|e| format!("err_run_ytdlp:{}", e))?;
+        .map_err(|e| format!("err_run_tool:{}:{}", tool, e))?;
+    let raw = if output.stdout.is_empty() {
+        &output.stderr
+    } else {
+        &output.stdout
+    };
+    let first_line = String::from_utf8_lossy(raw)
+        .lines()
+        .next()
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    let version = if tool == "ffmpeg" {
+        first_line
+            .strip_prefix("ffmpeg version ")
+            .unwrap_or(&first_line)
+            .split_whitespace()
+            .next()
+            .unwrap_or("")
+            .to_string()
+    } else if tool == "deno" {
+        first_line
+            .strip_prefix("deno ")
+            .unwrap_or(&first_line)
+            .to_string()
+    } else {
+        first_line
+    };
 
-    let version = String::from_utf8_lossy(&output.stdout).trim().to_string();
-
-    Ok(YtdlpStatus {
-        installed: true,
+    Ok(ToolStatus {
+        installed: output.status.success(),
         version,
-        path: ytdlp_path.to_string_lossy().to_string(),
-        is_managed,
+        path: path.to_string_lossy().to_string(),
+        source: source.as_str().to_string(),
+        is_managed: path == managed_path,
+        can_update: source == utils::ToolSource::Managed || tool != "ffmpeg",
     })
 }
 
-/// 下载 yt-dlp 可执行文件
+// ========== yt-dlp 管理 ==========
+
+/// 获取 yt-dlp 安装状态和版本
 #[tauri::command]
-pub async fn download_ytdlp(app: AppHandle) -> Result<(), String> {
+pub async fn get_ytdlp_status(app: AppHandle) -> Result<ToolStatus, String> {
+    let ytdlp_path = utils::get_ytdlp_path(&app)?;
+    let managed_path = utils::get_managed_ytdlp_path(&app)?;
+    build_tool_status("yt-dlp", ytdlp_path, managed_path, "--version").await
+}
+
+async fn download_ytdlp_impl(app: AppHandle, operation: &str) -> Result<(), String> {
+    emit_tool_progress(&app, "yt-dlp", operation, "downloading", Some(0.0));
     let ytdlp_path = utils::get_managed_ytdlp_path(&app)?;
     let temp_path = executable_temp_path(&ytdlp_path, "download")?;
     let url = utils::get_ytdlp_download_url();
@@ -182,6 +238,7 @@ pub async fn download_ytdlp(app: AppHandle) -> Result<(), String> {
                 "total": total_size,
             }),
         );
+        emit_tool_progress(&app, "yt-dlp", operation, "downloading", Some(percent));
     }
 
     tokio::io::AsyncWriteExt::shutdown(&mut file)
@@ -225,20 +282,34 @@ pub async fn download_ytdlp(app: AppHandle) -> Result<(), String> {
         }
     }
 
+    emit_tool_progress(&app, "yt-dlp", operation, "installing", None);
     replace_executable(&temp_path, &ytdlp_path)?;
+    emit_tool_progress(&app, "yt-dlp", operation, "complete", Some(100.0));
 
     Ok(())
 }
 
-/// 更新 yt-dlp 到最新版本（始终更新应用管理的副本，而非系统安装版）
+/// 下载 yt-dlp 可执行文件
+#[tauri::command]
+pub async fn download_ytdlp(app: AppHandle) -> Result<(), String> {
+    download_ytdlp_impl(app, "install").await
+}
+
+/// 更新当前选择的 yt-dlp；应用版本原子替换，系统版本使用其内置更新器。
 #[tauri::command]
 pub async fn update_ytdlp(app: AppHandle) -> Result<String, String> {
-    // 系统安装的 yt-dlp 通常在受保护目录，`-U` 自更新会因权限失败；
-    // 这里只更新应用数据目录下的副本，与 download_ytdlp 保持一致。
-    let ytdlp_path = utils::get_managed_ytdlp_path(&app)?;
+    let source = utils::get_tool_source("yt-dlp")?;
+    if source == utils::ToolSource::Managed {
+        download_ytdlp_impl(app, "update").await?;
+        return Ok("Updated managed yt-dlp".to_string());
+    }
+
+    let ytdlp_path = utils::get_ytdlp_path(&app)?;
     if !ytdlp_path.exists() {
         return Err("err_ytdlp_not_installed".to_string());
     }
+
+    emit_tool_progress(&app, "yt-dlp", "update", "updating", None);
 
     let mut cmd = tokio::process::Command::new(&ytdlp_path);
     cmd.arg("-U")
@@ -289,6 +360,7 @@ pub async fn update_ytdlp(app: AppHandle) -> Result<String, String> {
         .map_err(|e| format!("err_process:{}", e))?;
 
     if status.success() {
+        emit_tool_progress(&app, "yt-dlp", "update", "complete", Some(100.0));
         Ok(format!("{}\n{}", stdout_out, stderr_out).trim().to_string())
     } else {
         Err(format!("err_update_failed:{}", stderr_out.trim()))
@@ -378,57 +450,16 @@ pub async fn install_plugin(app: AppHandle, url: String) -> Result<(), String> {
 
 /// 获取 Deno 安装状态和版本
 #[tauri::command]
-pub async fn get_deno_status(app: AppHandle) -> Result<DenoStatus, String> {
+pub async fn get_deno_status(app: AppHandle) -> Result<ToolStatus, String> {
     let deno_path = utils::get_deno_path(&app)?;
     let managed_path = utils::get_managed_deno_path(&app)?;
-    let is_managed = deno_path == managed_path;
-
-    if !deno_path.exists() {
-        return Ok(DenoStatus {
-            installed: false,
-            version: String::new(),
-            path: deno_path.to_string_lossy().to_string(),
-            is_managed,
-        });
-    }
-
-    let mut cmd = tokio::process::Command::new(&deno_path);
-    cmd.arg("--version");
-    #[cfg(target_os = "windows")]
-    cmd.creation_flags(CREATE_NO_WINDOW);
-
-    let output = cmd.output().await;
-
-    match output {
-        Ok(out) if out.status.success() => {
-            let version_str = String::from_utf8_lossy(&out.stdout).trim().to_string();
-            let version = version_str
-                .lines()
-                .next()
-                .unwrap_or("")
-                .replace("deno ", "")
-                .trim()
-                .to_string();
-            Ok(DenoStatus {
-                installed: true,
-                version,
-                path: deno_path.to_string_lossy().to_string(),
-                is_managed,
-            })
-        }
-        _ => Ok(DenoStatus {
-            installed: true,
-            version: String::new(),
-            path: deno_path.to_string_lossy().to_string(),
-            is_managed,
-        }),
-    }
+    build_tool_status("deno", deno_path, managed_path, "--version").await
 }
 
-/// 下载 Deno 可执行文件（从 zip 解压）
-#[tauri::command]
-pub async fn download_deno(app: AppHandle) -> Result<(), String> {
+async fn download_deno_impl(app: AppHandle, operation: &str) -> Result<(), String> {
+    emit_tool_progress(&app, "deno", operation, "downloading", Some(0.0));
     let deno_path = utils::get_managed_deno_path(&app)?;
+    let temp_path = executable_temp_path(&deno_path, "download")?;
     let url = utils::get_deno_download_url();
 
     let client = reqwest::Client::builder()
@@ -439,23 +470,40 @@ pub async fn download_deno(app: AppHandle) -> Result<(), String> {
         .get(url)
         .send()
         .await
-        .map_err(|e| format!("err_download_failed:{}", e))?;
+        .map_err(|e| format!("err_download_failed:{}", e))?
+        .error_for_status()
+        .map_err(|e| format!("err_download_http_status:{}", e))?;
 
     let total_size = response.content_length().unwrap_or(0);
     let mut downloaded: u64 = 0;
 
     // 下载 zip 到临时文件
-    let zip_path = deno_path.with_extension("zip");
+    let deno_file_name = deno_path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or("err_invalid_executable_path")?;
+    let zip_path = deno_path.with_file_name(format!("{}.download.zip", deno_file_name));
+    let _ = tokio::fs::remove_file(&zip_path).await;
+    let _ = tokio::fs::remove_file(&temp_path).await;
     let mut file = tokio::fs::File::create(&zip_path)
         .await
         .map_err(|e| format!("err_create_file:{}", e))?;
 
     let mut stream = response.bytes_stream();
     while let Some(chunk) = stream.next().await {
-        let chunk = chunk.map_err(|e| format!("err_download_error:{}", e))?;
-        tokio::io::AsyncWriteExt::write_all(&mut file, &chunk)
-            .await
-            .map_err(|e| format!("err_write_error:{}", e))?;
+        let chunk = match chunk {
+            Ok(chunk) => chunk,
+            Err(e) => {
+                drop(file);
+                let _ = tokio::fs::remove_file(&zip_path).await;
+                return Err(format!("err_download_error:{}", e));
+            }
+        };
+        if let Err(e) = tokio::io::AsyncWriteExt::write_all(&mut file, &chunk).await {
+            drop(file);
+            let _ = tokio::fs::remove_file(&zip_path).await;
+            return Err(format!("err_write_error:{}", e));
+        }
 
         downloaded += chunk.len() as u64;
         let percent = if total_size > 0 {
@@ -471,6 +519,7 @@ pub async fn download_deno(app: AppHandle) -> Result<(), String> {
                 "total": total_size,
             }),
         );
+        emit_tool_progress(&app, "deno", operation, "downloading", Some(percent));
     }
 
     // 确保文件写入完成
@@ -479,9 +528,19 @@ pub async fn download_deno(app: AppHandle) -> Result<(), String> {
         .map_err(|e| format!("err_flush_file:{}", e))?;
     drop(file);
 
-    // 解压 deno 可执行文件
+    if total_size > 0 && downloaded != total_size {
+        let _ = tokio::fs::remove_file(&zip_path).await;
+        return Err(format!(
+            "err_download_incomplete:expected={},actual={}",
+            total_size, downloaded
+        ));
+    }
+
+    emit_tool_progress(&app, "deno", operation, "installing", None);
+
+    // 先解压到临时文件，验证成功后才替换现有 Deno。
     let zip_path_clone = zip_path.clone();
-    let deno_path_clone = deno_path.clone();
+    let temp_path_clone = temp_path.clone();
     let deno_bin_name = if cfg!(target_os = "windows") {
         "deno.exe"
     } else {
@@ -499,7 +558,7 @@ pub async fn download_deno(app: AppHandle) -> Result<(), String> {
                 .map_err(|e| format!("err_read_zip_entry:{}", e))?;
             let name = entry.name().to_lowercase();
             if name == deno_bin_name || name.ends_with(&format!("/{}", deno_bin_name)) {
-                let mut outfile = std::fs::File::create(&deno_path_clone)
+                let mut outfile = std::fs::File::create(&temp_path_clone)
                     .map_err(|e| format!("err_create_file:{}", e))?;
                 std::io::copy(&mut entry, &mut outfile)
                     .map_err(|e| format!("err_extract_deno:{}", e))?;
@@ -509,18 +568,229 @@ pub async fn download_deno(app: AppHandle) -> Result<(), String> {
         Err(format!("err_not_found_in_zip:{}", deno_bin_name))
     })
     .await
-    .map_err(|e| format!("err_task:{}", e))??;
+    .map_err(|e| format!("err_task:{}", e))?
+    .map_err(|e| {
+        let _ = std::fs::remove_file(&zip_path);
+        e
+    })?;
 
     // Unix: 设置可执行权限
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&deno_path, std::fs::Permissions::from_mode(0o755))
+        std::fs::set_permissions(&temp_path, std::fs::Permissions::from_mode(0o755))
             .map_err(|e| format!("err_set_permissions:{}", e))?;
     }
 
-    // 清理 zip 文件
+    let validation = tokio::process::Command::new(&temp_path)
+        .arg("--version")
+        .output()
+        .await;
+    match validation {
+        Ok(output) if output.status.success() && !output.stdout.is_empty() => {}
+        Ok(output) => {
+            let _ = tokio::fs::remove_file(&zip_path).await;
+            let _ = tokio::fs::remove_file(&temp_path).await;
+            return Err(format!(
+                "err_validate_deno:{}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            ));
+        }
+        Err(e) => {
+            let _ = tokio::fs::remove_file(&zip_path).await;
+            let _ = tokio::fs::remove_file(&temp_path).await;
+            return Err(format!("err_validate_deno:{}", e));
+        }
+    }
+
+    replace_executable(&temp_path, &deno_path)?;
     let _ = tokio::fs::remove_file(&zip_path).await;
+    emit_tool_progress(&app, "deno", operation, "complete", Some(100.0));
 
     Ok(())
+}
+
+/// 下载 Deno 可执行文件（从 zip 解压）
+#[tauri::command]
+pub async fn download_deno(app: AppHandle) -> Result<(), String> {
+    download_deno_impl(app, "install").await
+}
+
+#[tauri::command]
+pub async fn update_deno(app: AppHandle) -> Result<String, String> {
+    if utils::get_tool_source("deno")? == utils::ToolSource::Managed {
+        download_deno_impl(app, "update").await?;
+        return Ok("Updated managed Deno".to_string());
+    }
+
+    let deno_path = utils::get_deno_path(&app)?;
+    if !deno_path.exists() {
+        return Err("err_deno_not_installed".to_string());
+    }
+    emit_tool_progress(&app, "deno", "update", "updating", None);
+    let mut cmd = tokio::process::Command::new(&deno_path);
+    cmd.arg("upgrade");
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+    let output = cmd
+        .output()
+        .await
+        .map_err(|e| format!("err_update_deno:{}", e))?;
+    if !output.status.success() {
+        return Err(format!(
+            "err_update_deno:{}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
+    }
+    emit_tool_progress(&app, "deno", "update", "complete", Some(100.0));
+    Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+}
+
+// ========== FFmpeg 管理 ==========
+
+#[tauri::command]
+pub async fn get_ffmpeg_status(app: AppHandle) -> Result<ToolStatus, String> {
+    let ffmpeg_path = utils::get_ffmpeg_path(&app)?;
+    let ffprobe_path = utils::get_ffprobe_path(&app)?;
+    let managed_path = utils::get_managed_ffmpeg_path(&app)?;
+    let mut status = build_tool_status("ffmpeg", ffmpeg_path, managed_path, "-version").await?;
+    status.installed = status.installed && ffprobe_path.exists();
+    Ok(status)
+}
+
+async fn download_file_with_progress(
+    app: &AppHandle,
+    tool: &str,
+    operation: &str,
+    url: &str,
+    target: &Path,
+    start_percent: f64,
+    span: f64,
+) -> Result<(), String> {
+    let client = reqwest::Client::builder()
+        .timeout(DOWNLOAD_TIMEOUT)
+        .build()
+        .map_err(|e| format!("err_create_http_client:{}", e))?;
+    let response = client
+        .get(url)
+        .send()
+        .await
+        .map_err(|e| format!("err_download_failed:{}", e))?
+        .error_for_status()
+        .map_err(|e| format!("err_download_http_status:{}", e))?;
+    let total_size = response.content_length().unwrap_or(0);
+    let mut downloaded = 0u64;
+    let mut file = tokio::fs::File::create(target)
+        .await
+        .map_err(|e| format!("err_create_file:{}", e))?;
+    let mut stream = response.bytes_stream();
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk.map_err(|e| format!("err_download_error:{}", e))?;
+        tokio::io::AsyncWriteExt::write_all(&mut file, &chunk)
+            .await
+            .map_err(|e| format!("err_write_error:{}", e))?;
+        downloaded += chunk.len() as u64;
+        let fraction = if total_size > 0 {
+            downloaded as f64 / total_size as f64
+        } else {
+            0.0
+        };
+        emit_tool_progress(
+            app,
+            tool,
+            operation,
+            "downloading",
+            Some(start_percent + fraction * span),
+        );
+    }
+    tokio::io::AsyncWriteExt::shutdown(&mut file)
+        .await
+        .map_err(|e| format!("err_flush_file:{}", e))?;
+    if total_size > 0 && downloaded != total_size {
+        return Err(format!(
+            "err_download_incomplete:expected={},actual={}",
+            total_size, downloaded
+        ));
+    }
+    Ok(())
+}
+
+async fn download_ffmpeg_impl(app: AppHandle, operation: &str) -> Result<(), String> {
+    let dir = utils::get_managed_ffmpeg_dir(&app)?;
+    let urls = utils::get_ffmpeg_download_urls();
+    let ffmpeg_name = if cfg!(target_os = "windows") {
+        "ffmpeg.exe"
+    } else {
+        "ffmpeg"
+    };
+    let ffprobe_name = if cfg!(target_os = "windows") {
+        "ffprobe.exe"
+    } else {
+        "ffprobe"
+    };
+    let targets = [dir.join(ffmpeg_name), dir.join(ffprobe_name)];
+    let temps = [
+        executable_temp_path(&targets[0], "download")?,
+        executable_temp_path(&targets[1], "download")?,
+    ];
+
+    for (index, ((_, url), temp)) in urls.iter().zip(temps.iter()).enumerate() {
+        let _ = tokio::fs::remove_file(&temp).await;
+        if let Err(e) = download_file_with_progress(
+            &app,
+            "ffmpeg",
+            operation,
+            url,
+            temp,
+            index as f64 * 50.0,
+            50.0,
+        )
+        .await
+        {
+            for pending in &temps {
+                let _ = tokio::fs::remove_file(pending).await;
+            }
+            return Err(e);
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(temp, std::fs::Permissions::from_mode(0o755))
+                .map_err(|e| format!("err_set_permissions:{}", e))?;
+        }
+        let validation = tokio::process::Command::new(temp)
+            .arg("-version")
+            .output()
+            .await
+            .map_err(|e| format!("err_validate_ffmpeg:{}", e))?;
+        if !validation.status.success() {
+            for pending in &temps {
+                let _ = tokio::fs::remove_file(pending).await;
+            }
+            return Err(format!(
+                "err_validate_ffmpeg:{}",
+                String::from_utf8_lossy(&validation.stderr).trim()
+            ));
+        }
+    }
+
+    emit_tool_progress(&app, "ffmpeg", operation, "installing", None);
+    for (temp, target) in temps.iter().zip(targets.iter()) {
+        replace_executable(temp, target)?;
+    }
+    emit_tool_progress(&app, "ffmpeg", operation, "complete", Some(100.0));
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn download_ffmpeg(app: AppHandle) -> Result<(), String> {
+    download_ffmpeg_impl(app, "install").await
+}
+
+#[tauri::command]
+pub async fn update_ffmpeg(app: AppHandle) -> Result<(), String> {
+    if utils::get_tool_source("ffmpeg")? != utils::ToolSource::Managed {
+        return Err("err_system_ffmpeg_update_managed_externally".to_string());
+    }
+    download_ffmpeg_impl(app, "update").await
 }

@@ -85,6 +85,7 @@ pub async fn run_ytdlp_json(
         args.push(a.to_string());
     }
     args.extend(utils::build_js_runtime_args(app));
+    args.extend(utils::build_ffmpeg_location_args(app));
     args.extend(utils::build_plugin_args(app));
     args.extend(utils::build_youtube_extractor_args());
     append_cookie_proxy_args(&mut args, cookie_file, cookie_browser, proxy);

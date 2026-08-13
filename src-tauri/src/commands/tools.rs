@@ -37,6 +37,7 @@ async fn run_ytdlp_tool(
         "3".to_string(),
     ];
     args.extend(utils::build_js_runtime_args(app));
+    args.extend(utils::build_ffmpeg_location_args(app));
     args.extend(utils::build_plugin_args(app));
     args.extend(utils::build_youtube_extractor_args());
 
@@ -616,6 +617,7 @@ pub async fn tool_fetch_live_chat(
         output_template,
     ];
     args.extend(utils::build_js_runtime_args(&app));
+    args.extend(utils::build_ffmpeg_location_args(&app));
     args.extend(utils::build_plugin_args(&app));
     append_cookie_proxy_args(
         &mut args,

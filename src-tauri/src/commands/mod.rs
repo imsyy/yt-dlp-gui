@@ -24,26 +24,26 @@ use std::sync::{Arc, Mutex};
 
 // ========== 共享类型 ==========
 
-/// yt-dlp 安装状态
-#[derive(serde::Serialize)]
+/// 外部工具安装状态
+#[derive(Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct YtdlpStatus {
+pub struct ToolStatus {
     pub installed: bool,
     pub version: String,
     pub path: String,
-    /// `true` 表示当前实际使用的是应用管理的副本；
-    /// `false` 表示用的是系统安装的版本（此时「检测更新」更新的是 managed 副本，不会生效）
+    pub source: String,
     pub is_managed: bool,
+    pub can_update: bool,
 }
 
-/// Deno 安装状态
-#[derive(serde::Serialize)]
+/// 工具安装或更新进度
+#[derive(Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct DenoStatus {
-    pub installed: bool,
-    pub version: String,
-    pub path: String,
-    pub is_managed: bool,
+pub struct ToolProgress {
+    pub tool: String,
+    pub operation: String,
+    pub stage: String,
+    pub percent: Option<f64>,
 }
 
 /// 下载进程信息（运行时状态）

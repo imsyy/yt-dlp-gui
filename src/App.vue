@@ -26,6 +26,18 @@ const downloadStore = useDownloadStore();
 const pendingStore = usePendingStore();
 const themeVars = useThemeVars();
 
+const applyToolSources = () =>
+  invoke("set_tool_sources", {
+    ytdlp: settingStore.ytdlpSource,
+    deno: settingStore.denoSource,
+    ffmpeg: settingStore.ffmpegSource,
+  });
+
+watch(
+  () => [settingStore.ytdlpSource, settingStore.denoSource, settingStore.ffmpegSource],
+  () => applyToolSources(),
+);
+
 const navBadgeCounts = computed<Record<string, number>>(() => ({
   pending: pendingStore.items.length,
   downloads: downloadStore.tasks.filter(
@@ -133,6 +145,7 @@ const checkAppUpdate = async () => {
 };
 
 onMounted(async () => {
+  await applyToolSources();
   win.show();
   syncTrayMenu();
   if (settingStore.autoCheckUpdate) {
