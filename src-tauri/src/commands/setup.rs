@@ -2,6 +2,7 @@
 
 use crate::utils;
 use futures_util::StreamExt;
+use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::time::Duration;
 use tauri::{AppHandle, Emitter};
@@ -12,6 +13,46 @@ use super::{DenoStatus, YtdlpStatus};
 
 /// HTTP 下载超时时间（30 分钟，用于大文件下载）
 const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(1800);
+
+/// 为可执行文件生成同目录临时路径，确保最终替换不会跨文件系统。
+fn executable_temp_path(target: &Path, suffix: &str) -> Result<PathBuf, String> {
+    let stem = target
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .ok_or("err_invalid_executable_path")?;
+    let extension = target.extension().and_then(|s| s.to_str());
+    let name = match extension {
+        Some(ext) => format!("{}.{}.{}", stem, suffix, ext),
+        None => format!("{}.{}", stem, suffix),
+    };
+    Ok(target.with_file_name(name))
+}
+
+/// 用已验证的临时文件替换正式文件；Windows 上保留可恢复备份，避免先删后换。
+fn replace_executable(temp_path: &Path, target_path: &Path) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        let backup_path = executable_temp_path(target_path, "backup")?;
+        let _ = std::fs::remove_file(&backup_path);
+        if target_path.exists() {
+            std::fs::rename(target_path, &backup_path)
+                .map_err(|e| format!("err_backup_executable:{}", e))?;
+        }
+        if let Err(e) = std::fs::rename(temp_path, target_path) {
+            if backup_path.exists() {
+                let _ = std::fs::rename(&backup_path, target_path);
+            }
+            return Err(format!("err_replace_executable:{}", e));
+        }
+        let _ = std::fs::remove_file(backup_path);
+        Ok(())
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        std::fs::rename(temp_path, target_path).map_err(|e| format!("err_replace_executable:{}", e))
+    }
+}
 
 #[cfg(target_os = "windows")]
 use super::CREATE_NO_WINDOW;
@@ -86,6 +127,7 @@ pub async fn get_ytdlp_status(app: AppHandle) -> Result<YtdlpStatus, String> {
 #[tauri::command]
 pub async fn download_ytdlp(app: AppHandle) -> Result<(), String> {
     let ytdlp_path = utils::get_managed_ytdlp_path(&app)?;
+    let temp_path = executable_temp_path(&ytdlp_path, "download")?;
     let url = utils::get_ytdlp_download_url();
 
     let client = reqwest::Client::builder()
@@ -96,22 +138,34 @@ pub async fn download_ytdlp(app: AppHandle) -> Result<(), String> {
         .get(url)
         .send()
         .await
-        .map_err(|e| format!("err_download_failed:{}", e))?;
+        .map_err(|e| format!("err_download_failed:{}", e))?
+        .error_for_status()
+        .map_err(|e| format!("err_download_http_status:{}", e))?;
 
     let total_size = response.content_length().unwrap_or(0);
     let mut downloaded: u64 = 0;
 
-    let mut file = tokio::fs::File::create(&ytdlp_path)
+    let _ = tokio::fs::remove_file(&temp_path).await;
+    let mut file = tokio::fs::File::create(&temp_path)
         .await
         .map_err(|e| format!("err_create_file:{}", e))?;
 
     let mut stream = response.bytes_stream();
 
     while let Some(chunk) = stream.next().await {
-        let chunk = chunk.map_err(|e| format!("err_download_error:{}", e))?;
-        tokio::io::AsyncWriteExt::write_all(&mut file, &chunk)
-            .await
-            .map_err(|e| format!("err_write_error:{}", e))?;
+        let chunk = match chunk {
+            Ok(chunk) => chunk,
+            Err(e) => {
+                drop(file);
+                let _ = tokio::fs::remove_file(&temp_path).await;
+                return Err(format!("err_download_error:{}", e));
+            }
+        };
+        if let Err(e) = tokio::io::AsyncWriteExt::write_all(&mut file, &chunk).await {
+            drop(file);
+            let _ = tokio::fs::remove_file(&temp_path).await;
+            return Err(format!("err_write_error:{}", e));
+        }
 
         downloaded += chunk.len() as u64;
         let percent = if total_size > 0 {
@@ -130,13 +184,48 @@ pub async fn download_ytdlp(app: AppHandle) -> Result<(), String> {
         );
     }
 
+    tokio::io::AsyncWriteExt::shutdown(&mut file)
+        .await
+        .map_err(|e| format!("err_flush_file:{}", e))?;
+    drop(file);
+
+    if total_size > 0 && downloaded != total_size {
+        let _ = tokio::fs::remove_file(&temp_path).await;
+        return Err(format!(
+            "err_download_incomplete:expected={},actual={}",
+            total_size, downloaded
+        ));
+    }
+
     // Unix: 设置可执行权限
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        std::fs::set_permissions(&ytdlp_path, std::fs::Permissions::from_mode(0o755))
+        std::fs::set_permissions(&temp_path, std::fs::Permissions::from_mode(0o755))
             .map_err(|e| format!("err_set_permissions:{}", e))?;
     }
+
+    // PyInstaller 可执行文件只有真正启动后才能确认内嵌归档完整。
+    let validation = tokio::process::Command::new(&temp_path)
+        .arg("--version")
+        .output()
+        .await;
+    match validation {
+        Ok(output) if output.status.success() && !output.stdout.is_empty() => {}
+        Ok(output) => {
+            let _ = tokio::fs::remove_file(&temp_path).await;
+            return Err(format!(
+                "err_validate_ytdlp:{}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            ));
+        }
+        Err(e) => {
+            let _ = tokio::fs::remove_file(&temp_path).await;
+            return Err(format!("err_validate_ytdlp:{}", e));
+        }
+    }
+
+    replace_executable(&temp_path, &ytdlp_path)?;
 
     Ok(())
 }
