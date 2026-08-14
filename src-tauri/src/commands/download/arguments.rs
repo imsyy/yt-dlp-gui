@@ -18,6 +18,58 @@ pub(super) fn requires_ffmpeg_merge(params: &DownloadParams) -> bool {
         && !params.no_merge
 }
 
+/// 根据下载模式与格式选择，构建 `-f` 格式参数。
+/// `no_merge` 为 true 时不使用 `+` 拼接，避免触发 ffmpeg 合并
+/// （yt-dlp 无 --no-merge-output 选项，用单独格式替代）。
+fn build_format_args(params: &DownloadParams) -> Vec<String> {
+    match params.download_mode.as_str() {
+        "video" => {
+            if let Some(ref vf) = params.video_format {
+                if !vf.is_empty() {
+                    return vec!["-f".to_string(), vf.clone()];
+                }
+            }
+            Vec::new()
+        }
+        "audio" => {
+            if let Some(ref af) = params.audio_format {
+                if !af.is_empty() {
+                    return vec!["-f".to_string(), af.clone()];
+                }
+            }
+            Vec::new()
+        }
+        _ => {
+            let vf = params.video_format.as_deref().filter(|s| !s.is_empty());
+            let af = params.audio_format.as_deref().filter(|s| !s.is_empty());
+            match (vf, af) {
+                (Some(v), Some(a)) => {
+                    if params.no_merge {
+                        vec!["-f".to_string(), v.to_string()]
+                    } else {
+                        vec!["-f".to_string(), format!("{}+{}", v, a)]
+                    }
+                }
+                (Some(v), None) => {
+                    if params.no_merge {
+                        vec!["-f".to_string(), v.to_string()]
+                    } else {
+                        vec!["-f".to_string(), format!("{}+bestaudio/{}", v, v)]
+                    }
+                }
+                (None, Some(a)) => {
+                    if params.no_merge {
+                        vec!["-f".to_string(), a.to_string()]
+                    } else {
+                        vec!["-f".to_string(), format!("bestvideo+{0}/{0}", a)]
+                    }
+                }
+                _ => Vec::new(),
+            }
+        }
+    }
+}
+
 /// 构建 yt-dlp 下载参数
 pub(super) fn build_download_args(
     app: &AppHandle,
@@ -40,43 +92,7 @@ pub(super) fn build_download_args(
     args.extend(utils::build_youtube_extractor_args());
 
     // 格式选择
-    match params.download_mode.as_str() {
-        "video" => {
-            if let Some(ref vf) = params.video_format {
-                if !vf.is_empty() {
-                    args.push("-f".to_string());
-                    args.push(vf.clone());
-                }
-            }
-        }
-        "audio" => {
-            if let Some(ref af) = params.audio_format {
-                if !af.is_empty() {
-                    args.push("-f".to_string());
-                    args.push(af.clone());
-                }
-            }
-        }
-        _ => {
-            let vf = params.video_format.as_deref().filter(|s| !s.is_empty());
-            let af = params.audio_format.as_deref().filter(|s| !s.is_empty());
-            match (vf, af) {
-                (Some(v), Some(a)) => {
-                    args.push("-f".to_string());
-                    args.push(format!("{}+{}", v, a));
-                }
-                (Some(v), None) => {
-                    args.push("-f".to_string());
-                    args.push(format!("{}+bestaudio/{}", v, v));
-                }
-                (None, Some(a)) => {
-                    args.push("-f".to_string());
-                    args.push(format!("bestvideo+{0}/{0}", a));
-                }
-                _ => {}
-            }
-        }
-    }
+    args.extend(build_format_args(params));
 
     // 代理
     if let Some(ref proxy) = params.proxy {
@@ -150,9 +166,6 @@ pub(super) fn build_download_args(
             }
         }
     }
-    if params.no_merge {
-        args.push("--no-merge-output".to_string());
-    }
     if let Some(ref fmt) = params.recode_format {
         if !fmt.is_empty() {
             args.push("--recode-video".to_string());
@@ -169,7 +182,7 @@ pub(super) fn build_download_args(
     if let Some(ref ffmpeg_args) = params.ffmpeg_args {
         if !ffmpeg_args.is_empty() {
             args.push("--postprocessor-args".to_string());
-            args.push(ffmpeg_args.clone());
+            args.push(format!("FFmpeg:{}", ffmpeg_args));
         }
     }
 
@@ -285,7 +298,7 @@ mod subtitle_arg_tests {
 
 #[cfg(test)]
 mod ffmpeg_requirement_tests {
-    use super::{requires_ffmpeg_merge, DownloadParams};
+    use super::{build_format_args, requires_ffmpeg_merge, DownloadParams};
 
     fn params() -> DownloadParams {
         DownloadParams {
@@ -330,5 +343,19 @@ mod ffmpeg_requirement_tests {
         let mut value = params();
         value.no_merge = true;
         assert!(!requires_ffmpeg_merge(&value));
+    }
+
+    #[test]
+    fn no_merge_uses_single_format_without_plus_concatenation() {
+        let mut value = params();
+        value.no_merge = true;
+        let args = build_format_args(&value);
+        assert_eq!(args, ["-f", "137"]);
+    }
+
+    #[test]
+    fn merge_mode_uses_plus_concatenation() {
+        let args = build_format_args(&params());
+        assert_eq!(args, ["-f", "137+140"]);
     }
 }

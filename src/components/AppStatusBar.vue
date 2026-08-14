@@ -157,9 +157,9 @@ onUnmounted(() => unlistenProgress?.());
           v-for="tool in tools"
           :key="tool.key"
           :show-arrow="false"
-          trigger="hover"
+          trigger="click"
           placement="top-end"
-          content-style="max-width: min(340px, calc(100vw - 24px));"
+          :width="240"
         >
           <template #trigger>
             <n-button
@@ -181,16 +181,10 @@ onUnmounted(() => unlistenProgress?.());
               </n-badge>
             </n-button>
           </template>
-          <n-flex vertical :size="6" class="tool-popover">
-            <n-flex align="center" justify="space-between" :wrap="false" :size="12">
-              <n-text strong>{{ tool.label }}</n-text>
-              <n-button strong secondary size="tiny" @click="router.push({ name: 'settings' })">
-                {{ $t("setup.goToSettings") }}
-              </n-button>
-            </n-flex>
-            <div class="tool-detail-list">
-              <div class="tool-detail-row">
-                <n-text depth="3">{{ $t("statusBar.status") }}</n-text>
+          <n-flex vertical :size="8">
+            <n-flex align="center" justify="space-between" :wrap="false" :size="10">
+              <n-text style="font-size: 15px">{{ tool.label }}</n-text>
+              <n-flex align="center" :size="6" :wrap="false">
                 <n-tag
                   size="small"
                   round
@@ -205,15 +199,28 @@ onUnmounted(() => unlistenProgress?.());
                       : $t("statusBar.checking")
                   }}
                 </n-tag>
-              </div>
-              <div class="tool-detail-row">
-                <n-text depth="3">{{ $t("settings.version") }}</n-text>
-                <n-text>{{ statuses[tool.key]?.version || "—" }}</n-text>
-              </div>
-              <div class="tool-detail-row">
-                <n-text depth="3">{{ $t("statusBar.source") }}</n-text>
-                <n-text>{{ sourceText(tool.key) }}</n-text>
-              </div>
+                <n-tooltip trigger="hover">
+                  <template #trigger>
+                    <n-button
+                      text
+                      size="small"
+                      :focusable="false"
+                      @click="router.push({ name: 'settings' })"
+                    >
+                      <n-icon><icon-mdi-cog /></n-icon>
+                    </n-button>
+                  </template>
+                  {{ $t("setup.goToSettings") }}
+                </n-tooltip>
+              </n-flex>
+            </n-flex>
+            <div class="tool-field">
+              <n-text depth="3" size="small">{{ $t("settings.version") }}</n-text>
+              <n-text>{{ statuses[tool.key]?.version || "—" }}</n-text>
+            </div>
+            <div class="tool-field">
+              <n-text depth="3" size="small">{{ $t("statusBar.source") }}</n-text>
+              <n-text>{{ sourceText(tool.key) }}</n-text>
             </div>
           </n-flex>
         </n-popover>
@@ -247,20 +254,9 @@ onUnmounted(() => unlistenProgress?.());
   margin: 0;
 }
 
-.tool-popover {
-  min-width: 210px;
-}
-
-.tool-detail-list {
-  display: grid;
-  gap: 4px;
-}
-
-.tool-detail-row {
+.tool-field {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  min-height: 22px;
+  flex-direction: column;
+  gap: 2px;
 }
 </style>

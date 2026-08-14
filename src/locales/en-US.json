@@ -103,7 +103,7 @@
     "notInstalled": "Not Installed",
     "checkUpdate": "Check for updates",
     "toolManager": "Required Setup",
-    "sourceManaged": "App-managed",
+    "sourceManaged": "Built-in",
     "sourceSystem": "System PATH",
     "installManaged": "Install app copy",
     "updateNow": "Update",

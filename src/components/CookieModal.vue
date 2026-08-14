@@ -8,6 +8,7 @@ const statusStore = useStatusStore();
   <n-modal
     v-model:show="statusStore.showCookieModal"
     preset="card"
+    :auto-focus="false"
     :title="$t('cookie.settings')"
     size="small"
     :bordered="false"

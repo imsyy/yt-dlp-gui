@@ -101,7 +101,7 @@
     "notInstalled": "未インストール",
     "checkUpdate": "更新を確認",
     "toolManager": "必要な設定",
-    "sourceManaged": "アプリ管理",
+    "sourceManaged": "アプリ内蔵",
     "sourceSystem": "システム PATH",
     "installManaged": "アプリ版をインストール",
     "updateNow": "今すぐ更新",

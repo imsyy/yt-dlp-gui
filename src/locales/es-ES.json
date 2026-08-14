@@ -101,7 +101,7 @@
     "notInstalled": "No instalado",
     "checkUpdate": "Buscar actualizaciones",
     "toolManager": "Configuración necesaria",
-    "sourceManaged": "Gestionado por la aplicación",
+    "sourceManaged": "Integrado",
     "sourceSystem": "PATH del sistema",
     "installManaged": "Instalar versión de la aplicación",
     "updateNow": "Actualizar ahora",

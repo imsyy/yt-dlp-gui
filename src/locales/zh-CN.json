@@ -103,7 +103,7 @@
     "notInstalled": "未安装",
     "checkUpdate": "检测更新",
     "toolManager": "必要配置",
-    "sourceManaged": "应用管理",
+    "sourceManaged": "应用内置",
     "sourceSystem": "系统 PATH",
     "installManaged": "安装应用版",
     "updateNow": "立即更新",

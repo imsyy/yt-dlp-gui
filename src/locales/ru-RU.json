@@ -101,7 +101,7 @@
     "notInstalled": "Не установлено",
     "checkUpdate": "Проверить обновления",
     "toolManager": "Необходимая настройка",
-    "sourceManaged": "Управляется приложением",
+    "sourceManaged": "Встроен",
     "sourceSystem": "Системный PATH",
     "installManaged": "Установить версию приложения",
     "updateNow": "Обновить сейчас",
