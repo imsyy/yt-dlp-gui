@@ -9,6 +9,7 @@
 
 mod download;
 mod external_tools;
+mod proxy;
 pub(crate) mod support;
 mod toolbox;
 mod video;
@@ -16,6 +17,7 @@ mod video;
 // 使用 glob 导出：Tauri generate_handler! 宏需要访问 __cmd__ 隐藏项
 pub use download::*;
 pub use external_tools::*;
+pub use proxy::*;
 pub use toolbox::*;
 pub use video::*;
 

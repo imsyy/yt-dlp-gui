@@ -98,6 +98,7 @@ pub fn run() {
             commands::tool_fetch_live_chat,
             commands::tool_fetch_chapters,
             commands::tool_fetch_comments,
+            commands::test_proxy,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

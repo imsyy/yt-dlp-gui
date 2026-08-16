@@ -178,20 +178,10 @@ watch(
 
     <DownloadDirCard class="section-card" />
 
+    <ProxyCard class="section-card" />
+
     <n-card :title="$t('settings.downloadOptions')" size="small" class="section-card">
       <n-flex vertical :size="12">
-        <div class="info-list">
-          <div class="info-row">
-            <span class="info-label">{{ $t("settings.proxy") }}</span>
-            <n-input
-              v-model:value="settingStore.proxy"
-              :placeholder="$t('settings.proxyPlaceholder')"
-              size="small"
-              clearable
-              style="width: 220px"
-            />
-          </div>
-        </div>
         <div class="info-list">
           <div class="info-row">
             <span class="info-label">{{ $t("settings.concurrentFragments") }}</span>
