@@ -26,6 +26,9 @@ interface ProgressPayload {
   eta: string;
   downloaded: string;
   total: string;
+  fragmentIndex?: number;
+  fragmentCount?: number;
+  status?: string;
 }
 
 export const useDownloadStore = defineStore("download", () => {
@@ -169,12 +172,24 @@ export const useDownloadStore = defineStore("download", () => {
 
     await listen<ProgressPayload>("download-progress", (event) => {
       const task = tasks.value.find((t) => t.id === event.payload.id);
-      if (task && task.status === "downloading") {
-        task.percent = event.payload.percent;
-        task.speed = event.payload.speed;
-        task.eta = event.payload.eta;
-        if (event.payload.downloaded) task.downloaded = event.payload.downloaded;
-        if (event.payload.total) task.total = event.payload.total;
+      if (task && (task.status === "downloading" || task.status === "postprocessing")) {
+        const status = event.payload.status;
+        if (status === "postprocessing") {
+          // 后处理阶段（合并/嵌入等），仅更新有实际进度的字段
+          task.status = "postprocessing";
+          if (event.payload.percent > 0) task.percent = event.payload.percent;
+          if (event.payload.speed) task.speed = event.payload.speed;
+          if (event.payload.eta) task.eta = event.payload.eta;
+          if (event.payload.downloaded) task.downloaded = event.payload.downloaded;
+          if (event.payload.total) task.total = event.payload.total;
+        } else {
+          task.status = "downloading";
+          task.percent = event.payload.percent;
+          if (event.payload.speed) task.speed = event.payload.speed;
+          if (event.payload.eta) task.eta = event.payload.eta;
+          if (event.payload.downloaded) task.downloaded = event.payload.downloaded;
+          if (event.payload.total) task.total = event.payload.total;
+        }
       }
       updateTaskbarProgress();
     });

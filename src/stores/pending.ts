@@ -28,6 +28,7 @@ const createItem = (data: FetchedVideoData): PendingItem => {
     limitRate: "",
     ffmpegArgs: settingStore.defaultFfmpegArgs,
     selectedSubtitles: [],
+    liveFromStart: false,
   };
 };
 

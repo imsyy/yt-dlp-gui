@@ -79,9 +79,16 @@ pub(super) fn build_download_args(
         "--newline".to_string(),
         "--ignore-config".to_string(),  // 忽略用户系统配置，防止干扰 GUI
         "--color".to_string(), "never".to_string(),  // 禁用 ANSI 颜色转义序列
-        // 使用 --progress-template 输出结构化进度（官方推荐方式，避免解析 stdout 常规输出）
+        // 使用 --progress-template 输出结构化进度
+        // download 模板：下载阶段的进度（包含 fragment 信息以支持 HLS/DASH/直播流）
         "--progress-template".to_string(),
-        r#"download:PROGRESS_JSON:{"percent":"%(progress._percent_str|0%)s","speed":"%(progress._speed_str|)s","eta":"%(progress._eta_str|)s","downloaded":"%(progress._downloaded_bytes_str|)s","total":"%(progress._total_bytes_str|)s"}"#.to_string(),
+        r#"download:PROGRESS_JSON:{"percent":"%(progress._percent_str|0%)s","speed":"%(progress._speed_str|)s","eta":"%(progress._eta_str|)s","downloaded":"%(progress._downloaded_bytes_str|)s","total":"%(progress._total_bytes_str|)s","fragmentIndex":"%(progress.fragment_index|0)s","fragmentCount":"%(progress.fragment_count|0)s","status":"downloading"}"#.to_string(),
+        // postprocess 模板：后处理阶段（合并/嵌入等），前端据此区分下载与后处理
+        "--progress-template".to_string(),
+        r#"postprocess:PROGRESS_JSON:{"status":"postprocessing"}"#.to_string(),
+        // 进度输出间隔，避免高频刷屏
+        "--progress-delta".to_string(),
+        "1".to_string(),
     ];
 
     // JS 运行时（Deno）
@@ -213,6 +220,11 @@ pub(super) fn build_download_args(
         }
     }
 
+    // 直播流：从开始下载（实验性，仅 YouTube/Twitch/TVer/mellow-fan）
+    if params.live_from_start {
+        args.push("--live-from-start".to_string());
+    }
+
     // URL（必须放在最后）
     args.push(params.url.clone());
 
@@ -330,6 +342,7 @@ mod ffmpeg_requirement_tests {
             end_time: None,
             no_playlist: false,
             playlist_items: None,
+            live_from_start: false,
         }
     }
 

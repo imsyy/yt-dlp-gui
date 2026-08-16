@@ -2,9 +2,14 @@
 import { useSettingStore } from "@/stores/setting";
 import { DEFAULT_OUTPUT_TEMPLATE } from "@/utils/output-template";
 import { useI18n } from "vue-i18n";
+import type { VideoInfo } from "@/types";
 
 const { t } = useI18n();
 const settingStore = useSettingStore();
+
+const props = defineProps<{
+  videoInfo: VideoInfo;
+}>();
 
 const startTime = defineModel<number | null>("startTime", {
   required: true,
@@ -35,6 +40,16 @@ const noMerge = defineModel<boolean>("noMerge", { required: true });
 const recodeFormat = defineModel<string>("recodeFormat", { required: true });
 const limitRate = defineModel<string>("limitRate", { required: true });
 const ffmpegArgs = defineModel<string>("ffmpegArgs", { required: true });
+const liveFromStart = defineModel<boolean>("liveFromStart", { required: true });
+
+/** 是否为正在直播 */
+const isLive = computed(
+  () => props.videoInfo.is_live === true || props.videoInfo.live_status === "is_live",
+);
+/** 是否为预约直播 */
+const isUpcoming = computed(() => props.videoInfo.live_status === "is_upcoming");
+/** 是否为直播相关（正在直播或预约） */
+const isLiveRelated = computed(() => isLive.value || isUpcoming.value);
 
 const outputTemplatePresets = computed(() => [
   { label: t("common.default"), value: DEFAULT_OUTPUT_TEMPLATE },
@@ -209,6 +224,7 @@ watch(endTime, (val) => {
             format="HH:mm:ss"
             style="width: 120px"
             :actions="[]"
+            :disabled="isLive"
           />
           <n-text depth="3">—</n-text>
           <n-time-picker
@@ -219,11 +235,20 @@ watch(endTime, (val) => {
             format="HH:mm:ss"
             style="width: 120px"
             :actions="[]"
+            :disabled="isLive"
           />
+          <n-text v-if="isLive" depth="3" style="font-size: 12px">
+            {{ $t("detail.liveTimeTrimDisabled") }}
+          </n-text>
         </n-flex>
       </n-flex>
 
       <n-flex :size="16" wrap>
+        <n-flex v-if="isLiveRelated" align="center" :size="8">
+          <n-checkbox v-model:checked="liveFromStart" size="small" :disabled="isUpcoming">
+            {{ $t("detail.liveFromStart") }}
+          </n-checkbox>
+        </n-flex>
         <n-flex align="center" :size="8">
           <span class="option-label">{{ $t("detail.recodeFormat") }}</span>
           <n-select

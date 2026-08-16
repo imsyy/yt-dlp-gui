@@ -85,7 +85,12 @@ const handleApply = () => {
       <div class="info-list">
         <div class="info-row">
           <span class="info-label">{{ $t("settings.proxyScheme") }}</span>
-          <n-select v-model:value="scheme" :options="schemeOptions" size="small" style="width: 120px" />
+          <n-select
+            v-model:value="scheme"
+            :options="schemeOptions"
+            size="small"
+            style="width: 120px"
+          />
         </div>
         <div class="info-row">
           <span class="info-label">{{ $t("settings.proxyHost") }}</span>
@@ -133,12 +138,7 @@ const handleApply = () => {
         </div>
       </div>
       <n-flex justify="end" :size="8">
-        <n-button
-          size="small"
-          :loading="testing"
-          :disabled="!host.trim()"
-          @click="handleTest"
-        >
+        <n-button size="small" :loading="testing" :disabled="!host.trim()" @click="handleTest">
           <template #icon>
             <n-icon>
               <icon-mdi-sync />

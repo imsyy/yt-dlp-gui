@@ -79,7 +79,16 @@ export const useVideoStore = defineStore("video", () => {
       };
       // YouTube 的 JS challenge 未完成时常只返回一个 360p 合并流。重试一次，
       // 但仍保留退化结果供页面明确提示，避免把它伪装成完整格式列表。
-      if (/youtube\.com|youtu\.be/i.test(targetUrl) && hasIncompleteYoutubeFormats(info)) {
+      // 直播流天然只有一个低清晰度格式，重试无益且会拖慢解析，直接跳过。
+      const isLive =
+        info.is_live === true ||
+        info.live_status === "is_live" ||
+        info.live_status === "is_upcoming";
+      if (
+        !isLive &&
+        /youtube\.com|youtu\.be/i.test(targetUrl) &&
+        hasIncompleteYoutubeFormats(info)
+      ) {
         info = await fetchInfo();
       }
 

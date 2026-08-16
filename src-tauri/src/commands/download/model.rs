@@ -76,4 +76,6 @@ pub struct DownloadParams {
     pub end_time: Option<f64>,
     pub no_playlist: bool,
     pub playlist_items: Option<String>,
+    /// 从开始下载直播流（--live-from-start）
+    pub live_from_start: bool,
 }

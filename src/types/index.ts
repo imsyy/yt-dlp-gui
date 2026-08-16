@@ -109,6 +109,8 @@ export interface DownloadTaskParams {
   endTime: number | null;
   noPlaylist: boolean;
   playlistItems: string | null;
+  /** 从开始下载直播流 */
+  liveFromStart: boolean;
 }
 
 export interface DownloadTask {
@@ -117,7 +119,14 @@ export interface DownloadTask {
   title: string;
   thumbnail: string;
   formatLabel: string;
-  status: "queued" | "downloading" | "paused" | "completed" | "error" | "cancelled";
+  status:
+    | "queued"
+    | "downloading"
+    | "postprocessing"
+    | "paused"
+    | "completed"
+    | "error"
+    | "cancelled";
   percent: number;
   speed: string;
   eta: string;
@@ -160,6 +169,8 @@ export interface PendingItem extends FetchedVideoData {
   limitRate: string;
   ffmpegArgs: string;
   selectedSubtitles: string[];
+  /** 是否从开始下载直播流（--live-from-start） */
+  liveFromStart: boolean;
 }
 
 export interface PlaylistEntry {
@@ -193,6 +204,10 @@ export interface VideoInfo {
   formats: VideoFormat[];
   subtitles: Record<string, { ext: string; url: string; name?: string }[]>;
   automatic_captions: Record<string, { ext: string; url: string; name?: string }[]>;
+  /** yt-dlp 直播状态: "not_live" | "is_live" | "is_upcoming" | "was_live" | "post_live" */
+  live_status?: string;
+  /** 是否为直播流（yt-dlp 布尔字段） */
+  is_live?: boolean;
   /** Playlist fields — present when the URL is a playlist */
   _type?: string;
   entries?: PlaylistEntry[];

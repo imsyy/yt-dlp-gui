@@ -55,6 +55,18 @@ const selectedSubtitles = defineModel<string[]>("selectedSubtitles", {
   required: true,
 });
 
+/** 是否为正在直播或直播回放 */
+const isLiveRelated = computed(
+  () =>
+    props.videoInfo.is_live === true ||
+    ["is_live", "was_live", "post_live"].includes(props.videoInfo.live_status || ""),
+);
+
+/** live_chat 是否存在（在直播流中会作为字幕出现） */
+const hasLiveChat = computed(
+  () => !!(props.videoInfo.subtitles?.live_chat || props.videoInfo.automatic_captions?.live_chat),
+);
+
 /** 获取语言显示名称 */
 const getLangLabel = (lang: string, tracks: { name?: string }[]): string => {
   const name = tracks[0]?.name;
@@ -127,6 +139,13 @@ const hasSubtitles = computed(() => manualOptions.value.length > 0 || autoOption
         :placeholder="$t('detail.selectSubtitleLangs')"
         max-tag-count="responsive"
       />
+      <n-text
+        v-if="isLiveRelated && hasLiveChat"
+        depth="3"
+        style="font-size: 12px; margin-top: 4px"
+      >
+        {{ $t("detail.liveChatSubtitleHint") }}
+      </n-text>
     </template>
     <n-text v-else depth="3" style="font-size: 13px">
       {{ $t("detail.noSubtitles") }}

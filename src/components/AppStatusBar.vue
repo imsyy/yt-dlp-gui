@@ -67,7 +67,7 @@ const formatSpeed = (bytesPerSecond: number) => {
 const totalSpeed = computed(() =>
   formatSpeed(
     downloadStore.tasks
-      .filter((task) => task.status === "downloading")
+      .filter((task) => task.status === "downloading" || task.status === "postprocessing")
       .reduce((total, task) => total + parseSpeed(task.speed), 0),
   ),
 );

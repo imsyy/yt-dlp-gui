@@ -46,6 +46,9 @@ fn process_output_line(
                 "eta": info.eta,
                 "downloaded": info.downloaded,
                 "total": info.total,
+                "fragmentIndex": info.fragment_index,
+                "fragmentCount": info.fragment_count,
+                "status": info.status,
             }),
         );
         return; // 进度行不需要转发到日志
@@ -60,15 +63,18 @@ fn process_output_line(
                 .and_then(|map| map.get(task_id).and_then(|info| info.clip_duration));
             if let Some(duration) = clip_dur {
                 let percent = (current_secs / duration * 100.0).min(100.0);
+                // 解析 ffmpeg 的 speed=Nx 字段（如 "speed=2.13x"）
+                let ffmpeg_speed = parser::parse_ffmpeg_speed(line);
                 let _ = app.emit(
                     "download-progress",
                     serde_json::json!({
                         "id": task_id,
                         "percent": percent,
-                        "speed": "",
+                        "speed": ffmpeg_speed,
                         "eta": "",
                         "downloaded": format_duration(current_secs),
                         "total": format_duration(duration),
+                        "status": "downloading",
                     }),
                 );
             }

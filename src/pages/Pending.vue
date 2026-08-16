@@ -176,6 +176,7 @@ const handleDownload = async () => {
     subtitles: item.selectedSubtitles,
     startTime: item.startTime != null ? timeToSeconds(item.startTime) : null,
     endTime: item.endTime != null ? timeToSeconds(item.endTime) : null,
+    liveFromStart: item.liveFromStart,
     noPlaylist: item.isPlaylist && item.selectedPlaylistItems.length === 1,
     playlistItems:
       item.isPlaylist && item.selectedPlaylistItems.length > 0
@@ -336,6 +337,7 @@ const handleDownload = async () => {
           v-model:selected-audio-format="activeItem.selectedAudioFormat"
           :video-formats="activeItem.videoFormats"
           :audio-formats="activeItem.audioFormats"
+          :video-info="activeItem.videoInfo as VideoInfo"
           class="section-card"
         />
 
@@ -359,6 +361,8 @@ const handleDownload = async () => {
           v-model:recode-format="activeItem.recodeFormat"
           v-model:limit-rate="activeItem.limitRate"
           v-model:ffmpeg-args="activeItem.ffmpegArgs"
+          v-model:live-from-start="activeItem.liveFromStart"
+          :video-info="activeItem.videoInfo as VideoInfo"
           class="section-card"
         />
 

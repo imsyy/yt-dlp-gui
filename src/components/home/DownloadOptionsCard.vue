@@ -2,13 +2,14 @@
 import { formatFileSize } from "@/utils/format";
 import { getCodecKey, getCodecLabel } from "@/utils/formats";
 import { useI18n } from "vue-i18n";
-import type { VideoFormat } from "@/types";
+import type { VideoFormat, VideoInfo } from "@/types";
 
 const { t } = useI18n();
 
 const props = defineProps<{
   videoFormats: VideoFormat[];
   audioFormats: VideoFormat[];
+  videoInfo: VideoInfo;
 }>();
 
 const downloadMode = defineModel<"default" | "video" | "audio">("downloadMode", {
@@ -59,6 +60,11 @@ const formatsIncomplete = computed(() => {
   if (props.audioFormats.length > 0 || props.videoFormats.length === 0) return false;
   return Math.max(...props.videoFormats.map((format) => format.height || 0)) <= 360;
 });
+
+/** 是否为正在直播 */
+const isLive = computed(
+  () => props.videoInfo.is_live === true || props.videoInfo.live_status === "is_live",
+);
 
 /** 视频格式下拉选项 */
 const videoFormatOptions = computed(() =>
@@ -155,6 +161,10 @@ watch(
 
       <n-alert v-if="formatsIncomplete" type="warning" :bordered="false">
         {{ $t("detail.incompleteFormatsHint") }}
+      </n-alert>
+
+      <n-alert v-if="isLive" type="info" :bordered="false">
+        {{ $t("detail.liveFormatHint") }}
       </n-alert>
 
       <n-flex v-if="downloadMode !== 'audio' && videoFormatOptions.length" align="center" :size="8">

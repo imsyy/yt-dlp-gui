@@ -43,7 +43,11 @@ watch(
 const navBadgeCounts = computed<Record<string, number>>(() => ({
   pending: pendingStore.items.length,
   downloads: downloadStore.tasks.filter(
-    (t) => t.status === "downloading" || t.status === "queued" || t.status === "paused",
+    (t) =>
+      t.status === "downloading" ||
+      t.status === "postprocessing" ||
+      t.status === "queued" ||
+      t.status === "paused",
   ).length,
 }));
 

@@ -7,6 +7,9 @@ pub struct ProgressInfo {
     pub eta: String,
     pub downloaded: String,
     pub total: String,
+    pub fragment_index: Option<u64>,
+    pub fragment_count: Option<u64>,
+    pub status: String,
 }
 
 /// 解析 --progress-template 输出的 JSON 进度行
@@ -27,6 +30,9 @@ pub fn parse_progress_json(line: &str) -> Option<ProgressInfo> {
     let eta = clean_field(v["eta"].as_str());
     let downloaded = clean_field(v["downloaded"].as_str());
     let total = clean_field(v["total"].as_str());
+    let fragment_index = v["fragmentIndex"].as_u64();
+    let fragment_count = v["fragmentCount"].as_u64();
+    let status = v["status"].as_str().unwrap_or("downloading").to_string();
 
     Some(ProgressInfo {
         percent,
@@ -34,6 +40,9 @@ pub fn parse_progress_json(line: &str) -> Option<ProgressInfo> {
         eta,
         downloaded,
         total,
+        fragment_index,
+        fragment_count,
+        status,
     })
 }
 
@@ -55,6 +64,20 @@ pub fn parse_ffmpeg_time(line: &str) -> Option<f64> {
     let m: f64 = parts[1].parse().ok()?;
     let s: f64 = parts[2].parse().ok()?;
     Some(h * 3600.0 + m * 60.0 + s)
+}
+
+/// 解析 ffmpeg 输出中的 speed= 字段，返回可读速度字符串
+/// 格式: speed=2.13x 或 speed=N/A
+pub fn parse_ffmpeg_speed(line: &str) -> String {
+    if let Some(speed_start) = line.find("speed=") {
+        let after = &line[speed_start + 6..];
+        let speed_str = after.split_whitespace().next().unwrap_or("");
+        // 排除 N/A 等无效值
+        if !speed_str.is_empty() && speed_str != "N/A" && speed_str != "Unknown" {
+            return speed_str.to_string();
+        }
+    }
+    String::new()
 }
 
 /// 清理 yt-dlp 输出字段：移除 NA/Unknown 等无效值
@@ -173,5 +196,22 @@ mod tests {
     fn clean_field_valid_value_returns_trimmed() {
         assert_eq!(clean_field(Some("2.50MiB/s")), "2.50MiB/s");
         assert_eq!(clean_field(Some("  00:11  ")), "00:11");
+    }
+
+    #[test]
+    fn parse_ffmpeg_speed_valid_returns_speed() {
+        let line = "frame= 1234 fps=128 q=28.0 size=   15360kB time=00:02:29.65 bitrate= 840.2kbits/s speed=2.13x";
+        assert_eq!(parse_ffmpeg_speed(line), "2.13x");
+    }
+
+    #[test]
+    fn parse_ffmpeg_speed_na_returns_empty() {
+        let line = "frame=    0 fps=0.0 q=0.0 size=       0kB time=00:00:00.00 bitrate=N/A speed=N/A";
+        assert!(parse_ffmpeg_speed(line).is_empty());
+    }
+
+    #[test]
+    fn parse_ffmpeg_speed_no_field_returns_empty() {
+        assert!(parse_ffmpeg_speed("some random line without speed field").is_empty());
     }
 }

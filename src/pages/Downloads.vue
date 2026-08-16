@@ -11,7 +11,11 @@ const downloadStore = useDownloadStore();
 
 const activeTasks = computed(() =>
   downloadStore.tasks.filter(
-    (t) => t.status === "downloading" || t.status === "paused" || t.status === "queued",
+    (t) =>
+      t.status === "downloading" ||
+      t.status === "postprocessing" ||
+      t.status === "paused" ||
+      t.status === "queued",
   ),
 );
 
@@ -100,6 +104,8 @@ const progressStatus = (task: DownloadTask): ProgressStatus => {
     case "paused":
     case "queued":
       return "warning";
+    case "postprocessing":
+      return "warning";
     default:
       return "default";
   }
@@ -111,6 +117,8 @@ const statusLabel = (task: DownloadTask) => {
       return t("downloads.status.queued");
     case "downloading":
       return task.speed || t("downloads.status.downloading");
+    case "postprocessing":
+      return task.speed || t("downloads.status.postprocessing");
     case "paused":
       return t("downloads.status.paused");
     case "completed":
@@ -134,6 +142,7 @@ const statusType = (task: DownloadTask): "default" | "success" | "error" | "warn
     case "queued":
       return "warning";
     case "downloading":
+    case "postprocessing":
       return "info";
     default:
       return "default";
@@ -324,7 +333,7 @@ const handleClearFinished = () => {
                     :percentage="task.percent"
                     :show-indicator="false"
                     :status="progressStatus(task)"
-                    :processing="task.status === 'downloading'"
+                    :processing="task.status === 'downloading' || task.status === 'postprocessing'"
                     style="width: 100%"
                   />
                   <n-flex align="center" justify="space-between">
@@ -355,7 +364,9 @@ const handleClearFinished = () => {
                         </template>
                       </n-button>
                       <n-divider vertical style="margin: 0 2px" />
-                      <template v-if="task.status === 'downloading'">
+                      <template
+                        v-if="task.status === 'downloading' || task.status === 'postprocessing'"
+                      >
                         <n-button size="tiny" strong secondary @click="handlePause(task.id)">
                           <template #icon>
                             <n-icon size="16"><icon-mdi-pause /></n-icon>
