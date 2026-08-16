@@ -257,7 +257,7 @@
     "wasLive": "녹화본",
     "liveFromStart": "처음부터 다운로드",
     "liveTimeTrimDisabled": "라이브 스트림에서는 시간 자르기를 사용할 수 없습니다",
-    "liveFormatHint": "라이브 스트림이 진행 중입니다. 일부 형식이 불완전할 수 있습니다. 처음부터 다운로드는 YouTube, Twitch 등에서만 지원됩니다",
+    "liveFormatHint": "라이브 스트림이 진행 중입니다. 일부 형식이 불완전할 수 있습니다. 안정적인 다운로드를 위해 방송 종료 후 다운로드하는 것을 권장합니다",
     "liveChatSubtitleHint": "라이브 채팅(live_chat)이 감지되어 자동으로 제외되었습니다. 필요시 \"라이브 채팅 가져오기\" 도구를 사용하세요",
     "subtitles": "자막",
     "selectSubtitleLangs": "다운로드할 자막 언어를 선택하세요...",

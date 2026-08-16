@@ -257,7 +257,7 @@
     "wasLive": "Aufzeichnung",
     "liveFromStart": "Von Anfang an herunterladen",
     "liveTimeTrimDisabled": "Zeitschnitt ist bei Live-Streams nicht verfügbar",
-    "liveFormatHint": "Der Live-Stream ist aktiv. Einige Formate können unvollständig sein. Download von Anfang an wird nur auf YouTube, Twitch usw. unterstützt",
+    "liveFormatHint": "Der Live-Stream ist aktiv. Einige Formate können unvollständig sein. Es wird empfohlen, für mehr Stabilität nach dem Ende des Streams herunterzuladen",
     "liveChatSubtitleHint": "Live-Chat (live_chat) erkannt und automatisch ausgeschlossen. Verwenden Sie das Werkzeug „Live-Chat abrufen“, falls benötigt",
     "subtitles": "Untertitel",
     "selectSubtitleLangs": "Untertitelsprachen zum Herunterladen auswählen...",

@@ -28,7 +28,8 @@ const createItem = (data: FetchedVideoData): PendingItem => {
     limitRate: "",
     ffmpegArgs: settingStore.defaultFfmpegArgs,
     selectedSubtitles: [],
-    liveFromStart: false,
+    liveFromStart:
+      data.videoInfo.is_live === true || data.videoInfo.live_status === "is_live",
   };
 };
 

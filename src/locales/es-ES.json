@@ -257,7 +257,7 @@
     "wasLive": "Grabación",
     "liveFromStart": "Descargar desde el inicio",
     "liveTimeTrimDisabled": "El recorte de tiempo no está disponible para transmisiones en vivo",
-    "liveFormatHint": "La transmisión en vivo está activa. Algunos formatos pueden estar incompletos. Descargar desde el inicio solo es compatible con YouTube, Twitch, etc.",
+    "liveFormatHint": "La transmisión en vivo está activa. Algunos formatos pueden estar incompletos, se recomienda descargar después de que termine para mayor estabilidad.",
     "liveChatSubtitleHint": "Se detectó live chat (live_chat) y se excluyó automáticamente. Use la herramienta \"Obtener chat en vivo\" si es necesario",
     "subtitles": "Subtítulos",
     "selectSubtitleLangs": "Selecciona los idiomas de subtítulos a descargar...",

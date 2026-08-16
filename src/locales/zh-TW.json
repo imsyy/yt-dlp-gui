@@ -257,7 +257,7 @@
     "wasLive": "直播回放",
     "liveFromStart": "從開始下載",
     "liveTimeTrimDisabled": "直播中不支援時間裁剪",
-    "liveFormatHint": "直播流正在推流中，部分格式可能不完整。從開始下載僅支援 YouTube、Twitch 等平台",
+    "liveFormatHint": "直播流正在推流中，部分格式可能不完整，建議等直播結束後下載更穩定",
     "liveChatSubtitleHint": "偵測到直播彈幕（live_chat），已自動排除。如需下載請使用工具箱中的「取得直播彈幕」功能",
     "subtitles": "字幕",
     "selectSubtitleLangs": "選擇需要下載的字幕語言...",
