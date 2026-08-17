@@ -1,14 +1,10 @@
 <script setup lang="ts">
-import { invoke } from "@tauri-apps/api/core";
 import { formatFileSize } from "@/utils/format";
-import { composeOutputTemplate } from "@/utils/output-template";
-import { useSettingStore } from "@/stores/setting";
-import { useDownloadStore } from "@/stores/download";
 import { useVideoStore } from "@/stores/video";
 import { usePendingStore } from "@/stores/pending";
-import { useStatusStore } from "@/stores/status";
+import { useDownloadLauncher } from "@/composables/useDownloadLauncher";
 import { useI18n } from "vue-i18n";
-import type { FfmpegStatus, VideoInfo } from "@/types";
+import type { VideoInfo } from "@/types";
 import VideoInfoCard from "@/components/home/VideoInfoCard.vue";
 import DownloadOptionsCard from "@/components/home/DownloadOptionsCard.vue";
 import ExtraOptionsCard from "@/components/home/ExtraOptionsCard.vue";
@@ -18,28 +14,11 @@ import DownloadBar from "@/components/home/DownloadBar.vue";
 
 const { t } = useI18n();
 const router = useRouter();
-const settingStore = useSettingStore();
-const downloadStore = useDownloadStore();
 const videoStore = useVideoStore();
 const pendingStore = usePendingStore();
-const statusStore = useStatusStore();
+const { launchDownload } = useDownloadLauncher();
 
 const activeItem = computed(() => pendingStore.activeItem);
-
-/** 将 Naive UI time picker 的时间戳值转换为当天秒数 */
-const timeToSeconds = (ts: number): number => {
-  const d = new Date(ts);
-  return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
-};
-
-/** 秒数格式化为 HH:MM:SS */
-const formatTime = (secs: number): string => {
-  const h = Math.floor(secs / 3600);
-  const m = Math.floor((secs % 3600) / 60);
-  const s = secs % 60;
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
-};
 
 const estimatedSize = computed(() => {
   const item = activeItem.value;
@@ -96,134 +75,12 @@ const handleRefresh = async () => {
 const handleDownload = async () => {
   const item = activeItem.value;
   if (!item) return;
-
-  if (!settingStore.downloadDir) {
-    window.$message.warning(t("detail.setDownloadDirFirst"));
+  const result = await launchDownload(item);
+  if (result === "missing-directory") {
     dirCardRef.value?.scrollIntoView({ behavior: "smooth", block: "center" });
-    return;
-  }
-
-  const requiresFfmpegMerge =
-    item.downloadMode === "default" &&
-    Boolean(item.selectedVideoFormat) &&
-    Boolean(item.selectedAudioFormat) &&
-    !item.noMerge;
-  if (requiresFfmpegMerge) {
-    try {
-      const ffmpegStatus = await invoke<FfmpegStatus>("get_ffmpeg_status");
-      if (!ffmpegStatus.installed) {
-        statusStore.showFfmpegSetupModal = true;
-        return;
-      }
-    } catch {
-      statusStore.showFfmpegSetupModal = true;
-      return;
-    }
-  }
-
-  const taskId = `dl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  const { cookieFile, cookieBrowser } = await videoStore.getCookieArgs();
-
-  const buildFormatLabel = (): string => {
-    const parts: string[] = [];
-    if (item.downloadMode === "audio") {
-      parts.push(t("detail.audioOnly"));
-      const af = item.audioFormats.find((f) => f.format_id === item.selectedAudioFormat);
-      if (af) parts.push(af.format_note || af.ext);
-    } else {
-      const vf = item.videoFormats.find((f) => f.format_id === item.selectedVideoFormat);
-      if (vf) {
-        if (vf.height) parts.push(`${vf.height}p`);
-        if (vf.fps) parts.push(`${vf.fps}fps`);
-      }
-      if (item.downloadMode === "video") parts.push(t("detail.videoOnly"));
-    }
-    if (item.startTime != null || item.endTime != null) {
-      const s = item.startTime != null ? formatTime(timeToSeconds(item.startTime)) : "00:00";
-      const e = item.endTime != null ? formatTime(timeToSeconds(item.endTime)) : t("detail.end");
-      parts.push(`✂${s}-${e}`);
-    }
-    return parts.join(" ") || t("detail.defaultQuality");
-  };
-
-  const dlParams = {
-    url: item.url,
-    downloadDir: settingStore.downloadDir,
-    downloadMode: item.downloadMode,
-    videoFormat: item.selectedVideoFormat || null,
-    audioFormat: item.selectedAudioFormat || null,
-    cookieFile,
-    cookieBrowser,
-    proxy: settingStore.proxy || null,
-    outputTemplate: composeOutputTemplate(
-      settingStore.outputTemplate,
-      settingStore.filenamePrefix,
-      settingStore.filenameSuffix,
-    ),
-    concurrentFragments: settingStore.concurrentFragments || null,
-    noOverwrites: settingStore.noOverwrites,
-    embedSubs: item.embedSubs,
-    embedThumbnail: item.embedThumbnail,
-    embedMetadata: item.embedMetadata,
-    embedChapters: item.embedChapters,
-    sponsorblockRemove: item.sponsorblockRemove,
-    extractAudio: item.extractAudio,
-    audioConvertFormat: item.audioConvertFormat || null,
-    noMerge: item.noMerge,
-    recodeFormat: item.recodeFormat || null,
-    limitRate: item.limitRate || null,
-    ffmpegArgs: item.ffmpegArgs || null,
-    subtitles: item.selectedSubtitles,
-    startTime: item.startTime != null ? timeToSeconds(item.startTime) : null,
-    endTime: item.endTime != null ? timeToSeconds(item.endTime) : null,
-    liveFromStart: item.liveFromStart,
-    noPlaylist: item.isPlaylist && item.selectedPlaylistItems.length === 1,
-    playlistItems:
-      item.isPlaylist && item.selectedPlaylistItems.length > 0
-        ? item.selectedPlaylistItems
-            .slice()
-            .sort((a, b) => a - b)
-            .join(",")
-        : null,
-  };
-
-  const shouldQueue = !downloadStore.canStartNow();
-
-  downloadStore.addTask({
-    id: taskId,
-    url: item.url,
-    title: item.videoInfo.title || t("detail.unknownVideo"),
-    thumbnail: item.videoInfo.thumbnail || "",
-    formatLabel: buildFormatLabel(),
-    status: shouldQueue ? "queued" : "downloading",
-    percent: 0,
-    speed: "",
-    eta: "",
-    downloaded: "",
-    total: "",
-    logs: [],
-    createdAt: Date.now(),
-    params: dlParams,
-  });
-
-  // 任务已加入下载列表，从待下载列表移除该项
-  pendingStore.remove(item.id);
-
-  if (shouldQueue) {
+  } else if (result === "started" || result === "queued") {
+    pendingStore.remove(item.id);
     router.push({ name: "downloads" });
-    return;
-  }
-
-  try {
-    await invoke("start_download", {
-      params: { id: taskId, ...dlParams },
-    });
-    router.push({ name: "downloads" });
-  } catch (e: unknown) {
-    window.$message.error(
-      e instanceof Error ? e.message : String(e) || t("detail.startDownloadFailed"),
-    );
-    downloadStore.removeTask(taskId);
   }
 };
 </script>

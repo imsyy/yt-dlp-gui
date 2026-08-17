@@ -50,7 +50,10 @@ export const useVideoStore = defineStore("video", () => {
   };
 
   /** 解析视频信息，成功返回结构化结果，失败返回 null */
-  const fetchVideoInfo = async (targetUrl: string): Promise<FetchedVideoData | null> => {
+  const fetchVideoInfo = async (
+    targetUrl: string,
+    options: { silent?: boolean } = {},
+  ): Promise<FetchedVideoData | null> => {
     const settingStore = useSettingStore();
     fetching.value = true;
     try {
@@ -139,7 +142,7 @@ export const useVideoStore = defineStore("video", () => {
         window.$message.warning(i18n.global.t("cookie.verificationDesc"));
         const statusStore = useStatusStore();
         statusStore.showCookieModal = true;
-      } else {
+      } else if (!options.silent) {
         showErrorDialog(raw);
       }
       return null;

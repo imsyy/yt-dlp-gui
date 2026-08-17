@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { setI18nLocale, resolveLocale } from "@/locales";
 import { DEFAULT_OUTPUT_TEMPLATE } from "@/utils/output-template";
+import type { HomeDownloadBehavior, HomeMode } from "@/types";
 
 export const useSettingStore = defineStore(
   "setting",
@@ -14,6 +15,22 @@ export const useSettingStore = defineStore(
 
     /** 主题模式 */
     const themeMode = ref<"auto" | "light" | "dark">("auto");
+
+    /** 首页输入模式与解析后的处理方式 */
+    const homeMode = ref<HomeMode>("standard");
+    const homeDownloadBehavior = ref<HomeDownloadBehavior>("pending");
+
+    /** 快速下载默认参数 */
+    const quickDownloadMode = ref<"default" | "video" | "audio">("default");
+    const quickMaxHeight = ref(1080);
+    const quickEmbedThumbnail = ref(false);
+    const quickEmbedMetadata = ref(false);
+    const quickEmbedChapters = ref(false);
+    const quickSponsorblockRemove = ref(false);
+    const quickNoMerge = ref(false);
+    const quickRecodeFormat = ref("");
+    const quickLimitRate = ref("");
+    const quickFfmpegArgs = ref("");
 
     /** 下载目录 */
     const downloadDir = ref("");
@@ -78,6 +95,18 @@ export const useSettingStore = defineStore(
     return {
       locale,
       themeMode,
+      homeMode,
+      homeDownloadBehavior,
+      quickDownloadMode,
+      quickMaxHeight,
+      quickEmbedThumbnail,
+      quickEmbedMetadata,
+      quickEmbedChapters,
+      quickSponsorblockRemove,
+      quickNoMerge,
+      quickRecodeFormat,
+      quickLimitRate,
+      quickFfmpegArgs,
       downloadDir,
       cookieMode,
       cookieText,

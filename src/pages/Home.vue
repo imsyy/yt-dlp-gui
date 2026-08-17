@@ -2,17 +2,39 @@
 import { readText } from "@tauri-apps/plugin-clipboard-manager";
 import { isValidUrl } from "@/utils/validate";
 import { useVideoStore } from "@/stores/video";
-import { usePendingStore } from "@/stores/pending";
+import { createPendingItem, usePendingStore } from "@/stores/pending";
 import { useHistoryStore } from "@/stores/history";
+import { useSettingStore } from "@/stores/setting";
+import { useDownloadLauncher } from "@/composables/useDownloadLauncher";
 import { useI18n } from "vue-i18n";
+import type { FetchedVideoData } from "@/types";
 
 const { t, tm } = useI18n();
 const router = useRouter();
 const videoStore = useVideoStore();
 const pendingStore = usePendingStore();
 const historyStore = useHistoryStore();
+const settingStore = useSettingStore();
+const { createPreparingTask, markPreparationError, launchDownload } = useDownloadLauncher();
 
 const url = ref("");
+const batchInput = ref("");
+const batchParsing = ref(false);
+const showQuickSettings = ref(false);
+const BATCH_LIMIT = 50;
+
+const extractUrls = (text: string): string[] =>
+  Array.from(
+    new Set(
+      text
+        .split(/\s+/)
+        .map((item) => item.trim())
+        .filter(isValidUrl),
+    ),
+  );
+
+const batchUrls = computed(() => extractUrls(batchInput.value));
+const isBusy = computed(() => videoStore.fetching || batchParsing.value);
 
 const historyIndex = ref(-1);
 const showHistory = ref(false);
@@ -61,13 +83,23 @@ const handlePaste = async () => {
       window.$message.warning(t("clipboard.empty"));
       return;
     }
-    if (!isValidUrl(trimmed)) {
-      window.$message.warning(t("clipboard.invalidUrl"));
-      return;
+    if (settingStore.homeMode === "batch") {
+      const urls = extractUrls(trimmed);
+      if (urls.length === 0) {
+        window.$message.warning(t("clipboard.invalidUrl"));
+        return;
+      }
+      batchInput.value = urls.join("\n");
+      window.$message.success(t("home.batchPasted", { count: urls.length }));
+    } else {
+      if (!isValidUrl(trimmed)) {
+        window.$message.warning(t("clipboard.invalidUrl"));
+        return;
+      }
+      url.value = trimmed;
+      historyIndex.value = -1;
+      window.$message.success(t("clipboard.pasteSuccess"));
     }
-    url.value = trimmed;
-    historyIndex.value = -1;
-    window.$message.success(t("clipboard.pasteSuccess"));
   } catch {
     window.$message.warning(t("clipboard.readFailed"));
   }
@@ -125,6 +157,26 @@ onUnmounted(() => {
 });
 
 /** 解析视频链接，获取视频信息与可用格式 */
+const handleParsedData = async (
+  data: FetchedVideoData,
+  preparingTaskId?: string,
+): Promise<boolean> => {
+  if (settingStore.homeDownloadBehavior === "pending") {
+    pendingStore.add(data);
+    return true;
+  }
+
+  const result = await launchDownload(createPendingItem(data, true), preparingTaskId);
+  return result === "started" || result === "queued";
+};
+
+const ensureQuickDownloadConfigured = (): boolean => {
+  if (settingStore.homeDownloadBehavior !== "quick" || settingStore.downloadDir) return true;
+  window.$message.warning(t("detail.setDownloadDirFirst"));
+  showQuickSettings.value = true;
+  return false;
+};
+
 const handleSearch = async () => {
   const trimmed = url.value.trim();
   if (!trimmed) return;
@@ -132,11 +184,66 @@ const handleSearch = async () => {
     window.$message.warning(t("home.enterValidUrl"));
     return;
   }
+  if (!ensureQuickDownloadConfigured()) return;
+  const preparingTaskId =
+    settingStore.homeDownloadBehavior === "quick" ? createPreparingTask(trimmed) : undefined;
+  if (preparingTaskId) await router.push({ name: "downloads" });
   const data = await videoStore.fetchVideoInfo(trimmed);
   if (data) {
     historyStore.add(trimmed, data.videoInfo.title);
-    pendingStore.add(data);
-    router.push({ name: "pending" });
+    const submitted = await handleParsedData(data, preparingTaskId);
+    if (submitted && settingStore.homeDownloadBehavior === "pending") {
+      router.push({ name: "pending" });
+    }
+  } else if (preparingTaskId) {
+    markPreparationError(preparingTaskId);
+  }
+};
+
+/** 批量解析去重后的链接；逐项执行可避免同时启动过多 yt-dlp 进程 */
+const handleBatchSearch = async () => {
+  const urls = batchUrls.value;
+  if (urls.length === 0) {
+    window.$message.warning(t("home.batchEmpty"));
+    return;
+  }
+  if (urls.length > BATCH_LIMIT) {
+    window.$message.warning(t("home.batchLimit", { count: BATCH_LIMIT }));
+    return;
+  }
+  if (!ensureQuickDownloadConfigured()) return;
+
+  batchParsing.value = true;
+  let succeeded = 0;
+  const preparingTasks =
+    settingStore.homeDownloadBehavior === "quick"
+      ? new Map(urls.map((targetUrl) => [targetUrl, createPreparingTask(targetUrl)]))
+      : new Map<string, string>();
+  if (preparingTasks.size > 0) await router.push({ name: "downloads" });
+
+  try {
+    for (const targetUrl of urls) {
+      const data = await videoStore.fetchVideoInfo(targetUrl, { silent: true });
+      if (data) {
+        historyStore.add(targetUrl, data.videoInfo.title);
+        if (await handleParsedData(data, preparingTasks.get(targetUrl))) succeeded += 1;
+      } else {
+        const preparingTaskId = preparingTasks.get(targetUrl);
+        if (preparingTaskId) markPreparationError(preparingTaskId);
+      }
+    }
+  } finally {
+    batchParsing.value = false;
+  }
+
+  if (succeeded > 0) {
+    window.$message.success(
+      t("home.batchComplete", { succeeded, failed: urls.length - succeeded }),
+    );
+    batchInput.value = "";
+    if (settingStore.homeDownloadBehavior === "pending") router.push({ name: "pending" });
+  } else {
+    window.$message.error(t("home.batchAllFailed"));
   }
 };
 </script>
@@ -152,35 +259,124 @@ const handleSearch = async () => {
           {{ $t("home.slogan") }}
         </n-text>
       </n-flex>
-      <n-flex :size="8" :wrap="false" class="search-bar">
-        <n-input
-          v-model:value="url"
-          :placeholder="$t('home.inputPlaceholder')"
-          size="large"
-          round
-          clearable
-          :disabled="videoStore.fetching"
-          @keydown="handleKeydown"
-          @input="handleInput"
-        />
+      <n-flex :size="8">
         <n-button
-          type="primary"
-          size="large"
-          round
+          size="small"
           strong
           secondary
-          :loading="videoStore.fetching"
-          :disabled="!url.trim()"
-          @click="handleSearch"
+          round
+          :disabled="isBusy"
+          :type="settingStore.homeMode === 'standard' ? 'primary' : 'default'"
+          @click="settingStore.homeMode = 'standard'"
         >
-          <template #icon>
-            <n-icon>
-              <icon-mdi-magnify />
-            </n-icon>
-          </template>
-          {{ $t("home.parse") }}
+          {{ $t("home.standardMode") }}
+        </n-button>
+        <n-button
+          size="small"
+          strong
+          secondary
+          round
+          :disabled="isBusy"
+          :type="settingStore.homeMode === 'batch' ? 'primary' : 'default'"
+          @click="settingStore.homeMode = 'batch'"
+        >
+          {{ $t("home.batchMode") }}
         </n-button>
       </n-flex>
+
+      <div class="input-stage" :class="{ 'is-batch': settingStore.homeMode === 'batch' }">
+        <Transition name="mode-fade">
+          <div v-if="settingStore.homeMode === 'standard'" key="standard" class="input-panel">
+            <n-input
+              v-model:value="url"
+              :placeholder="$t('home.inputPlaceholder')"
+              size="large"
+              round
+              clearable
+              :disabled="isBusy"
+              @keydown="handleKeydown"
+              @input="handleInput"
+            />
+
+            <div class="submit-row">
+              <div class="submit-left">
+                <DownloadBehaviorControls
+                  v-model="settingStore.homeDownloadBehavior"
+                  @settings="showQuickSettings = true"
+                />
+              </div>
+
+              <n-button
+                type="primary"
+                strong
+                secondary
+                round
+                :loading="videoStore.fetching"
+                :disabled="!url.trim() || isBusy"
+                @click="handleSearch"
+              >
+                <template #icon>
+                  <n-icon>
+                    <icon-mdi-download
+                      v-if="settingStore.homeDownloadBehavior === 'quick'"
+                    />
+                    <icon-mdi-magnify v-else />
+                  </n-icon>
+                </template>
+                {{
+                  settingStore.homeDownloadBehavior === "quick"
+                    ? $t("common.download")
+                    : $t("home.parse")
+                }}
+              </n-button>
+            </div>
+          </div>
+
+          <div v-else key="batch" class="input-panel">
+            <n-input
+              v-model:value="batchInput"
+              type="textarea"
+              :placeholder="$t('home.batchPlaceholder')"
+              :autosize="{ minRows: 3, maxRows: 3 }"
+              :disabled="isBusy"
+              @keydown.ctrl.enter.prevent="handleBatchSearch"
+            />
+
+            <div class="submit-row">
+              <div class="submit-left">
+                <DownloadBehaviorControls
+                  v-model="settingStore.homeDownloadBehavior"
+                  @settings="showQuickSettings = true"
+                />
+              </div>
+
+              <n-button
+                type="primary"
+                strong
+                secondary
+                round
+                :loading="batchParsing"
+                :disabled="batchUrls.length === 0 || isBusy"
+                @click="handleBatchSearch"
+              >
+                <template #icon>
+                  <n-icon>
+                    <icon-mdi-download
+                      v-if="settingStore.homeDownloadBehavior === 'quick'"
+                    />
+                    <icon-mdi-magnify v-else />
+                  </n-icon>
+                </template>
+                {{
+                  settingStore.homeDownloadBehavior === "quick"
+                    ? $t("common.download")
+                    : $t("home.parseBatch", { count: batchUrls.length })
+                }}
+              </n-button>
+            </div>
+          </div>
+        </Transition>
+      </div>
       <n-flex :size="8" justify="center">
         <n-button size="small" strong secondary round @click="handlePaste">
           <template #icon>
@@ -273,6 +469,8 @@ const handleSearch = async () => {
         </n-list>
       </n-drawer-content>
     </n-drawer>
+
+    <QuickDownloadSettingsModal v-model:show="showQuickSettings" />
   </div>
 </template>
 
@@ -283,6 +481,7 @@ const handleSearch = async () => {
 }
 
 .search-view {
+  padding-top: 40px;
   height: 100%;
   min-height: 300px;
 
@@ -300,6 +499,68 @@ const handleSearch = async () => {
     width: 100%;
     max-width: 500px;
   }
+}
+
+.input-stage {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  height: 88px;
+  transition-property: height;
+  transition-duration: 180ms;
+  transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
+.input-stage.is-batch {
+  height: 132px;
+}
+
+.input-panel {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.submit-row {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.submit-left {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mode-fade-enter-active,
+.mode-fade-leave-active {
+  transition-property: opacity, transform;
+}
+
+.mode-fade-enter-active {
+  transition-duration: 160ms;
+  transition-timing-function: ease-out;
+}
+
+.mode-fade-leave-active {
+  transition-duration: 120ms;
+  transition-timing-function: ease-in;
+}
+
+.mode-fade-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.mode-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 .tips-container {

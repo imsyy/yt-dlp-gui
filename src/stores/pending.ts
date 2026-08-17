@@ -1,32 +1,42 @@
 import { defineStore } from "pinia";
 import { useSettingStore } from "@/stores/setting";
-import type { FetchedVideoData, PendingItem } from "@/types";
+import type { FetchedVideoData, PendingItem, VideoFormat } from "@/types";
 
 const generateId = () => `pd_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-const createItem = (data: FetchedVideoData): PendingItem => {
+const selectVideoFormat = (formats: VideoFormat[], maxHeight?: number): string => {
+  if (!maxHeight) return formats[0]?.format_id ?? "";
+  return (
+    formats.find((format) => format.height != null && format.height <= maxHeight)?.format_id ??
+    formats[0]?.format_id ??
+    ""
+  );
+};
+
+export const createPendingItem = (data: FetchedVideoData, quick = false): PendingItem => {
   const settingStore = useSettingStore();
+  const maxHeight = quick ? settingStore.quickMaxHeight : undefined;
   return {
     ...data,
     id: generateId(),
     createdAt: Date.now(),
     selectedPlaylistItems: data.isPlaylist ? data.playlistEntries.map((_, i) => i + 1) : [],
-    downloadMode: "default",
-    selectedVideoFormat: data.videoFormats[0]?.format_id ?? "",
+    downloadMode: quick ? settingStore.quickDownloadMode : "default",
+    selectedVideoFormat: selectVideoFormat(data.videoFormats, maxHeight),
     selectedAudioFormat: data.audioFormats[0]?.format_id ?? "",
     startTime: null,
     endTime: null,
     embedSubs: false,
-    embedThumbnail: false,
-    embedMetadata: false,
-    embedChapters: false,
-    sponsorblockRemove: false,
+    embedThumbnail: quick ? settingStore.quickEmbedThumbnail : false,
+    embedMetadata: quick ? settingStore.quickEmbedMetadata : false,
+    embedChapters: quick ? settingStore.quickEmbedChapters : false,
+    sponsorblockRemove: quick ? settingStore.quickSponsorblockRemove : false,
     extractAudio: false,
     audioConvertFormat: "",
-    noMerge: false,
-    recodeFormat: "",
-    limitRate: "",
-    ffmpegArgs: settingStore.defaultFfmpegArgs,
+    noMerge: quick ? settingStore.quickNoMerge : false,
+    recodeFormat: quick ? settingStore.quickRecodeFormat : "",
+    limitRate: quick ? settingStore.quickLimitRate : "",
+    ffmpegArgs: quick ? settingStore.quickFfmpegArgs : settingStore.defaultFfmpegArgs,
     selectedSubtitles: [],
     liveFromStart:
       data.videoInfo.is_live === true || data.videoInfo.live_status === "is_live",
@@ -42,7 +52,7 @@ export const usePendingStore = defineStore("pending", () => {
   );
 
   const add = (data: FetchedVideoData): string => {
-    const item = createItem(data);
+    const item = createPendingItem(data);
     items.value.push(item);
     activeId.value = item.id;
     return item.id;

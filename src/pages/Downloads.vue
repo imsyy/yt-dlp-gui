@@ -12,6 +12,7 @@ const downloadStore = useDownloadStore();
 const activeTasks = computed(() =>
   downloadStore.tasks.filter(
     (t) =>
+      t.status === "preparing" ||
       t.status === "downloading" ||
       t.status === "postprocessing" ||
       t.status === "paused" ||
@@ -113,6 +114,8 @@ const progressStatus = (task: DownloadTask): ProgressStatus => {
 
 const statusLabel = (task: DownloadTask) => {
   switch (task.status) {
+    case "preparing":
+      return t("downloads.status.preparing");
     case "queued":
       return t("downloads.status.queued");
     case "downloading":
@@ -134,6 +137,8 @@ const statusLabel = (task: DownloadTask) => {
 
 const statusType = (task: DownloadTask): "default" | "success" | "error" | "warning" | "info" => {
   switch (task.status) {
+    case "preparing":
+      return "info";
     case "completed":
       return "success";
     case "error":
@@ -333,7 +338,11 @@ const handleClearFinished = () => {
                     :percentage="task.percent"
                     :show-indicator="false"
                     :status="progressStatus(task)"
-                    :processing="task.status === 'downloading' || task.status === 'postprocessing'"
+                    :processing="
+                      task.status === 'preparing' ||
+                      task.status === 'downloading' ||
+                      task.status === 'postprocessing'
+                    "
                     style="width: 100%"
                   />
                   <n-flex align="center" justify="space-between">
@@ -397,7 +406,7 @@ const handleClearFinished = () => {
                           </template>
                         </n-button>
                       </template>
-                      <template v-else-if="task.status === 'queued'">
+                      <template v-else-if="task.status === 'queued' || task.status === 'preparing'">
                         <n-button
                           size="tiny"
                           strong

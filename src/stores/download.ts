@@ -108,6 +108,7 @@ export const useDownloadStore = defineStore("download", () => {
     if (saved && Array.isArray(saved)) {
       for (const task of saved) {
         if (
+          task.status === "preparing" ||
           task.status === "downloading" ||
           task.status === "postprocessing" ||
           task.status === "paused" ||
@@ -274,10 +275,10 @@ export const useDownloadStore = defineStore("download", () => {
     const task = tasks.value.find((t) => t.id === id);
     if (!task) return;
 
-    const wasQueued = task.status === "queued";
+    const hadNoProcess = task.status === "queued" || task.status === "preparing";
     task.status = "cancelled";
 
-    if (!wasQueued) {
+    if (!hadNoProcess) {
       try {
         await invoke("cancel_download", { id, deleteFiles: true });
       } catch {

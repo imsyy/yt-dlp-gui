@@ -1,4 +1,6 @@
 export type ToolSource = "managed" | "system" | "custom";
+export type HomeMode = "standard" | "batch";
+export type HomeDownloadBehavior = "pending" | "quick";
 
 export interface CliOpenRequest {
   url: string | null;
@@ -120,6 +122,7 @@ export interface DownloadTask {
   thumbnail: string;
   formatLabel: string;
   status:
+    | "preparing"
     | "queued"
     | "downloading"
     | "postprocessing"
