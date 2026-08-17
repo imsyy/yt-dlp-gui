@@ -116,9 +116,9 @@ const statusLabel = (task: DownloadTask) => {
     case "queued":
       return t("downloads.status.queued");
     case "downloading":
-      return task.speed || t("downloads.status.downloading");
+      return t("downloads.status.downloading");
     case "postprocessing":
-      return task.speed || t("downloads.status.postprocessing");
+      return t("downloads.status.postprocessing");
     case "paused":
       return t("downloads.status.paused");
     case "completed":
@@ -344,8 +344,21 @@ const handleClearFinished = () => {
                       <n-text v-if="sizeProgress(task)" depth="3">
                         {{ sizeProgress(task) }}
                       </n-text>
-                      <n-text depth="3">{{ task.percent.toFixed(1) }}%</n-text>
-                      <n-text v-if="task.eta && task.status === 'downloading'" depth="3">
+                      <n-text
+                        v-if="task.speed && task.status === 'downloading'"
+                        depth="3"
+                        class="task-stat"
+                      >
+                        {{ task.speed }}
+                      </n-text>
+                      <n-text depth="3" class="task-stat">
+                        {{ task.percent.toFixed(1) }}%
+                      </n-text>
+                      <n-text
+                        v-if="task.eta && task.status === 'downloading'"
+                        depth="3"
+                        class="task-stat"
+                      >
                         ETA {{ task.eta }}
                       </n-text>
                     </n-flex>
@@ -634,6 +647,10 @@ const handleClearFinished = () => {
 .task-info {
   flex: 1;
   min-width: 0;
+}
+
+.task-stat {
+  font-variant-numeric: tabular-nums;
 }
 
 .task-header {

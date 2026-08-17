@@ -51,23 +51,19 @@ watch(
   <n-card size="small">
     <n-flex :size="16" :wrap="false">
       <div class="video-cover">
-        <n-image
+        <div v-if="!coverLoaded || coverError" class="cover-placeholder" aria-hidden="true">
+          <icon-mdi-image-broken-variant v-if="coverError" />
+          <icon-mdi-image-outline v-else />
+        </div>
+        <img
+          v-if="videoInfo.thumbnail && !coverError"
           :src="videoInfo.thumbnail"
-          width="200"
-          height="112"
-          object-fit="cover"
-          preview-disabled
           class="cover-img"
+          :class="{ 'cover-img-loading': !coverLoaded }"
+          alt=""
           @load="coverLoaded = true"
           @error="coverError = true"
-        >
-          <template #placeholder>
-            <icon-mdi-image-outline style="font-size: 32px; opacity: 0.4" />
-          </template>
-          <template #error>
-            <icon-mdi-image-broken-variant style="font-size: 32px; opacity: 0.4" />
-          </template>
-        </n-image>
+        />
         <div v-if="coverLoaded && !coverError && !isLive" class="video-duration">
           {{ formatDuration(videoInfo.duration) }}
         </div>
@@ -111,17 +107,29 @@ watch(
   position: relative;
   flex-shrink: 0;
   width: 200px;
-  min-height: 112px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--n-color-modal);
 
   .cover-img {
-    width: 200px;
-    height: 112px;
-    border-radius: 6px;
+    width: 100%;
+    height: 100%;
     display: block;
+    object-fit: cover;
+  }
 
-    :deep(img) {
-      object-fit: cover;
-    }
+  .cover-img-loading {
+    opacity: 0;
+  }
+
+  .cover-placeholder {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 32px;
+    opacity: 0.4;
   }
 
   .video-duration {

@@ -85,10 +85,11 @@ fn clean_field(s: Option<&str>) -> String {
     match s {
         Some(v) => {
             let trimmed = v.trim();
-            if trimmed.is_empty()
-                || trimmed == "NA"
-                || trimmed == "Unknown"
-                || trimmed.contains("N/A")
+            let normalized = trimmed.to_ascii_lowercase();
+            if normalized.is_empty()
+                || matches!(normalized.as_str(), "na" | "n/a" | "none" | "null")
+                || normalized.contains("unknown")
+                || normalized.contains("n/a")
             {
                 String::new()
             } else {
@@ -129,6 +130,13 @@ mod tests {
         assert!(info.eta.is_empty());
         assert!(info.downloaded.is_empty());
         assert!(info.total.is_empty());
+    }
+
+    #[test]
+    fn parse_progress_json_unknown_speed_with_unit_returns_empty() {
+        let line = r#"PROGRESS_JSON:{"percent":"0%","speed":"Unknown B/s","eta":"","downloaded":"","total":""}"#;
+        let info = parse_progress_json(line).unwrap();
+        assert!(info.speed.is_empty());
     }
 
     #[test]

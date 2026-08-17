@@ -37,8 +37,13 @@ export const useDownloadStore = defineStore("download", () => {
   let listenersSetup = false;
   let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
-  /** 当前正在下载的任务数 */
-  const activeCount = computed(() => tasks.value.filter((t) => t.status === "downloading").length);
+  /** 当前占用下载进程的任务数（后处理尚未释放进程，也计入并发槽位） */
+  const activeCount = computed(
+    () =>
+      tasks.value.filter(
+        (task) => task.status === "downloading" || task.status === "postprocessing",
+      ).length,
+  );
 
   /** 尝试启动队列中的下一个任务 */
   const tryStartNext = async () => {
@@ -102,7 +107,12 @@ export const useDownloadStore = defineStore("download", () => {
     const saved = await storage.getItem<DownloadTask[]>(STORAGE_KEY);
     if (saved && Array.isArray(saved)) {
       for (const task of saved) {
-        if (task.status === "downloading" || task.status === "paused" || task.status === "queued") {
+        if (
+          task.status === "downloading" ||
+          task.status === "postprocessing" ||
+          task.status === "paused" ||
+          task.status === "queued"
+        ) {
           task.status = "error";
           task.error = i18n.global.t("downloads.appRestarted");
           task.speed = "";
@@ -175,18 +185,19 @@ export const useDownloadStore = defineStore("download", () => {
       if (task && (task.status === "downloading" || task.status === "postprocessing")) {
         const status = event.payload.status;
         if (status === "postprocessing") {
-          // 后处理阶段（合并/嵌入等），仅更新有实际进度的字段
+          // 后处理阶段没有网络下载速度/ETA，切换阶段时清掉上一阶段数据。
           task.status = "postprocessing";
+          task.speed = "";
+          task.eta = "";
           if (event.payload.percent > 0) task.percent = event.payload.percent;
-          if (event.payload.speed) task.speed = event.payload.speed;
-          if (event.payload.eta) task.eta = event.payload.eta;
           if (event.payload.downloaded) task.downloaded = event.payload.downloaded;
           if (event.payload.total) task.total = event.payload.total;
         } else {
           task.status = "downloading";
           task.percent = event.payload.percent;
-          if (event.payload.speed) task.speed = event.payload.speed;
-          if (event.payload.eta) task.eta = event.payload.eta;
+          task.speed = event.payload.speed;
+          task.eta = event.payload.eta;
+          // 分片切换时 yt-dlp 偶尔会暂时不给大小，保留最近一次有效值以避免闪烁。
           if (event.payload.downloaded) task.downloaded = event.payload.downloaded;
           if (event.payload.total) task.total = event.payload.total;
         }
