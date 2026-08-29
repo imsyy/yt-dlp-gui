@@ -238,6 +238,30 @@ watch(
             />
           </div>
         </div>
+        <div class="info-list">
+          <div class="info-row">
+            <n-tooltip placement="right" :style="{ maxWidth: '320px' }">
+              <template #trigger>
+                <span class="info-label">{{ $t("settings.titleReplacement") }}</span>
+              </template>
+              {{ $t("settings.titleReplacementHint") }}
+            </n-tooltip>
+            <n-input-group style="width: min(480px, 64vw)">
+              <n-input
+                v-model:value="settingStore.titleRegex"
+                :placeholder="$t('settings.titleRegexPlaceholder')"
+                size="small"
+                clearable
+              />
+              <n-input
+                v-model:value="settingStore.titleReplacement"
+                :placeholder="$t('settings.titleReplacementPlaceholder')"
+                size="small"
+                clearable
+              />
+            </n-input-group>
+          </div>
+        </div>
       </n-flex>
     </n-card>
 

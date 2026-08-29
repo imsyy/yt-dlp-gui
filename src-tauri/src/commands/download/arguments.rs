@@ -70,6 +70,19 @@ fn build_format_args(params: &DownloadParams) -> Vec<String> {
     }
 }
 
+fn append_title_replacement_args(
+    args: &mut Vec<String>,
+    title_regex: Option<&str>,
+    title_replacement: Option<&str>,
+) {
+    if let Some(regex) = title_regex.filter(|value| !value.is_empty()) {
+        args.push("--replace-in-metadata".to_string());
+        args.push("title".to_string());
+        args.push(regex.to_string());
+        args.push(title_replacement.unwrap_or_default().to_string());
+    }
+}
+
 /// 构建 yt-dlp 下载参数
 pub(super) fn build_download_args(
     app: &AppHandle,
@@ -97,6 +110,12 @@ pub(super) fn build_download_args(
     args.extend(utils::build_plugin_args(app));
     // YouTube PO Token / visitor_data（如设置）
     args.extend(utils::build_youtube_extractor_args());
+
+    append_title_replacement_args(
+        &mut args,
+        params.title_regex.as_deref(),
+        params.title_replacement.as_deref(),
+    );
 
     // 格式选择
     args.extend(build_format_args(params));
@@ -337,6 +356,8 @@ mod ffmpeg_requirement_tests {
             recode_format: None,
             limit_rate: None,
             ffmpeg_args: None,
+            title_regex: None,
+            title_replacement: None,
             subtitles: Vec::new(),
             start_time: None,
             end_time: None,
@@ -370,5 +391,24 @@ mod ffmpeg_requirement_tests {
     fn merge_mode_uses_plus_concatenation() {
         let args = build_format_args(&params());
         assert_eq!(args, ["-f", "137+140"]);
+    }
+}
+
+#[cfg(test)]
+mod metadata_replacement_tests {
+    use super::append_title_replacement_args;
+
+    #[test]
+    fn empty_regex_does_not_add_arguments() {
+        let mut args = Vec::new();
+        append_title_replacement_args(&mut args, Some(""), Some("unused"));
+        assert!(args.is_empty());
+    }
+
+    #[test]
+    fn title_replacement_is_passed_as_separate_arguments() {
+        let mut args = Vec::new();
+        append_title_replacement_args(&mut args, Some(r"^prefix\s+"), Some(""));
+        assert_eq!(args, ["--replace-in-metadata", "title", r"^prefix\s+", ""]);
     }
 }
