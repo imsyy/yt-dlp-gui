@@ -6,6 +6,8 @@ use tauri::AppHandle;
 
 use super::runner::run_ytdlp_tool;
 
+const SUBTITLE_INFO_ARGS: &[&str] = &["--no-check-formats", "--write-subs", "--write-auto-subs"];
+
 /// 获取视频可用字幕列表（返回 subtitles + automatic_captions）
 /// 支持单视频和合集：合集 URL 时聚合所有 entry 的字幕（同语言取首个出现的 entry）。
 #[tauri::command]
@@ -19,7 +21,7 @@ pub async fn tool_fetch_subtitles(
     let info = support::run_ytdlp_json(
         &app,
         &url,
-        &["--no-check-formats"],
+        SUBTITLE_INFO_ARGS,
         cookie_file.as_deref(),
         cookie_browser.as_deref(),
         proxy.as_deref(),
@@ -63,6 +65,49 @@ fn aggregate_subtitle_map(entries: &[Value], field: &str) -> Value {
         }
     }
     Value::Object(merged)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{aggregate_subtitle_map, SUBTITLE_INFO_ARGS};
+    use serde_json::{json, Value};
+
+    #[test]
+    fn subtitle_info_requests_manual_and_automatic_subtitles() {
+        assert!(SUBTITLE_INFO_ARGS.contains(&"--write-subs"));
+        assert!(SUBTITLE_INFO_ARGS.contains(&"--write-auto-subs"));
+    }
+
+    #[test]
+    fn aggregates_danmaku_tracks_from_playlist_entries() {
+        let entries = json!([
+            {
+                "subtitles": {
+                    "danmaku": [{
+                        "ext": "xml",
+                        "url": "https://comment.bilibili.com/1.xml"
+                    }]
+                }
+            },
+            {
+                "subtitles": {
+                    "danmaku": [{
+                        "ext": "xml",
+                        "url": "https://comment.bilibili.com/2.xml"
+                    }]
+                }
+            }
+        ]);
+        let merged = aggregate_subtitle_map(entries.as_array().unwrap(), "subtitles");
+        assert_eq!(
+            merged.pointer("/danmaku/0/ext").and_then(Value::as_str),
+            Some("xml")
+        );
+        assert_eq!(
+            merged.pointer("/danmaku/0/url").and_then(Value::as_str),
+            Some("https://comment.bilibili.com/1.xml")
+        );
+    }
 }
 
 /// 下载单个字幕文件并另存为

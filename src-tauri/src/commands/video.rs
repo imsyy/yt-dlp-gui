@@ -6,6 +6,8 @@ use tauri::AppHandle;
 
 use super::support;
 
+const VIDEO_INFO_ARGS: &[&str] = &["--write-subs", "--write-auto-subs"];
+
 // ========== Cookie 管理 ==========
 
 /// 保存 Cookie 文本（Netscape 格式）到应用数据目录
@@ -64,7 +66,13 @@ fn normalize_netscape_cookie_file(text: &str) -> Result<String, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::normalize_netscape_cookie_file;
+    use super::{normalize_netscape_cookie_file, VIDEO_INFO_ARGS};
+
+    #[test]
+    fn video_info_requests_manual_and_automatic_subtitles() {
+        assert!(VIDEO_INFO_ARGS.contains(&"--write-subs"));
+        assert!(VIDEO_INFO_ARGS.contains(&"--write-auto-subs"));
+    }
 
     #[test]
     fn validates_and_normalizes_cookie_file() {
@@ -97,7 +105,7 @@ pub async fn fetch_video_info(
     support::run_ytdlp_json(
         &app,
         &url,
-        &[],
+        VIDEO_INFO_ARGS,
         cookie_file.as_deref(),
         cookie_browser.as_deref(),
         proxy.as_deref(),

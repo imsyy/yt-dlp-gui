@@ -43,6 +43,7 @@ const formatOptions = [
   { label: "VTT (.vtt)", value: "vtt" },
   { label: "ASS (.ass)", value: "ass" },
   { label: "LRC (.lrc)", value: "lrc" },
+  { label: "XML (.xml)", value: "xml" },
 ];
 
 /** 从字幕轨道列表中找到指定格式（或最接近的格式）的 URL */
