@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { useI18n } from "vue-i18n";
 import type { VideoInfo } from "@/types";
-
-const { t } = useI18n();
+import { formatViewCount } from "@/utils/format";
 
 const props = defineProps<{
   videoInfo: VideoInfo;
@@ -18,14 +16,6 @@ const formatDuration = (seconds: number): string => {
   const s = Math.floor(seconds % 60);
   if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   return `${m}:${String(s).padStart(2, "0")}`;
-};
-
-/** 格式化播放次数 */
-const formatViewCount = (count: number): string => {
-  if (!count) return "";
-  if (count >= 100000000) return `${(count / 100000000).toFixed(1)}${t("detail.viewYi")}`;
-  if (count >= 10000) return `${(count / 10000).toFixed(1)}${t("detail.viewWan")}`;
-  return String(count);
 };
 
 /** 是否为正在直播 */
