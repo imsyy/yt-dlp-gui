@@ -78,6 +78,7 @@ const refreshStatuses = async () => {
     deno: settingStore.denoSource,
     ffmpeg: settingStore.ffmpegSource,
   });
+  await invoke("set_ytdlp_channel", { channel: settingStore.ytdlpChannel }).catch(() => {});
   await Promise.all(
     tools.map(async (tool) => {
       try {
@@ -97,10 +98,35 @@ const sourceText = (tool: ToolKey) => {
   return t("settings.cliManaged");
 };
 
+/** 工具图标是否亮点：未安装，或检测到可用更新 */
+const showToolDot = (tool: ToolKey) =>
+  statuses[tool]?.installed === false || statusStore.toolUpdates[tool]?.updateAvailable === true;
+
+/** 亮点类型：未安装用 error 红点，有可用更新用 warning 黄点 */
+const toolDotType = (tool: ToolKey): "error" | "warning" =>
+  statuses[tool]?.installed === false ? "error" : "warning";
+
+/** 弹窗标签：与设置页一致，有更新时显示"有更新" */
+const toolTagType = (tool: ToolKey) => {
+  if (statusStore.toolUpdates[tool]?.updateAvailable === true) return "warning";
+  return statuses[tool]?.installed ? "success" : "error";
+};
+
+const toolTagText = (tool: ToolKey) => {
+  if (!statuses[tool]) return t("statusBar.checking");
+  if (statusStore.toolUpdates[tool]?.updateAvailable === true) return t("settings.updateAvailable");
+  return statuses[tool]?.installed ? t("settings.installed") : t("settings.notInstalled");
+};
+
 let unlistenProgress: (() => void) | null = null;
 
 watch(
-  () => [settingStore.ytdlpSource, settingStore.denoSource, settingStore.ffmpegSource],
+  () => [
+    settingStore.ytdlpSource,
+    settingStore.denoSource,
+    settingStore.ffmpegSource,
+    settingStore.ytdlpChannel,
+  ],
   () => void refreshStatuses(),
   { immediate: true },
 );
@@ -171,8 +197,8 @@ onUnmounted(() => unlistenProgress?.());
             >
               <n-badge
                 dot
-                type="error"
-                :show="statuses[tool.key]?.installed === false"
+                :type="toolDotType(tool.key)"
+                :show="showToolDot(tool.key)"
                 :offset="[-1, 2]"
               >
                 <n-icon size="18">
@@ -185,19 +211,8 @@ onUnmounted(() => unlistenProgress?.());
             <n-flex align="center" justify="space-between" :wrap="false" :size="10">
               <n-text style="font-size: 15px">{{ tool.label }}</n-text>
               <n-flex align="center" :size="6" :wrap="false">
-                <n-tag
-                  size="small"
-                  round
-                  :type="statuses[tool.key]?.installed ? 'success' : 'error'"
-                  :bordered="false"
-                >
-                  {{
-                    statuses[tool.key]
-                      ? statuses[tool.key]?.installed
-                        ? $t("settings.installed")
-                        : $t("settings.notInstalled")
-                      : $t("statusBar.checking")
-                  }}
+                <n-tag size="small" round :type="toolTagType(tool.key)" :bordered="false">
+                  {{ toolTagText(tool.key) }}
                 </n-tag>
                 <n-tooltip trigger="hover">
                   <template #trigger>
@@ -217,6 +232,10 @@ onUnmounted(() => unlistenProgress?.());
             <div class="tool-field">
               <n-text depth="3" size="small">{{ $t("settings.version") }}</n-text>
               <n-text>{{ statuses[tool.key]?.version || "—" }}</n-text>
+            </div>
+            <div v-if="statusStore.toolUpdates[tool.key]?.updateAvailable" class="tool-field">
+              <n-text depth="3" size="small">{{ $t("settings.latestVersion") }}</n-text>
+              <n-text type="warning">{{ statusStore.toolUpdates[tool.key]?.latestVersion }}</n-text>
             </div>
             <div class="tool-field">
               <n-text depth="3" size="small">{{ $t("statusBar.source") }}</n-text>

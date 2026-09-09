@@ -334,11 +334,11 @@ const handleSave = async () => {
             <template #trigger>
               <n-button
                 size="small"
+                style="font-family: monospace; font-weight: bold; width: 32px"
                 :type="useRegex ? 'primary' : 'default'"
                 :secondary="useRegex"
                 :quaternary="!useRegex"
                 @click="useRegex = !useRegex"
-                style="font-family: monospace; font-weight: bold; width: 32px"
               >
                 .*
               </n-button>

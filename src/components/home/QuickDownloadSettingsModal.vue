@@ -55,11 +55,7 @@ const limitRateOptions = [
             </n-radio-group>
           </n-flex>
 
-          <n-flex
-            v-if="settingStore.quickDownloadMode !== 'audio'"
-            align="center"
-            :size="8"
-          >
+          <n-flex v-if="settingStore.quickDownloadMode !== 'audio'" align="center" :size="8">
             <span class="option-label">{{ $t("home.maxQuality") }}</span>
             <n-select
               v-model:value="settingStore.quickMaxHeight"
@@ -106,6 +102,12 @@ const limitRateOptions = [
           <n-flex :size="[16, 8]" wrap>
             <n-checkbox v-model:checked="settingStore.quickEmbedThumbnail" size="small">
               {{ $t("detail.embedThumbnail") }}
+            </n-checkbox>
+            <n-checkbox v-model:checked="settingStore.quickWriteThumbnail" size="small">
+              {{ $t("detail.writeThumbnail") }}
+            </n-checkbox>
+            <n-checkbox v-model:checked="settingStore.quickWriteDescription" size="small">
+              {{ $t("detail.writeDescription") }}
             </n-checkbox>
             <n-checkbox v-model:checked="settingStore.quickEmbedMetadata" size="small">
               {{ $t("detail.embedMetadata") }}

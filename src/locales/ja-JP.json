@@ -260,6 +260,8 @@
     "audioFormat": "音声形式",
     "embedSubs": "字幕を埋め込む",
     "embedThumbnail": "サムネイルを埋め込む",
+    "writeThumbnail": "サムネイルをダウンロード",
+    "writeDescription": "概要をダウンロード",
     "embedMetadata": "メタデータを埋め込む",
     "embedChapters": "チャプターを埋め込む",
     "skipSponsor": "スポンサー区間をスキップ",

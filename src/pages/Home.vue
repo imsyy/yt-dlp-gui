@@ -317,9 +317,7 @@ const handleBatchSearch = async () => {
               >
                 <template #icon>
                   <n-icon>
-                    <icon-mdi-download
-                      v-if="settingStore.homeDownloadBehavior === 'quick'"
-                    />
+                    <icon-mdi-download v-if="settingStore.homeDownloadBehavior === 'quick'" />
                     <icon-mdi-magnify v-else />
                   </n-icon>
                 </template>
@@ -361,9 +359,7 @@ const handleBatchSearch = async () => {
               >
                 <template #icon>
                   <n-icon>
-                    <icon-mdi-download
-                      v-if="settingStore.homeDownloadBehavior === 'quick'"
-                    />
+                    <icon-mdi-download v-if="settingStore.homeDownloadBehavior === 'quick'" />
                     <icon-mdi-magnify v-else />
                   </n-icon>
                 </template>

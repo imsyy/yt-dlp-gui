@@ -26,20 +26,25 @@ export const createPendingItem = (data: FetchedVideoData, quick = false): Pendin
     selectedAudioFormat: data.audioFormats[0]?.format_id ?? "",
     startTime: null,
     endTime: null,
-    embedSubs: false,
-    embedThumbnail: quick ? settingStore.quickEmbedThumbnail : false,
-    embedMetadata: quick ? settingStore.quickEmbedMetadata : false,
-    embedChapters: quick ? settingStore.quickEmbedChapters : false,
-    sponsorblockRemove: quick ? settingStore.quickSponsorblockRemove : false,
-    extractAudio: false,
-    audioConvertFormat: "",
-    noMerge: quick ? settingStore.quickNoMerge : false,
-    recodeFormat: quick ? settingStore.quickRecodeFormat : "",
-    limitRate: quick ? settingStore.quickLimitRate : "",
+    embedSubs: quick ? false : settingStore.defaultEmbedSubs,
+    embedThumbnail: quick ? settingStore.quickEmbedThumbnail : settingStore.defaultEmbedThumbnail,
+    writeThumbnail: quick ? settingStore.quickWriteThumbnail : settingStore.defaultWriteThumbnail,
+    writeDescription: quick
+      ? settingStore.quickWriteDescription
+      : settingStore.defaultWriteDescription,
+    embedMetadata: quick ? settingStore.quickEmbedMetadata : settingStore.defaultEmbedMetadata,
+    embedChapters: quick ? settingStore.quickEmbedChapters : settingStore.defaultEmbedChapters,
+    sponsorblockRemove: quick
+      ? settingStore.quickSponsorblockRemove
+      : settingStore.defaultSponsorblockRemove,
+    extractAudio: quick ? false : settingStore.defaultExtractAudio,
+    audioConvertFormat: quick ? "" : settingStore.defaultAudioConvertFormat,
+    noMerge: quick ? settingStore.quickNoMerge : settingStore.defaultNoMerge,
+    recodeFormat: quick ? settingStore.quickRecodeFormat : settingStore.defaultRecodeFormat,
+    limitRate: quick ? settingStore.quickLimitRate : settingStore.defaultLimitRate,
     ffmpegArgs: quick ? settingStore.quickFfmpegArgs : settingStore.defaultFfmpegArgs,
     selectedSubtitles: [],
-    liveFromStart:
-      data.videoInfo.is_live === true || data.videoInfo.live_status === "is_live",
+    liveFromStart: data.videoInfo.is_live === true || data.videoInfo.live_status === "is_live",
   };
 };
 

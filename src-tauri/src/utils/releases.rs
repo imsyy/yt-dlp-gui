@@ -1,24 +1,62 @@
 //! 各平台外部工具的官方发行下载地址。
 
+use super::source::get_ytdlp_channel;
+
 /// 获取工具的最新稳定发行页；请求完成后的重定向 URL 包含实际版本标签。
-pub fn get_tool_latest_release_url(tool: &str) -> Option<&'static str> {
+/// yt-dlp 按当前所选通道返回对应仓库地址（stable/nightly/master）。
+pub fn get_tool_latest_release_url(tool: &str) -> Option<String> {
     match tool {
-        "yt-dlp" => Some("https://github.com/yt-dlp/yt-dlp/releases/latest"),
-        "deno" => Some("https://github.com/denoland/deno/releases/latest"),
-        "ffmpeg" => Some("https://github.com/eugeneware/ffmpeg-static/releases/latest"),
+        "yt-dlp" => Some(get_ytdlp_latest_release_url()),
+        "deno" => Some("https://github.com/denoland/deno/releases/latest".to_string()),
+        "ffmpeg" => Some("https://github.com/eugeneware/ffmpeg-static/releases/latest".to_string()),
         _ => None,
     }
 }
 
-/// 获取 yt-dlp 下载地址（根据平台）
-pub fn get_ytdlp_download_url() -> &'static str {
+/// 当前通道下 yt-dlp 最新发行页；重定向 URL 包含实际版本标签。
+pub fn get_ytdlp_latest_release_url() -> String {
+    format!(
+        "https://github.com/{}/releases/latest",
+        get_ytdlp_channel().repository()
+    )
+}
+
+/// 当前平台下 yt-dlp 可执行文件在对应通道中的资产名。
+fn ytdlp_asset_name() -> &'static str {
     if cfg!(target_os = "windows") {
-        "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
+        "yt-dlp.exe"
     } else if cfg!(target_os = "macos") {
-        "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_macos"
+        "yt-dlp_macos"
     } else {
-        "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux"
+        "yt-dlp_linux"
     }
+}
+
+/// 获取指定通道的 yt-dlp 下载地址（根据平台）。
+/// 三个通道的构建产物使用相同的资产文件名。
+pub fn get_ytdlp_download_url_for_channel(channel: &str) -> Result<String, String> {
+    let channel = channel.trim();
+    let repository = match channel {
+        "stable" => "yt-dlp/yt-dlp",
+        "nightly" => "yt-dlp/yt-dlp-nightly-builds",
+        "master" => "yt-dlp/yt-dlp-master-builds",
+        _ => return Err(format!("err_invalid_ytdlp_channel:{}", channel)),
+    };
+    Ok(format!(
+        "https://github.com/{}/releases/latest/download/{}",
+        repository,
+        ytdlp_asset_name()
+    ))
+}
+
+/// 获取当前所选通道的 yt-dlp 下载地址（根据平台）。
+pub fn get_ytdlp_download_url() -> String {
+    get_ytdlp_download_url_for_channel(get_ytdlp_channel().as_str()).unwrap_or_else(|_| {
+            format!(
+                "https://github.com/yt-dlp/yt-dlp/releases/latest/download/{}",
+                ytdlp_asset_name()
+            )
+        })
 }
 
 /// 获取 Deno 下载地址（根据平台和架构）

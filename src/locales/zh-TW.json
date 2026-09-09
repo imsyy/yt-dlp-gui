@@ -260,6 +260,8 @@
     "audioFormat": "音訊格式",
     "embedSubs": "嵌入字幕",
     "embedThumbnail": "嵌入縮圖",
+    "writeThumbnail": "下載縮圖",
+    "writeDescription": "下載簡介",
     "embedMetadata": "嵌入中繼資料",
     "embedChapters": "嵌入章節",
     "skipSponsor": "跳過贊助片段",

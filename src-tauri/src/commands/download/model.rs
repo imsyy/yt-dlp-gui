@@ -57,6 +57,10 @@ pub struct DownloadParams {
     pub no_overwrites: bool,
     pub embed_subs: bool,
     pub embed_thumbnail: bool,
+    /// 下载封面为单独文件（--write-thumbnail），与嵌入封面相互独立
+    pub write_thumbnail: bool,
+    /// 下载简介为单独文件（--write-description）
+    pub write_description: bool,
     pub embed_metadata: bool,
     /// 嵌入章节标记
     pub embed_chapters: bool,

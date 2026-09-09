@@ -35,9 +35,18 @@ const applyToolSources = () =>
     ffmpeg: settingStore.ffmpegSource,
   });
 
+/** 后端通道状态随应用重启丢失，启动与切换时以后端持久化的前端值为准 */
+const applyYtdlpChannel = () =>
+  invoke("set_ytdlp_channel", { channel: settingStore.ytdlpChannel }).catch(() => {});
+
 watch(
   () => [settingStore.ytdlpSource, settingStore.denoSource, settingStore.ffmpegSource],
   () => applyToolSources(),
+);
+
+watch(
+  () => settingStore.ytdlpChannel,
+  () => applyYtdlpChannel(),
 );
 
 const navBadgeCounts = computed<Record<string, number>>(() => ({
@@ -166,6 +175,7 @@ const checkAppUpdate = async () => {
 
 onMounted(async () => {
   await applyToolSources();
+  await applyYtdlpChannel();
   await listen("browser-extension-import-ready", () => void consumeBrowserExtensionImports());
   await consumeBrowserExtensionImports();
   await listen<CliOpenRequest>("cli-open-request", (event) => {

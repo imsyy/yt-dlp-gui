@@ -21,6 +21,12 @@ const embedSubs = defineModel<boolean>("embedSubs", { required: true });
 const embedThumbnail = defineModel<boolean>("embedThumbnail", {
   required: true,
 });
+const writeThumbnail = defineModel<boolean>("writeThumbnail", {
+  required: true,
+});
+const writeDescription = defineModel<boolean>("writeDescription", {
+  required: true,
+});
 const embedMetadata = defineModel<boolean>("embedMetadata", {
   required: true,
 });
@@ -292,6 +298,12 @@ watch(endTime, (val) => {
         </n-checkbox>
         <n-checkbox v-model:checked="embedThumbnail" size="small">
           {{ $t("detail.embedThumbnail") }}
+        </n-checkbox>
+        <n-checkbox v-model:checked="writeThumbnail" size="small">
+          {{ $t("detail.writeThumbnail") }}
+        </n-checkbox>
+        <n-checkbox v-model:checked="writeDescription" size="small">
+          {{ $t("detail.writeDescription") }}
         </n-checkbox>
         <n-checkbox v-model:checked="embedMetadata" size="small">
           {{ $t("detail.embedMetadata") }}

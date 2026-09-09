@@ -260,6 +260,8 @@
     "audioFormat": "오디오 형식",
     "embedSubs": "자막 포함",
     "embedThumbnail": "썸네일 포함",
+    "writeThumbnail": "썸네일 다운로드",
+    "writeDescription": "설명 다운로드",
     "embedMetadata": "메타데이터 포함",
     "embedChapters": "챕터 포함",
     "skipSponsor": "스폰서 구간 건너뛰기",

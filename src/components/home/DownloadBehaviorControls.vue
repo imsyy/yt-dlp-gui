@@ -7,13 +7,7 @@ defineEmits<{ settings: [] }>();
 
 <template>
   <div class="behavior-controls">
-    <n-tabs
-      v-model:value="behavior"
-      type="segment"
-      size="small"
-      animated
-      class="behavior-tabs"
-    >
+    <n-tabs v-model:value="behavior" type="segment" size="small" animated class="behavior-tabs">
       <n-tab-pane name="pending">
         <template #tab>
           <n-tooltip>

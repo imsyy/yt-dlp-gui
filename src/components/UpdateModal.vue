@@ -74,7 +74,7 @@ const handleClose = () => {
         </n-tag>
       </n-flex>
 
-      <n-flex vertical :size="8" v-if="statusStore.updateNotes">
+      <n-flex v-if="statusStore.updateNotes" vertical :size="8">
         <n-text depth="3" style="font-size: 13px">
           {{ $t("settings.appUpdateNotes") }}
         </n-text>

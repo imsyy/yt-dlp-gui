@@ -260,6 +260,8 @@
     "audioFormat": "Формат аудио",
     "embedSubs": "Встроить субтитры",
     "embedThumbnail": "Встроить обложку",
+    "writeThumbnail": "Скачать обложку",
+    "writeDescription": "Скачать описание",
     "embedMetadata": "Встроить метаданные",
     "embedChapters": "Встроить главы",
     "skipSponsor": "Пропустить рекламные вставки",

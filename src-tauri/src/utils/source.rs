@@ -150,3 +150,62 @@ pub fn build_youtube_extractor_args() -> Vec<String> {
         format!("youtube:{}", parts.join(";")),
     ]
 }
+
+// ========== yt-dlp 发行通道（stable / nightly / master）==========
+
+/// yt-dlp 官方的三个发行通道，详见 yt-dlp README "UPDATE" 章节。
+#[derive(Clone, Copy, PartialEq, Eq, Default)]
+pub enum YtdlpChannel {
+    #[default]
+    Stable,
+    Nightly,
+    Master,
+}
+
+impl YtdlpChannel {
+    fn parse(value: &str) -> Result<Self, String> {
+        match value {
+            "stable" => Ok(Self::Stable),
+            "nightly" => Ok(Self::Nightly),
+            "master" => Ok(Self::Master),
+            _ => Err(format!("err_invalid_ytdlp_channel:{}", value)),
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Stable => "stable",
+            Self::Nightly => "nightly",
+            Self::Master => "master",
+        }
+    }
+
+    /// 通道对应的 GitHub 仓库；nightly/master 是官方独立的构建仓库。
+    pub fn repository(self) -> &'static str {
+        match self {
+            Self::Stable => "yt-dlp/yt-dlp",
+            Self::Nightly => "yt-dlp/yt-dlp-nightly-builds",
+            Self::Master => "yt-dlp/yt-dlp-master-builds",
+        }
+    }
+}
+
+static YTDLP_CHANNEL: OnceLock<RwLock<YtdlpChannel>> = OnceLock::new();
+
+fn ytdlp_channel_lock() -> &'static RwLock<YtdlpChannel> {
+    YTDLP_CHANNEL.get_or_init(|| RwLock::new(YtdlpChannel::default()))
+}
+
+/// 设置内置 yt-dlp 的发行通道；非法值返回错误并保持原通道不变。
+pub fn set_ytdlp_channel(channel: &str) -> Result<(), String> {
+    let parsed = YtdlpChannel::parse(channel.trim())?;
+    let mut guard = ytdlp_channel_lock()
+        .write()
+        .map_err(|e| format!("err_set_ytdlp_channel:{}", e))?;
+    *guard = parsed;
+    Ok(())
+}
+
+pub fn get_ytdlp_channel() -> YtdlpChannel {
+    ytdlp_channel_lock().read().map(|g| *g).unwrap_or_default()
+}

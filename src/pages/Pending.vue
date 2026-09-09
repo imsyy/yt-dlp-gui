@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { formatFileSize } from "@/utils/format";
 import { useVideoStore } from "@/stores/video";
+import { useSettingStore } from "@/stores/setting";
 import { usePendingStore } from "@/stores/pending";
 import { useDownloadLauncher } from "@/composables/useDownloadLauncher";
 import { useI18n } from "vue-i18n";
@@ -15,10 +16,49 @@ import DownloadBar from "@/components/home/DownloadBar.vue";
 const { t } = useI18n();
 const router = useRouter();
 const videoStore = useVideoStore();
+const settingStore = useSettingStore();
 const pendingStore = usePendingStore();
 const { launchDownload } = useDownloadLauncher();
 
 const activeItem = computed(() => pendingStore.activeItem);
+
+/**
+ * 待下载页偏好型选项持久化
+ */
+const persistedOptionSnapshot = computed(() => {
+  const item = activeItem.value;
+  if (!item) return null;
+  return {
+    embedSubs: item.embedSubs,
+    embedThumbnail: item.embedThumbnail,
+    writeThumbnail: item.writeThumbnail,
+    writeDescription: item.writeDescription,
+    embedMetadata: item.embedMetadata,
+    embedChapters: item.embedChapters,
+    sponsorblockRemove: item.sponsorblockRemove,
+    extractAudio: item.extractAudio,
+    audioConvertFormat: item.audioConvertFormat,
+    noMerge: item.noMerge,
+    recodeFormat: item.recodeFormat,
+    limitRate: item.limitRate,
+  };
+});
+
+watch(persistedOptionSnapshot, (snapshot) => {
+  if (!snapshot) return;
+  settingStore.defaultEmbedSubs = snapshot.embedSubs;
+  settingStore.defaultEmbedThumbnail = snapshot.embedThumbnail;
+  settingStore.defaultWriteThumbnail = snapshot.writeThumbnail;
+  settingStore.defaultWriteDescription = snapshot.writeDescription;
+  settingStore.defaultEmbedMetadata = snapshot.embedMetadata;
+  settingStore.defaultEmbedChapters = snapshot.embedChapters;
+  settingStore.defaultSponsorblockRemove = snapshot.sponsorblockRemove;
+  settingStore.defaultExtractAudio = snapshot.extractAudio;
+  settingStore.defaultAudioConvertFormat = snapshot.audioConvertFormat;
+  settingStore.defaultNoMerge = snapshot.noMerge;
+  settingStore.defaultRecodeFormat = snapshot.recodeFormat;
+  settingStore.defaultLimitRate = snapshot.limitRate;
+});
 
 const estimatedSize = computed(() => {
   const item = activeItem.value;
@@ -209,6 +249,8 @@ const handleDownload = async () => {
           v-model:end-time="activeItem.endTime"
           v-model:embed-subs="activeItem.embedSubs"
           v-model:embed-thumbnail="activeItem.embedThumbnail"
+          v-model:write-thumbnail="activeItem.writeThumbnail"
+          v-model:write-description="activeItem.writeDescription"
           v-model:embed-metadata="activeItem.embedMetadata"
           v-model:embed-chapters="activeItem.embedChapters"
           v-model:sponsorblock-remove="activeItem.sponsorblockRemove"

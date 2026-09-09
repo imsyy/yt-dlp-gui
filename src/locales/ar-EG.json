@@ -260,6 +260,8 @@
     "audioFormat": "تنسيق الصوت",
     "embedSubs": "دمج الترجمة",
     "embedThumbnail": "دمج الصورة المصغرة",
+    "writeThumbnail": "تنزيل الصورة المصغرة",
+    "writeDescription": "تنزيل الوصف",
     "embedMetadata": "دمج البيانات الوصفية (Metadata)",
     "embedChapters": "دمج الفصول",
     "skipSponsor": "تخطي الإعلانات (Sponsors)",

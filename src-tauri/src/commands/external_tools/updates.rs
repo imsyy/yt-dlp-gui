@@ -28,6 +28,7 @@ async fn get_status(app: AppHandle, tool: &str) -> Result<ToolStatus, String> {
 }
 
 async fn fetch_latest_release_tag(tool: &str) -> Result<String, String> {
+    // yt-dlp 按当前所选通道（stable/nightly/master）检查对应仓库的最新构建。
     let url = utils::get_tool_latest_release_url(tool)
         .ok_or_else(|| format!("err_unknown_tool:{}", tool))?;
     let client = reqwest::Client::builder()
@@ -128,6 +129,11 @@ mod tests {
         assert_eq!(version_token("2026.07.04"), Some("2026.07.04"));
         assert_eq!(version_token("v2.9.5"), Some("2.9.5"));
         assert_eq!(version_token("b6.1.1"), Some("6.1.1"));
+        // nightly/master 通道版本号带有构建时间后缀
+        assert_eq!(
+            version_token("2026.08.20.234504"),
+            Some("2026.08.20.234504")
+        );
         assert_eq!(
             version_token("2.9.5 (stable, release, x86_64-pc-windows-msvc)"),
             Some("2.9.5")
@@ -142,6 +148,15 @@ mod tests {
     fn compares_numeric_version_segments() {
         assert_eq!(
             compare_versions("2026.07.04", "2026.03.17"),
+            Ok(Ordering::Greater)
+        );
+        // nightly 构建号大于同日 stable，且长版本号可比较
+        assert_eq!(
+            compare_versions("2026.08.20.234504", "2026.08.19"),
+            Ok(Ordering::Greater)
+        );
+        assert_eq!(
+            compare_versions("2026.08.20.234504", "2026.08.20.122307"),
             Ok(Ordering::Greater)
         );
         assert_eq!(compare_versions("v2.9.5", "2.9.5"), Ok(Ordering::Equal));

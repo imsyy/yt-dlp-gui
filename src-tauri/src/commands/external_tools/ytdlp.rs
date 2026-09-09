@@ -22,6 +22,18 @@ pub async fn get_ytdlp_status(app: AppHandle) -> Result<ToolStatus, String> {
     build_tool_status("yt-dlp", ytdlp_path, managed_path, "--version").await
 }
 
+/// 获取当前选择的 yt-dlp 发行通道（stable/nightly/master）
+#[tauri::command]
+pub fn get_ytdlp_channel() -> String {
+    utils::get_ytdlp_channel().as_str().to_string()
+}
+
+/// 设置内置 yt-dlp 的发行通道；后续下载与更新检查都使用该通道的构建仓库。
+#[tauri::command]
+pub fn set_ytdlp_channel(channel: String) -> Result<(), String> {
+    utils::set_ytdlp_channel(&channel)
+}
+
 async fn download_ytdlp_impl(app: AppHandle, operation: &str) -> Result<(), String> {
     emit_tool_progress(&app, "yt-dlp", operation, "downloading", Some(0.0));
     let ytdlp_path = utils::get_managed_ytdlp_path(&app)?;
@@ -154,8 +166,15 @@ pub async fn update_ytdlp(app: AppHandle) -> Result<String, String> {
     emit_tool_progress(&app, "yt-dlp", "update", "updating", None);
 
     let mut cmd = tokio::process::Command::new(&ytdlp_path);
-    cmd.arg("-U")
-        .env("PYTHONUTF8", "1")
+    // 系统版本使用其内置更新器；非 stable 通道用 --update-to 切换并更新，
+    // stable 通道保持原来的 -U 行为。
+    let channel = utils::get_ytdlp_channel();
+    if channel == utils::YtdlpChannel::Stable {
+        cmd.arg("-U");
+    } else {
+        cmd.arg("--update-to").arg(channel.as_str());
+    }
+    cmd.env("PYTHONUTF8", "1")
         .env("PYTHONIOENCODING", "utf-8");
     #[cfg(target_os = "windows")]
     cmd.creation_flags(CREATE_NO_WINDOW);

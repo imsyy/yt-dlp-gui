@@ -360,9 +360,7 @@ const handleClearFinished = () => {
                       >
                         {{ task.speed }}
                       </n-text>
-                      <n-text depth="3" class="task-stat">
-                        {{ task.percent.toFixed(1) }}%
-                      </n-text>
+                      <n-text depth="3" class="task-stat">{{ task.percent.toFixed(1) }}%</n-text>
                       <n-text
                         v-if="task.eta && task.status === 'downloading'"
                         depth="3"

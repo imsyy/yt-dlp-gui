@@ -1,4 +1,5 @@
 export type ToolSource = "managed" | "system" | "custom";
+export type YtdlpChannel = "stable" | "nightly" | "master";
 export type HomeMode = "standard" | "batch";
 export type HomeDownloadBehavior = "pending" | "quick";
 
@@ -72,6 +73,8 @@ export interface VideoFormat {
 export interface ExtraOptions {
   embedSubs: boolean;
   embedThumbnail: boolean;
+  writeThumbnail: boolean;
+  writeDescription: boolean;
   embedMetadata: boolean;
   embedChapters: boolean;
   sponsorblockRemove: boolean;
@@ -97,6 +100,8 @@ export interface DownloadTaskParams {
   noOverwrites: boolean;
   embedSubs: boolean;
   embedThumbnail: boolean;
+  writeThumbnail: boolean;
+  writeDescription: boolean;
   embedMetadata: boolean;
   embedChapters: boolean;
   sponsorblockRemove: boolean;
@@ -162,6 +167,8 @@ export interface PendingItem extends FetchedVideoData {
   endTime: number | null;
   embedSubs: boolean;
   embedThumbnail: boolean;
+  writeThumbnail: boolean;
+  writeDescription: boolean;
   embedMetadata: boolean;
   embedChapters: boolean;
   sponsorblockRemove: boolean;

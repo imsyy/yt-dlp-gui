@@ -267,6 +267,8 @@
     "audioFormat": "Hangformátum",
     "embedSubs": "Feliratok beágyazása",
     "embedThumbnail": "Indexkép beágyazása",
+    "writeThumbnail": "Indexkép letöltése",
+    "writeDescription": "Leírás letöltése",
     "embedMetadata": "Metaadatok beágyazása",
     "embedChapters": "Fejezetek beágyazása",
     "skipSponsor": "Szponzorok kivágása",

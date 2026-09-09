@@ -6,6 +6,10 @@ on:
       - "v*"
   workflow_dispatch:
 
+# 发版只串行不取消：同一 ref 的多次触发排队执行，避免产物交错；绝不在中途取消
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
 permissions:
   contents: write
 

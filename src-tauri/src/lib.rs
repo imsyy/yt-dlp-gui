@@ -67,6 +67,8 @@ pub fn run() {
             commands::set_tool_sources,
             commands::set_youtube_extractor_args,
             commands::get_ytdlp_status,
+            commands::get_ytdlp_channel,
+            commands::set_ytdlp_channel,
             commands::check_tool_update,
             commands::download_ytdlp,
             commands::update_ytdlp,
