@@ -59,6 +59,10 @@ export const useSettingStore = defineStore(
     const filenamePrefix = ref("");
     const filenameSuffix = ref("");
 
+    /** 下载前用正则替换标题元数据 */
+    const titleRegex = ref("");
+    const titleReplacement = ref("");
+
     /** 并发分片数，0 = 不启用 */
     const concurrentFragments = ref(0);
 
@@ -143,6 +147,8 @@ export const useSettingStore = defineStore(
       outputTemplate,
       filenamePrefix,
       filenameSuffix,
+      titleRegex,
+      titleReplacement,
       concurrentFragments,
       noOverwrites,
       defaultFfmpegArgs,

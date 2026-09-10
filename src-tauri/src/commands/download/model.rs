@@ -75,6 +75,9 @@ pub struct DownloadParams {
     pub limit_rate: Option<String>,
     /// 自定义 FFmpeg 后处理参数（--postprocessor-args）
     pub ffmpeg_args: Option<String>,
+    /// 下载前用正则替换标题元数据（--replace-in-metadata title REGEX REPLACEMENT）
+    pub title_regex: Option<String>,
+    pub title_replacement: Option<String>,
     pub subtitles: Vec<String>,
     pub start_time: Option<f64>,
     pub end_time: Option<f64>,

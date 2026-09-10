@@ -111,6 +111,8 @@ export interface DownloadTaskParams {
   recodeFormat: string | null;
   limitRate: string | null;
   ffmpegArgs: string | null;
+  titleRegex: string | null;
+  titleReplacement: string | null;
   subtitles: string[];
   startTime: number | null;
   endTime: number | null;
