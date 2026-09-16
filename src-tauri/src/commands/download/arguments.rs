@@ -187,6 +187,15 @@ pub(super) fn build_download_args(
             args.push(fmt.clone());
         }
     }
+    // 重新混流 / 合并封装格式（无需二次编码，解决 Issue #51, #33, #30）
+    if let Some(ref remux) = params.remux_format {
+        if !remux.is_empty() && remux != "auto" {
+            args.push("--remux-video".to_string());
+            args.push(remux.clone());
+            args.push("--merge-output-format".to_string());
+            args.push(remux.clone());
+        }
+    }
     if let Some(ref rate) = params.limit_rate {
         if !rate.is_empty() {
             args.push("-r".to_string());
@@ -198,6 +207,15 @@ pub(super) fn build_download_args(
         if !ffmpeg_args.is_empty() {
             args.push("--postprocessor-args".to_string());
             args.push(format!("FFmpeg:{}", ffmpeg_args));
+        }
+    }
+    // 用户自定义 yt-dlp 附加参数（如 --sleep-requests、--sleep-interval 等，解决 Issue #50）
+    if let Some(ref custom) = params.custom_args {
+        if !custom.trim().is_empty() {
+            let split_args = utils::split_command_line_args(custom);
+            for arg in split_args {
+                args.push(arg);
+            }
         }
     }
 
@@ -345,8 +363,10 @@ mod ffmpeg_requirement_tests {
             audio_convert_format: None,
             no_merge: false,
             recode_format: None,
+            remux_format: None,
             limit_rate: None,
             ffmpeg_args: None,
+            custom_args: None,
             subtitles: Vec::new(),
             start_time: None,
             end_time: None,

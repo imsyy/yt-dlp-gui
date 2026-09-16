@@ -41,6 +41,8 @@
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "typecheck": "vue-tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write \"src/**/*.{vue,ts,js,scss,css,json}\""
@@ -82,6 +84,7 @@
     "unplugin-icons": "^23.0.1",
     "unplugin-vue-components": "^32.0.0",
     "vite": "^8.0.11",
+    "vitest": "^5.0.1",
     "vue-router": "^5.0.6",
     "vue-tsc": "^2.2.12"
   }

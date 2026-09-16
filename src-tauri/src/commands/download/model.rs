@@ -72,9 +72,13 @@ pub struct DownloadParams {
     pub audio_convert_format: Option<String>,
     pub no_merge: bool,
     pub recode_format: Option<String>,
+    /// 重新混流 / 合并封装格式（--remux-video / --merge-output-format）
+    pub remux_format: Option<String>,
     pub limit_rate: Option<String>,
     /// 自定义 FFmpeg 后处理参数（--postprocessor-args）
     pub ffmpeg_args: Option<String>,
+    /// 自定义 yt-dlp 附加参数（如 --sleep-requests、--sleep-interval）
+    pub custom_args: Option<String>,
     pub subtitles: Vec<String>,
     pub start_time: Option<f64>,
     pub end_time: Option<f64>,

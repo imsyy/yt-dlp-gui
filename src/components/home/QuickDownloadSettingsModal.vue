@@ -26,6 +26,14 @@ const recodeOptions = computed(() => [
   { label: "FLAC", value: "flac" },
 ]);
 
+const remuxOptions = computed(() => [
+  { label: t("common.default"), value: "" },
+  { label: "MP4", value: "mp4" },
+  { label: "MKV", value: "mkv" },
+  { label: "WebM", value: "webm" },
+  { label: "MOV", value: "mov" },
+]);
+
 const limitRateOptions = computed(() => [
   { label: t("detail.noLimit"), value: "" },
   { label: "500K/s", value: "500K" },
@@ -70,6 +78,15 @@ const limitRateOptions = computed(() => [
 
           <n-flex :size="16" wrap>
             <n-flex align="center" :size="8">
+              <span class="option-label">{{ $t("detail.remuxFormat") }}</span>
+              <n-select
+                v-model:value="settingStore.quickRemuxFormat"
+                :options="remuxOptions"
+                size="small"
+                class="compact-select"
+              />
+            </n-flex>
+            <n-flex align="center" :size="8">
               <span class="option-label">{{ $t("detail.recodeFormat") }}</span>
               <n-select
                 v-model:value="settingStore.quickRecodeFormat"
@@ -94,6 +111,17 @@ const limitRateOptions = computed(() => [
             <n-input
               v-model:value="settingStore.quickFfmpegArgs"
               :placeholder="$t('detail.ffmpegArgsPlaceholder')"
+              size="small"
+              clearable
+              class="ffmpeg-input"
+            />
+          </n-flex>
+
+          <n-flex align="center" :size="8" :wrap="false">
+            <span class="option-label">{{ $t("detail.customArgs") }}</span>
+            <n-input
+              v-model:value="settingStore.quickCustomArgs"
+              :placeholder="$t('detail.customArgsPlaceholder')"
               size="small"
               clearable
               class="ffmpeg-input"

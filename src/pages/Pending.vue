@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { formatFileSize } from "@/utils/format";
+import { estimateFileSize } from "@/utils/normalizer";
 import { useVideoStore } from "@/stores/video";
 import { useSettingStore } from "@/stores/setting";
 import { usePendingStore } from "@/stores/pending";
@@ -40,7 +41,9 @@ const persistedOptionSnapshot = computed(() => {
     audioConvertFormat: item.audioConvertFormat,
     noMerge: item.noMerge,
     recodeFormat: item.recodeFormat,
+    remuxFormat: item.remuxFormat,
     limitRate: item.limitRate,
+    customArgs: item.customArgs,
   };
 });
 
@@ -57,20 +60,29 @@ watch(persistedOptionSnapshot, (snapshot) => {
   settingStore.defaultAudioConvertFormat = snapshot.audioConvertFormat;
   settingStore.defaultNoMerge = snapshot.noMerge;
   settingStore.defaultRecodeFormat = snapshot.recodeFormat;
+  settingStore.defaultRemuxFormat = snapshot.remuxFormat;
   settingStore.defaultLimitRate = snapshot.limitRate;
+  settingStore.defaultCustomArgs = snapshot.customArgs;
 });
 
 const estimatedSize = computed(() => {
   const item = activeItem.value;
   if (!item) return 0;
   let total = 0;
+  const duration = item.videoInfo?.duration || 0;
   if (item.downloadMode !== "audio") {
     const vf = item.videoFormats.find((f) => f.format_id === item.selectedVideoFormat);
-    if (vf) total += vf.filesize || vf.filesize_approx || 0;
+    if (vf) {
+      const { size } = estimateFileSize(vf, duration);
+      total += size;
+    }
   }
   if (item.downloadMode !== "video") {
     const af = item.audioFormats.find((f) => f.format_id === item.selectedAudioFormat);
-    if (af) total += af.filesize || af.filesize_approx || 0;
+    if (af) {
+      const { size } = estimateFileSize(af, duration);
+      total += size;
+    }
   }
   return total;
 });
@@ -258,8 +270,10 @@ const handleDownload = async () => {
           v-model:audio-convert-format="activeItem.audioConvertFormat"
           v-model:no-merge="activeItem.noMerge"
           v-model:recode-format="activeItem.recodeFormat"
+          v-model:remux-format="activeItem.remuxFormat"
           v-model:limit-rate="activeItem.limitRate"
           v-model:ffmpeg-args="activeItem.ffmpegArgs"
+          v-model:custom-args="activeItem.customArgs"
           :video-info="activeItem.videoInfo as VideoInfo"
           class="section-card"
         />

@@ -67,7 +67,65 @@ export interface VideoFormat {
   audio_channels?: number | null;
   dynamic_range?: string | null;
   tbr: number | null;
+  vbr?: number | null;
   abr: number | null;
+}
+
+/** 规范化的视频流规格（字段固定，结构严谨，消除展示跳变） */
+export interface NormalizedVideoFormat {
+  formatId: string;
+  container: string;
+  resolutionLabel: string;
+  height: number;
+  width: number;
+  fps: number;
+  fpsLabel: string;
+  codec: string;
+  codecKey: string;
+  dynamicRange: string;
+  filesize: number;
+  filesizeLabel: string;
+  isEstimatedSize: boolean;
+  bitrate: number;
+  raw: VideoFormat;
+}
+
+/** 规范化的音频流规格（语言、角色、声道统一） */
+export interface NormalizedAudioFormat {
+  formatId: string;
+  container: string;
+  codec: string;
+  codecKey: string;
+  channels: number;
+  channelsLabel: string;
+  language: string;
+  languageLabel: string;
+  role: "original" | "dubbed" | "descriptive" | "default" | "unknown";
+  roleLabel: string;
+  bitrate: number;
+  bitrateLabel: string;
+  filesize: number;
+  filesizeLabel: string;
+  isEstimatedSize: boolean;
+  raw: VideoFormat;
+}
+
+/** 规范化的下载进度指标 */
+export interface NormalizedProgressMetrics {
+  percent: number;
+  speed: string;
+  eta: string;
+  downloaded: string;
+  total: string;
+  status:
+    | "queued"
+    | "preparing"
+    | "downloading"
+    | "postprocessing"
+    | "paused"
+    | "completed"
+    | "error"
+    | "cancelled";
 }
 
 export interface ExtraOptions {
@@ -82,8 +140,10 @@ export interface ExtraOptions {
   audioConvertFormat: string;
   noMerge: boolean;
   recodeFormat: string;
+  remuxFormat: string;
   limitRate: string;
   ffmpegArgs: string;
+  customArgs: string;
 }
 
 export interface DownloadTaskParams {
@@ -109,8 +169,10 @@ export interface DownloadTaskParams {
   audioConvertFormat: string | null;
   noMerge: boolean;
   recodeFormat: string | null;
+  remuxFormat: string | null;
   limitRate: string | null;
   ffmpegArgs: string | null;
+  customArgs: string | null;
   subtitles: string[];
   startTime: number | null;
   endTime: number | null;
@@ -176,8 +238,10 @@ export interface PendingItem extends FetchedVideoData {
   audioConvertFormat: string;
   noMerge: boolean;
   recodeFormat: string;
+  remuxFormat: string;
   limitRate: string;
   ffmpegArgs: string;
+  customArgs: string;
   selectedSubtitles: string[];
   /** 是否从开始下载直播流（--live-from-start） */
   liveFromStart: boolean;

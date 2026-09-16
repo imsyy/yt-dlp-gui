@@ -50,8 +50,10 @@ const audioConvertFormat = defineModel<string>("audioConvertFormat", {
 });
 const noMerge = defineModel<boolean>("noMerge", { required: true });
 const recodeFormat = defineModel<string>("recodeFormat", { required: true });
+const remuxFormat = defineModel<string>("remuxFormat", { required: true });
 const limitRate = defineModel<string>("limitRate", { required: true });
 const ffmpegArgs = defineModel<string>("ffmpegArgs", { required: true });
+const customArgs = defineModel<string>("customArgs", { required: true });
 
 /** 是否为正在直播 */
 const isLive = computed(
@@ -145,6 +147,14 @@ const recodeOptions = computed(() => [
   { label: "WebM", value: "webm" },
   { label: "MP3", value: "mp3" },
   { label: "FLAC", value: "flac" },
+]);
+
+const remuxOptions = computed(() => [
+  { label: t("common.default"), value: "" },
+  { label: "MP4", value: "mp4" },
+  { label: "MKV", value: "mkv" },
+  { label: "WebM", value: "webm" },
+  { label: "MOV", value: "mov" },
 ]);
 
 const limitRateOptions = computed(() => [
@@ -280,6 +290,15 @@ watch(endTime, (val) => {
 
       <n-flex :size="16" wrap>
         <n-flex align="center" :size="8">
+          <span class="option-label">{{ $t("detail.remuxFormat") }}</span>
+          <n-select
+            v-model:value="remuxFormat"
+            :options="remuxOptions"
+            size="small"
+            style="width: 110px"
+          />
+        </n-flex>
+        <n-flex align="center" :size="8">
           <span class="option-label">{{ $t("detail.recodeFormat") }}</span>
           <n-select
             v-model:value="recodeFormat"
@@ -304,6 +323,17 @@ watch(endTime, (val) => {
         <n-input
           v-model:value="ffmpegArgs"
           :placeholder="$t('detail.ffmpegArgsPlaceholder')"
+          size="small"
+          clearable
+          style="flex: 1"
+        />
+      </n-flex>
+
+      <n-flex align="center" :size="8">
+        <span class="option-label">{{ $t("detail.customArgs") }}</span>
+        <n-input
+          v-model:value="customArgs"
+          :placeholder="$t('detail.customArgsPlaceholder')"
           size="small"
           clearable
           style="flex: 1"

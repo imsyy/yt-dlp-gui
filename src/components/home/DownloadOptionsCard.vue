@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { formatFileSize } from "@/utils/format";
+import { normalizeAudioFormat, normalizeVideoFormat } from "@/utils/normalizer";
 import { getCodecKey, getCodecLabel } from "@/utils/formats";
 import { useI18n } from "vue-i18n";
 import type { VideoFormat, VideoInfo } from "@/types";
@@ -66,46 +66,47 @@ const isLive = computed(
   () => props.videoInfo.is_live === true || props.videoInfo.live_status === "is_live",
 );
 
-/** 视频格式下拉选项 */
-const videoFormatOptions = computed(() =>
-  filteredVideoFormats.value.map((f) => ({
-    label: [
-      `${f.height}p${f.fps ? ` ${f.fps}fps` : ""}`,
-      getCodecLabel(f.vcodec),
-      f.dynamic_range,
-      f.ext,
-      f.filesize || f.filesize_approx
-        ? formatFileSize(f.filesize || f.filesize_approx || 0)
-        : t("detail.unknownSize"),
-      `#${f.format_id}`,
-    ]
-      .filter(Boolean)
-      .join(" · "),
-    value: f.format_id,
-  })),
-);
+/** 视频格式下拉选项（规范化固定结构：清晰度+帧率 · 编码 · 动态范围 · 容器 · 大小 · 编号） */
+const videoFormatOptions = computed(() => {
+  const duration = props.videoInfo.duration || 0;
+  return filteredVideoFormats.value.map((f) => {
+    const n = normalizeVideoFormat(f, duration);
+    const parts = [
+      `${n.resolutionLabel}${n.fpsLabel ? ` ${n.fpsLabel}` : ""}`,
+      n.codec,
+      n.dynamicRange,
+      n.container,
+      n.filesizeLabel,
+      `#${n.formatId}`,
+    ].filter(Boolean);
+    return {
+      label: parts.join(" · "),
+      value: n.formatId,
+    };
+  });
+});
 
-/** 音频格式下拉选项 */
-const audioFormatOptions = computed(() =>
-  filteredAudioFormats.value.map((f) => ({
-    label: [
-      f.language ? `[${f.language}]` : "",
-      f.format_note,
-      f.abr ? `${f.abr}kbps` : "",
-      getCodecLabel(f.acodec),
-      f.audio_channels ? `${f.audio_channels}ch` : "",
-      f.ext,
-      f.filesize || f.filesize_approx
-        ? formatFileSize(f.filesize || f.filesize_approx || 0)
-        : t("detail.unknownSize"),
-      `#${f.format_id}`,
-    ]
-      .filter(Boolean)
-      .filter((part, index, parts) => parts.indexOf(part) === index)
-      .join(" · "),
-    value: f.format_id,
-  })),
-);
+/** 音频格式下拉选项（规范化固定结构：[语言 · 角色] · 码率 · 编码 · 声道 · 容器 · 大小 · 编号） */
+const audioFormatOptions = computed(() => {
+  const duration = props.videoInfo.duration || 0;
+  return filteredAudioFormats.value.map((f) => {
+    const n = normalizeAudioFormat(f, duration);
+    const langInfo = [n.languageLabel || n.language, n.roleLabel].filter(Boolean).join(" · ");
+    const parts = [
+      langInfo ? `[${langInfo}]` : "",
+      n.bitrateLabel,
+      n.codec,
+      n.channelsLabel,
+      n.container,
+      n.filesizeLabel,
+      `#${n.formatId}`,
+    ].filter(Boolean);
+    return {
+      label: parts.join(" · "),
+      value: n.formatId,
+    };
+  });
+});
 
 const handleVideoCodecChange = (value: string) => {
   selectedVideoCodec.value = value;

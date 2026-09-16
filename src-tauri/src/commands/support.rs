@@ -105,17 +105,44 @@ pub async fn run_ytdlp_json(
 
     let stdout = String::from_utf8_lossy(&output.stdout);
 
-    // 优先从 stdout 解析 JSON（yt-dlp 可能在 stderr 输出警告但仍成功）
-    if let Some(json_str) = stdout
-        .lines()
-        .find(|line| line.trim_start().starts_with('{'))
-    {
-        return serde_json::from_str(json_str).map_err(|e| format!("err_parse_video_info:{}", e));
+    // 优先从 stdout 解析 JSON（yt-dlp 可能在 stderr 输出警告但仍成功，且可能输出多行格式化 JSON）
+    if let Some(val) = parse_json_from_stdout(&stdout) {
+        return Ok(val);
     }
 
     // 未找到 JSON，从 stderr 提取 ERROR 行作为错误信息
     let stderr = String::from_utf8_lossy(&output.stderr);
-    Err(extract_ytdlp_error(&stderr))
+    let err = extract_ytdlp_error(&stderr);
+    if err.is_empty() {
+        let stdout_err = extract_ytdlp_error(&stdout);
+        if !stdout_err.is_empty() {
+            return Err(stdout_err);
+        }
+        Err("err_parse_video_info:empty_json".to_string())
+    } else {
+        Err(err)
+    }
+}
+
+/// 从 yt-dlp stdout 输出中健壮地解析 JSON（支持单行、多行格式化及夹带日志输出）
+pub fn parse_json_from_stdout(stdout: &str) -> Option<Value> {
+    let trimmed = stdout.trim();
+    if let Some(start) = trimmed.find('{') {
+        if let Some(end) = trimmed.rfind('}') {
+            if start < end {
+                if let Ok(val) = serde_json::from_str::<Value>(&trimmed[start..=end]) {
+                    return Some(val);
+                }
+            }
+        }
+        let candidate = &trimmed[start..];
+        let mut de = serde_json::Deserializer::from_str(candidate);
+        use serde::Deserialize;
+        if let Ok(val) = Value::deserialize(&mut de) {
+            return Some(val);
+        }
+    }
+    None
 }
 
 /// 从 yt-dlp stderr 输出中提取错误信息
@@ -167,3 +194,52 @@ pub fn validate_path_within(
     }
     Ok(target_for_check)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_json_single_line() {
+        let stdout = r#"{"id": "abc123", "title": "Test Video"}"#;
+        let parsed = parse_json_from_stdout(stdout).unwrap();
+        assert_eq!(parsed["id"], "abc123");
+        assert_eq!(parsed["title"], "Test Video");
+    }
+
+    #[test]
+    fn test_parse_json_multiline() {
+        let stdout = r#"{
+  "id": "multi123",
+  "title": "Multiline Video",
+  "formats": [
+    {"format_id": "137", "height": 1080}
+  ]
+}"#;
+        let parsed = parse_json_from_stdout(stdout).unwrap();
+        assert_eq!(parsed["id"], "multi123");
+        assert_eq!(parsed["formats"][0]["height"], 1080);
+    }
+
+    #[test]
+    fn test_parse_json_with_surrounding_warnings() {
+        let stdout = r#"[youtube] Extracting URL: https://example.com/watch?v=123
+WARNING: [youtube] Some warning occurred
+{
+  "id": "123",
+  "title": "Warning Handled"
+}
+[download] Some trailing info
+"#;
+        let parsed = parse_json_from_stdout(stdout).unwrap();
+        assert_eq!(parsed["id"], "123");
+        assert_eq!(parsed["title"], "Warning Handled");
+    }
+
+    #[test]
+    fn test_parse_json_invalid() {
+        let stdout = "ERROR: Video unavailable";
+        assert!(parse_json_from_stdout(stdout).is_none());
+    }
+}
+

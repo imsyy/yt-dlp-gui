@@ -31,8 +31,10 @@ export const useSettingStore = defineStore(
     const quickSponsorblockRemove = ref(false);
     const quickNoMerge = ref(false);
     const quickRecodeFormat = ref("");
+    const quickRemuxFormat = ref("");
     const quickLimitRate = ref("");
     const quickFfmpegArgs = ref("");
+    const quickCustomArgs = ref("");
 
     /** 下载目录 */
     const downloadDir = ref("");
@@ -68,6 +70,9 @@ export const useSettingStore = defineStore(
     /** 新下载任务默认使用的 FFmpeg 后处理参数 */
     const defaultFfmpegArgs = ref("");
 
+    /** 新下载任务默认自定义 yt-dlp 附加参数（如 --sleep-requests 2） */
+    const defaultCustomArgs = ref("");
+
     /** 标准流程新解析任务的默认额外选项 */
     const defaultEmbedSubs = ref(false);
     const defaultEmbedThumbnail = ref(false);
@@ -80,6 +85,7 @@ export const useSettingStore = defineStore(
     const defaultAudioConvertFormat = ref("");
     const defaultNoMerge = ref(false);
     const defaultRecodeFormat = ref("");
+    const defaultRemuxFormat = ref("");
     const defaultLimitRate = ref("");
 
     /** 最大同时下载数，0 = 不限制 */
@@ -132,8 +138,10 @@ export const useSettingStore = defineStore(
       quickSponsorblockRemove,
       quickNoMerge,
       quickRecodeFormat,
+      quickRemuxFormat,
       quickLimitRate,
       quickFfmpegArgs,
+      quickCustomArgs,
       downloadDir,
       cookieMode,
       cookieText,
@@ -146,6 +154,7 @@ export const useSettingStore = defineStore(
       concurrentFragments,
       noOverwrites,
       defaultFfmpegArgs,
+      defaultCustomArgs,
       defaultEmbedSubs,
       defaultEmbedThumbnail,
       defaultWriteThumbnail,
@@ -157,6 +166,7 @@ export const useSettingStore = defineStore(
       defaultAudioConvertFormat,
       defaultNoMerge,
       defaultRecodeFormat,
+      defaultRemuxFormat,
       defaultLimitRate,
       maxConcurrentDownloads,
       notifyMode,
