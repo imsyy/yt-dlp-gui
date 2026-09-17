@@ -4,6 +4,15 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { readText } from "@tauri-apps/plugin-clipboard-manager";
 import { useSettingStore } from "@/stores/setting";
 import { useI18n } from "vue-i18n";
+import { NCard } from "naive-ui";
+
+interface Props {
+  plain?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  plain: false,
+});
 
 const { t } = useI18n();
 const settingStore = useSettingStore();
@@ -88,7 +97,10 @@ const handleSelectFile = async () => {
 </script>
 
 <template>
-  <n-card title="Cookie" size="small">
+  <component
+    :is="props.plain ? 'div' : NCard"
+    v-bind="props.plain ? {} : { title: 'Cookie', size: 'small' }"
+  >
     <n-flex vertical :size="12">
       <n-text depth="3" style="font-size: 13px">
         {{ $t("cookie.desc") }}
@@ -163,5 +175,5 @@ const handleSelectFile = async () => {
         />
       </template>
     </n-flex>
-  </n-card>
+  </component>
 </template>

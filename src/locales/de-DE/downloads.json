@@ -133,6 +133,9 @@
     "tplErrEmpty": "Die Dateinamenvorlage darf nicht leer sein",
     "tplErrPercent": "Einzelnes % gefunden; ein literales Prozentzeichen wird als %% geschrieben",
     "tplErrUnclosed": "Schließende ) für %( fehlt",
-    "tplErrConversion": "Nicht unterstützter Konvertierungstyp „{char}“; nach dem Feld wird s/d usw. erwartet (siehe yt-dlp OUTPUT TEMPLATE)"
+    "tplErrConversion": "Nicht unterstützter Konvertierungstyp „{char}“; nach dem Feld wird s/d usw. erwartet (siehe yt-dlp OUTPUT TEMPLATE)",
+    "remuxFormat": "Container-Format",
+    "customArgs": "Zusätzliche Parameter",
+    "customArgsPlaceholder": "Zusätzliche yt-dlp-Parameter, z. B. --sleep-requests 2 --sleep-interval 10"
   }
 }

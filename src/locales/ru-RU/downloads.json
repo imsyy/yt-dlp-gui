@@ -133,6 +133,9 @@
     "tplErrEmpty": "Шаблон имени файла не может быть пустым",
     "tplErrPercent": "Обнаружен одиночный символ %; знак процента пишется как %%",
     "tplErrUnclosed": "Для %( нет закрывающей скобки )",
-    "tplErrConversion": "Неподдерживаемый тип преобразования «{char}»; после поля ожидается s/d и т. п. (см. OUTPUT TEMPLATE в документации yt-dlp)"
+    "tplErrConversion": "Неподдерживаемый тип преобразования «{char}»; после поля ожидается s/d и т. п. (см. OUTPUT TEMPLATE в документации yt-dlp)",
+    "remuxFormat": "Контейнер",
+    "customArgs": "Дополнительные аргументы",
+    "customArgsPlaceholder": "Дополнительные аргументы yt-dlp, например --sleep-requests 2 --sleep-interval 10"
   }
 }

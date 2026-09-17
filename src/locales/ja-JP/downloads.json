@@ -133,6 +133,9 @@
     "tplErrEmpty": "ファイル名テンプレートは空にできません",
     "tplErrPercent": "単独の % があります。パーセント記号をそのまま使う場合は %% と記述してください",
     "tplErrUnclosed": "%( に対応する ) がありません",
-    "tplErrConversion": "変換タイプ「{char}」はサポートされていません。フィールドの後には s/d などを指定してください（yt-dlp の OUTPUT TEMPLATE を参照）"
+    "tplErrConversion": "変換タイプ「{char}」はサポートされていません。フィールドの後には s/d などを指定してください（yt-dlp の OUTPUT TEMPLATE を参照）",
+    "remuxFormat": "コンテナ変換",
+    "customArgs": "追加引数",
+    "customArgsPlaceholder": "追加の yt-dlp 引数（例: --sleep-requests 2 --sleep-interval 10）"
   }
 }

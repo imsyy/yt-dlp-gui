@@ -17,7 +17,9 @@
     "selectAll": "Select All",
     "deselectAll": "Deselect All",
     "saveFailed": "Save failed: {e}",
-    "downloadFailed": "Download failed: {e}"
+    "downloadFailed": "Download failed: {e}",
+    "open": "Open",
+    "openFolder": "Open Folder"
   },
   "nav": {
     "home": "Home",

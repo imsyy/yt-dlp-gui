@@ -133,6 +133,9 @@
     "tplErrEmpty": "檔名範本不可為空",
     "tplErrPercent": "存在孤立的 %，字面百分號請寫成 %%",
     "tplErrUnclosed": "%( 後缺少配對的 )",
-    "tplErrConversion": "不支援的轉換類型「{char}」，欄位後應為 s/d 等類型（詳見 yt-dlp OUTPUT TEMPLATE）"
+    "tplErrConversion": "不支援的轉換類型「{char}」，欄位後應為 s/d 等類型（詳見 yt-dlp OUTPUT TEMPLATE）",
+    "remuxFormat": "封裝格式",
+    "customArgs": "附加參數",
+    "customArgsPlaceholder": "附加 yt-dlp 參數，如 --sleep-requests 2 --sleep-interval 10"
   }
 }

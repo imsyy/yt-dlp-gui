@@ -133,6 +133,9 @@
     "tplErrEmpty": "A fájlnévsablon nem lehet üres",
     "tplErrPercent": "Egyedülálló % jel található; a szó szerinti százalékjelet %% formában kell írni",
     "tplErrUnclosed": "Hiányzik a %( utáni záró )",
-    "tplErrConversion": "Nem támogatott „{char}” átalakítótípus; a mező után s/d stb. elvárt (lásd az yt-dlp OUTPUT TEMPLATE dokumentációját)"
+    "tplErrConversion": "Nem támogatott „{char}” átalakítótípus; a mező után s/d stb. elvárt (lásd az yt-dlp OUTPUT TEMPLATE dokumentációját)",
+    "remuxFormat": "Konténer formátum",
+    "customArgs": "További argumentumok",
+    "customArgsPlaceholder": "További yt-dlp argumentumok, pl. --sleep-requests 2 --sleep-interval 10"
   }
 }

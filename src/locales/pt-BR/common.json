@@ -17,7 +17,9 @@
     "deselectAll": "Desmarcar tudo",
     "saveFailed": "Falha ao salvar: {e}",
     "downloadFailed": "Falha no download: {e}",
-    "copy": "Copiar"
+    "copy": "Copiar",
+    "open": "Abrir",
+    "openFolder": "Abrir pasta"
   },
   "nav": {
     "home": "Início",

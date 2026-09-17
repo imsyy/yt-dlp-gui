@@ -17,7 +17,9 @@
     "selectAll": "Az összes kijelölése",
     "deselectAll": "Minden kijelölés menszüntetése",
     "saveFailed": "A mentés meghiúsult: {e}",
-    "downloadFailed": "A letöltés meghiúsult: {e}"
+    "downloadFailed": "A letöltés meghiúsult: {e}",
+    "open": "Megnyitás",
+    "openFolder": "Mappa megnyitása"
   },
   "nav": {
     "home": "Kezdőlap",

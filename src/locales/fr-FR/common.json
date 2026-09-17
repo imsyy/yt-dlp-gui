@@ -17,7 +17,9 @@
     "deselectAll": "Tout désélectionner",
     "saveFailed": "Échec de l'enregistrement : {e}",
     "downloadFailed": "Échec du téléchargement : {e}",
-    "copy": "Copier"
+    "copy": "Copier",
+    "open": "Ouvrir",
+    "openFolder": "Ouvrir le dossier"
   },
   "nav": {
     "home": "Accueil",

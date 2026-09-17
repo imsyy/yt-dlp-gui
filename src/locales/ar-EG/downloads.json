@@ -133,6 +133,9 @@
     "tplErrEmpty": "لا يمكن أن يكون قالب اسم الملف فارغًا",
     "tplErrPercent": "توجد علامة % منفردة؛ اكتب علامة النسبة المئوية الحرفية كـ %%",
     "tplErrUnclosed": "تنقص قوس الإغلاق ) بعد %(",
-    "tplErrConversion": "نوع التحويل “{char}” غير مدعوم؛ يُتوقَّع بعد الحقل نوع مثل s/d (راجع OUTPUT TEMPLATE في yt-dlp)"
+    "tplErrConversion": "نوع التحويل “{char}” غير مدعوم؛ يُتوقَّع بعد الحقل نوع مثل s/d (راجع OUTPUT TEMPLATE في yt-dlp)",
+    "remuxFormat": "تنسيق الحاوية",
+    "customArgs": "معلمات إضافية",
+    "customArgsPlaceholder": "معلمات yt-dlp إضافية، مثل --sleep-requests 2 --sleep-interval 10"
   }
 }

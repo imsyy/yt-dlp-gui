@@ -62,7 +62,9 @@ const handleClose = () => {
     :bordered="false"
     :closable="!downloading"
     :mask-closable="!downloading"
-    :style="{ width: '420px' }"
+    content-scrollable
+    :segmented="{ action: 'soft' }"
+    :style="{ width: '440px', maxHeight: '80vh' }"
     @after-leave="progress = 0"
   >
     <n-flex vertical :size="16">
@@ -78,7 +80,7 @@ const handleClose = () => {
         <n-text depth="3" style="font-size: 13px">
           {{ $t("settings.appUpdateNotes") }}
         </n-text>
-        <n-scrollbar style="max-height: 200px">
+        <n-scrollbar style="max-height: 240px">
           <n-text style="font-size: 13px; white-space: pre-wrap; line-height: 1.6">
             {{ statusStore.updateNotes }}
           </n-text>
@@ -102,7 +104,7 @@ const handleClose = () => {
       </n-collapse-transition>
     </n-flex>
 
-    <template #footer>
+    <template #action>
       <n-flex justify="end" :size="8">
         <n-button :disabled="downloading" strong secondary @click="handleClose">
           {{ $t("settings.appUpdateLater") }}

@@ -133,6 +133,9 @@
     "tplErrEmpty": "La plantilla de nombre de archivo no puede estar vacía",
     "tplErrPercent": "Hay un % suelto; para escribir un signo de porcentaje literal usa %%",
     "tplErrUnclosed": "Falta el ) de cierre de %(",
-    "tplErrConversion": "Tipo de conversión «{char}» no admitido; tras el campo se espera s/d, etc. (consulta OUTPUT TEMPLATE de yt-dlp)"
+    "tplErrConversion": "Tipo de conversión «{char}» no admitido; tras el campo se espera s/d, etc. (consulta OUTPUT TEMPLATE de yt-dlp)",
+    "remuxFormat": "Contenedor",
+    "customArgs": "Argumentos adicionales",
+    "customArgsPlaceholder": "Argumentos adicionales de yt-dlp, ej. --sleep-requests 2 --sleep-interval 10"
   }
 }

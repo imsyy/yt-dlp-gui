@@ -3,6 +3,14 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { useSettingStore } from "@/stores/setting";
 import { useI18n } from "vue-i18n";
 
+interface Props {
+  plain?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  plain: false,
+});
+
 const { t } = useI18n();
 const settingStore = useSettingStore();
 
@@ -20,7 +28,27 @@ const handleSelectDir = async () => {
 </script>
 
 <template>
-  <n-card :title="$t('downloadDir.title')" size="small">
+  <template v-if="props.plain">
+    <n-flex align="center" :size="8" :wrap="false">
+      <span class="option-label">{{ $t("downloadDir.title") }}</span>
+      <n-input
+        :value="settingStore.downloadDir"
+        :placeholder="$t('downloadDir.notSet')"
+        size="small"
+        readonly
+        style="flex: 1"
+      />
+      <n-button size="small" @click="handleSelectDir">
+        <template #icon>
+          <n-icon>
+            <icon-mdi-folder-open-outline />
+          </n-icon>
+        </template>
+        {{ $t("common.select") }}
+      </n-button>
+    </n-flex>
+  </template>
+  <n-card v-else :title="$t('downloadDir.title')" size="small">
     <n-flex align="center" :size="8">
       <n-input
         :value="settingStore.downloadDir"
@@ -40,3 +68,13 @@ const handleSelectDir = async () => {
     </n-flex>
   </n-card>
 </template>
+
+<style scoped lang="scss">
+.option-label {
+  min-width: 56px;
+  flex-shrink: 0;
+  color: var(--n-text-color-3, #999);
+  font-size: 13px;
+  white-space: nowrap;
+}
+</style>

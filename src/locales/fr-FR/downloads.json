@@ -133,6 +133,9 @@
     "tplErrEmpty": "Le modèle de nom de fichier ne peut pas être vide",
     "tplErrPercent": "Symbole % isolé ; écrivez un signe pourcent littéral sous la forme %%",
     "tplErrUnclosed": "Parenthèse ) manquante pour %(",
-    "tplErrConversion": "Type de conversion « {char} » non pris en charge ; un type comme s/d est attendu après le champ (voir OUTPUT TEMPLATE de yt-dlp)"
+    "tplErrConversion": "Type de conversion « {char} » non pris en charge ; un type comme s/d est attendu après le champ (voir OUTPUT TEMPLATE de yt-dlp)",
+    "remuxFormat": "Conteneur",
+    "customArgs": "Paramètres supplémentaires",
+    "customArgsPlaceholder": "Paramètres yt-dlp supplémentaires, ex. --sleep-requests 2 --sleep-interval 10"
   }
 }

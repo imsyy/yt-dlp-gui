@@ -133,6 +133,9 @@
     "tplErrEmpty": "Mẫu tên tệp không được để trống",
     "tplErrPercent": "Có dấu % đơn lẻ; muốn dùng dấu phần trăm theo nghĩa đen hãy viết %%",
     "tplErrUnclosed": "Thiếu dấu ) đóng cho %(",
-    "tplErrConversion": "Kiểu chuyển đổi “{char}” không được hỗ trợ; sau trường dữ liệu phải là s/d v.v. (xem OUTPUT TEMPLATE của yt-dlp)"
+    "tplErrConversion": "Kiểu chuyển đổi “{char}” không được hỗ trợ; sau trường dữ liệu phải là s/d v.v. (xem OUTPUT TEMPLATE của yt-dlp)",
+    "remuxFormat": "Định dạng vùng chứa",
+    "customArgs": "Tham số bổ sung",
+    "customArgsPlaceholder": "Tham số yt-dlp bổ sung, vd: --sleep-requests 2 --sleep-interval 10"
   }
 }

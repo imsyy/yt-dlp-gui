@@ -17,7 +17,9 @@
     "deselectAll": "選択解除",
     "saveFailed": "保存に失敗しました: {e}",
     "downloadFailed": "ダウンロードに失敗しました: {e}",
-    "copy": "コピー"
+    "copy": "コピー",
+    "open": "開く",
+    "openFolder": "フォルダを開く"
   },
   "nav": {
     "home": "ホーム",

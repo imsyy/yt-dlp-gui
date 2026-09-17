@@ -17,7 +17,9 @@
     "deselectAll": "Deseleccionar todo",
     "saveFailed": "Error al guardar: {e}",
     "downloadFailed": "Error en la descarga: {e}",
-    "copy": "Copiar"
+    "copy": "Copiar",
+    "open": "Abrir",
+    "openFolder": "Abrir carpeta"
   },
   "nav": {
     "home": "Inicio",

@@ -36,8 +36,8 @@ const handleClearCompleted = () => {
 
 <template>
   <div class="completed-section">
-    <!-- 标题操作栏 -->
-    <n-flex v-if="showHeader" align="center" :size="8" class="section-title-bar">
+    <!-- 标题操作栏（仅有数据时展示） -->
+    <n-flex v-if="showHeader && totalCount > 0" align="center" :size="8" class="section-title-bar">
       <n-icon size="16"><icon-mdi-check-circle-outline /></n-icon>
       <n-text strong>{{ $t("downloads.completed") }}</n-text>
       <n-tag v-if="totalCount > 0" size="small" round :bordered="false" type="success">

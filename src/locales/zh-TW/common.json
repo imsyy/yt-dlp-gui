@@ -17,7 +17,9 @@
     "deselectAll": "取消全選",
     "saveFailed": "儲存失敗: {e}",
     "downloadFailed": "下載失敗: {e}",
-    "copy": "複製"
+    "copy": "複製",
+    "open": "開啟",
+    "openFolder": "開啟資料夾"
   },
   "nav": {
     "home": "首頁",

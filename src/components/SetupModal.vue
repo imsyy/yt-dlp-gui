@@ -20,7 +20,9 @@ const goToSettings = () => {
     :title="$t('setup.ytdlpTitle')"
     size="small"
     :bordered="false"
-    :style="{ width: '460px' }"
+    content-scrollable
+    :segmented="{ action: 'soft' }"
+    :style="{ width: '460px', maxHeight: '80vh' }"
   >
     <n-flex vertical :size="16">
       <n-alert type="error" :bordered="false">
@@ -49,7 +51,9 @@ const goToSettings = () => {
     :title="$t('setup.ffmpegTitle')"
     size="small"
     :bordered="false"
-    :style="{ width: '460px' }"
+    content-scrollable
+    :segmented="{ action: 'soft' }"
+    :style="{ width: '460px', maxHeight: '80vh' }"
   >
     <n-flex vertical :size="16">
       <n-alert type="error" :bordered="false">
@@ -78,7 +82,9 @@ const goToSettings = () => {
     :title="$t('setup.denoTitle')"
     size="small"
     :bordered="false"
-    :style="{ width: '460px' }"
+    content-scrollable
+    :segmented="{ action: 'soft' }"
+    :style="{ width: '460px', maxHeight: '80vh' }"
   >
     <n-flex vertical :size="16">
       <n-alert type="warning" :bordered="false">

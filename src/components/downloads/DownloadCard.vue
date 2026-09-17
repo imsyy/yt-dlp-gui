@@ -438,7 +438,7 @@ const handleRemove = () => {
                   </template>
                 </n-button>
               </template>
-              {{ $t("toolbox.thumbnail.openFolder") || $t("common.open") }}
+              {{ $t("common.openFolder") }}
             </n-tooltip>
 
             <n-divider vertical style="margin: 0 2px" />

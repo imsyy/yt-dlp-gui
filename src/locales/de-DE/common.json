@@ -17,7 +17,9 @@
     "deselectAll": "Alle abwählen",
     "saveFailed": "Speichern fehlgeschlagen: {e}",
     "downloadFailed": "Download fehlgeschlagen: {e}",
-    "copy": "Kopieren"
+    "copy": "Kopieren",
+    "open": "Öffnen",
+    "openFolder": "Ordner öffnen"
   },
   "nav": {
     "home": "Start",

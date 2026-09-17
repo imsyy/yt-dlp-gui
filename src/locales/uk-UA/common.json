@@ -17,7 +17,9 @@
     "selectAll": "Вибрати все",
     "deselectAll": "Зняти виділення",
     "saveFailed": "Помилка збереження: {e}",
-    "downloadFailed": "Помилка завантаження: {e}"
+    "downloadFailed": "Помилка завантаження: {e}",
+    "open": "Відкрити",
+    "openFolder": "Відкрити папку"
   },
   "nav": {
     "home": "Головна",

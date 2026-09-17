@@ -17,7 +17,9 @@
     "deselectAll": "إلغاء تحديد الكل",
     "saveFailed": "فشل الحفظ: {e}",
     "downloadFailed": "فشل التنزيل: {e}",
-    "copy": "نسخ"
+    "copy": "نسخ",
+    "open": "فتح",
+    "openFolder": "فتح المجلد"
   },
   "nav": {
     "home": "الرئيسية",

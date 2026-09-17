@@ -291,7 +291,14 @@ const handleRetryAllFailed = () => {
         </template>
         <n-scrollbar class="tab-scrollbar">
           <div class="tab-pane-content">
-            <CompletedTasksSection :groups="completedGroups" :total-count="completedTasks.length" />
+            <div v-if="completedTasks.length === 0" class="section-empty">
+              <n-empty :description="$t('downloads.noFinishedTasks')" size="small" />
+            </div>
+            <CompletedTasksSection
+              v-else
+              :groups="completedGroups"
+              :total-count="completedTasks.length"
+            />
           </div>
         </n-scrollbar>
       </n-tab-pane>

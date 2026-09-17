@@ -17,7 +17,9 @@
     "selectAll": "Vybrať všetko",
     "deselectAll": "Zrušiť výber všetkých",
     "saveFailed": "Uloženie sa nepodarilo: {e}",
-    "downloadFailed": "Sťahovanie sa nepodarilo: {e}"
+    "downloadFailed": "Sťahovanie sa nepodarilo: {e}",
+    "open": "Otvoriť",
+    "openFolder": "Otvoriť priečinok"
   },
   "nav": {
     "home": "Domov",

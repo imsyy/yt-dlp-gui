@@ -17,7 +17,9 @@
     "deselectAll": "선택 해제",
     "saveFailed": "저장 실패: {e}",
     "downloadFailed": "다운로드 실패: {e}",
-    "copy": "복사"
+    "copy": "복사",
+    "open": "열기",
+    "openFolder": "폴더 열기"
   },
   "nav": {
     "home": "홈",

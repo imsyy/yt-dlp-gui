@@ -133,6 +133,9 @@
     "tplErrEmpty": "O modelo de nome de arquivo não pode ficar vazio",
     "tplErrPercent": "Encontrado um % isolado; escreva o sinal de porcentagem literal como %%",
     "tplErrUnclosed": "Falta o ) de fechamento de %(",
-    "tplErrConversion": "Tipo de conversão “{char}” não suportado; após o campo espera-se s/d etc. (veja OUTPUT TEMPLATE do yt-dlp)"
+    "tplErrConversion": "Tipo de conversão “{char}” não suportado; após o campo espera-se s/d etc. (veja OUTPUT TEMPLATE do yt-dlp)",
+    "remuxFormat": "Formato de contêiner",
+    "customArgs": "Argumentos adicionais",
+    "customArgsPlaceholder": "Argumentos adicionais do yt-dlp, ex: --sleep-requests 2 --sleep-interval 10"
   }
 }

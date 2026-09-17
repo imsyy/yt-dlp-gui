@@ -17,7 +17,9 @@
     "deselectAll": "Bỏ chọn tất cả",
     "saveFailed": "Lưu thất bại: {e}",
     "downloadFailed": "Tải xuống thất bại: {e}",
-    "copy": "Sao chép"
+    "copy": "Sao chép",
+    "open": "Mở",
+    "openFolder": "Mở thư mục"
   },
   "nav": {
     "home": "Trang chủ",

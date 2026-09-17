@@ -133,6 +133,9 @@
     "tplErrEmpty": "파일명 템플릿은 비워 둘 수 없습니다",
     "tplErrPercent": "단독 %가 있습니다. 리터럴 퍼센트 기호는 %%로 입력하세요",
     "tplErrUnclosed": "( 에 대응하는 ) 가 없습니다",
-    "tplErrConversion": "지원하지 않는 변환 형식 \"{char}\"입니다. 필드 뒤에는 s/d 등을 지정해야 합니다(yt-dlp OUTPUT TEMPLATE 참고)"
+    "tplErrConversion": "지원하지 않는 변환 형식 \"{char}\"입니다. 필드 뒤에는 s/d 등을 지정해야 합니다(yt-dlp OUTPUT TEMPLATE 참고)",
+    "remuxFormat": "컨테이너 형식",
+    "customArgs": "추가 인수",
+    "customArgsPlaceholder": "추가 yt-dlp 인수 (예: --sleep-requests 2 --sleep-interval 10)"
   }
 }

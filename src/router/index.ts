@@ -1,4 +1,9 @@
 import { createRouter, createWebHistory } from "vue-router";
+import Home from "@/pages/Home.vue";
+import Pending from "@/pages/Pending.vue";
+import Downloads from "@/pages/Downloads.vue";
+import Toolbox from "@/pages/Toolbox.vue";
+import Settings from "@/pages/Settings.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -6,21 +11,21 @@ const router = createRouter({
     {
       path: "/",
       name: "home",
-      component: () => import("@/pages/Home.vue"),
+      component: Home,
     },
     {
       path: "/pending",
       name: "pending",
-      component: () => import("@/pages/Pending.vue"),
+      component: Pending,
     },
     {
       path: "/downloads",
       name: "downloads",
-      component: () => import("@/pages/Downloads.vue"),
+      component: Downloads,
     },
     {
       path: "/toolbox",
-      component: () => import("@/pages/Toolbox.vue"),
+      component: Toolbox,
       children: [
         {
           path: "",
@@ -67,7 +72,7 @@ const router = createRouter({
     {
       path: "/settings",
       name: "settings",
-      component: () => import("@/pages/Settings.vue"),
+      component: Settings,
     },
   ],
 });

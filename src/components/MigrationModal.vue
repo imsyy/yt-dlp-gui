@@ -68,7 +68,9 @@ const handleMigrate = async (): Promise<void> => {
     :bordered="false"
     :mask-closable="false"
     :closable="false"
-    :style="{ width: '460px' }"
+    content-scrollable
+    :segmented="{ action: 'soft' }"
+    :style="{ width: '460px', maxHeight: '80vh' }"
   >
     <!-- 确认态 -->
     <n-flex v-if="phase === 'prompt'" vertical :size="16">
@@ -104,7 +106,7 @@ const handleMigrate = async (): Promise<void> => {
           <n-button disabled>{{ $t("migration.migrateNow") }}</n-button>
         </template>
         <template v-else>
-          <n-button @click="handleLater" strong secondary>{{ $t("setup.later") }}</n-button>
+          <n-button strong secondary @click="handleLater">{{ $t("setup.later") }}</n-button>
           <n-button type="primary" @click="handleMigrate">
             {{ phase === "error" ? $t("migration.retry") : $t("migration.migrateNow") }}
           </n-button>

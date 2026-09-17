@@ -17,7 +17,9 @@
     "selectAll": "全选",
     "deselectAll": "取消全选",
     "saveFailed": "保存失败: {e}",
-    "downloadFailed": "下载失败: {e}"
+    "downloadFailed": "下载失败: {e}",
+    "open": "打开",
+    "openFolder": "打开文件夹"
   },
   "nav": {
     "home": "首页",

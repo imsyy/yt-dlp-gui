@@ -133,6 +133,9 @@
     "tplErrEmpty": "Шаблон імені файлу не може бути порожнім",
     "tplErrPercent": "Знайдено окремий знак %; літеральний знак відсотка пишіть як %%",
     "tplErrUnclosed": "Для %( немає парної дужки )",
-    "tplErrConversion": "Непідтримуваний тип перетворення «{char}»; після поля очікується s/d тощо (див. OUTPUT TEMPLATE у документації yt-dlp)"
+    "tplErrConversion": "Непідтримуваний тип перетворення «{char}»; після поля очікується s/d тощо (див. OUTPUT TEMPLATE у документації yt-dlp)",
+    "remuxFormat": "Контейнер",
+    "customArgs": "Додаткові параметри",
+    "customArgsPlaceholder": "Додаткові параметри yt-dlp, наприклад --sleep-requests 2 --sleep-interval 10"
   }
 }

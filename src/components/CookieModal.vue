@@ -12,8 +12,9 @@ const statusStore = useStatusStore();
     :title="$t('cookie.settings')"
     size="small"
     :bordered="false"
-    :style="{ width: '480px' }"
+    content-scrollable
+    :style="{ width: '480px', maxHeight: '80vh' }"
   >
-    <CookieCard />
+    <CookieCard plain />
   </n-modal>
 </template>
