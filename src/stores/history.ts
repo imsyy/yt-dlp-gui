@@ -1,6 +1,5 @@
 import { defineStore } from "pinia";
 import { invoke } from "@tauri-apps/api/core";
-import { migrateLegacyHistory } from "@/utils/migration";
 
 const MAX_HISTORY = 50;
 
@@ -23,21 +22,14 @@ export const useHistoryStore = defineStore("history", () => {
   /**
    * 从后端 SQLite 加载解析历史
    *
-   * 若首次启动且本地存在老版本 localStorage 历史记录，会自动执行静默平滑迁移。
+   * 老版本数据迁移由启动弹窗（MigrationModal）显式触发，迁移完成后会调用
+   * 本函数重载；此处只读库，不做任何迁移。
    *
    * @returns 加载结果 Promise
    */
   const loadHistory = async (): Promise<void> => {
     try {
-      // 优先检查并执行老版本数据无损迁移
-      const migrated = await migrateLegacyHistory();
-
-      const dbHistory = await invoke<HistoryItem[]>("db_get_history");
-      if (dbHistory.length > 0) {
-        items.value = dbHistory;
-      } else if (migrated && migrated.length > 0) {
-        items.value = migrated.slice(0, MAX_HISTORY);
-      }
+      items.value = await invoke<HistoryItem[]>("db_get_history");
     } catch (error) {
       console.error("加载解析历史失败:", error);
     } finally {

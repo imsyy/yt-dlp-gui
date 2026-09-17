@@ -1,0 +1,14 @@
+{
+  "migration": {
+    "title": "Korábbi verzió adatai észlelve",
+    "description": "Egy korábbi verzióból származó letöltési feladatok és előzmények találhatók. Szeretné importálni őket a jelenlegi verzióba a további használathoz? Az átmásolás befejezése után a régi gyorsítótárazott adatok automatikusan törlődnek.",
+    "tasksCount": "{n} letöltési feladat",
+    "historyCount": "{n} előzményelem",
+    "migrateNow": "Átmásolás most",
+    "migratingTasks": "Feladatok átmásolása…",
+    "migratingHistory": "Előzmények átmásolása…",
+    "failed": "Az átmásolás sikertelen: {message}",
+    "retry": "Újra",
+    "success": "Az átmásolás kész"
+  }
+}

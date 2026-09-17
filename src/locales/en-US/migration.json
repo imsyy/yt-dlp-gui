@@ -1,0 +1,14 @@
+{
+  "migration": {
+    "title": "Legacy Data Detected",
+    "description": "Download tasks and parse history from a previous version were found. Would you like to migrate them to the current version? Old cached data will be automatically cleaned up after migration.",
+    "tasksCount": "{n} download tasks",
+    "historyCount": "{n} history entries",
+    "migrateNow": "Migrate now",
+    "migratingTasks": "Migrating download tasks…",
+    "migratingHistory": "Migrating parse history…",
+    "failed": "Migration failed: {message}",
+    "retry": "Retry",
+    "success": "Data migration finished"
+  }
+}

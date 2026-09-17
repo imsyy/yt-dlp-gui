@@ -1,0 +1,14 @@
+{
+  "migration": {
+    "title": "Phát hiện dữ liệu phiên bản cũ",
+    "description": "Đã tìm thấy các tác vụ tải xuống và lịch sử được lưu từ phiên bản trước. Bạn có muốn chuyển sang phiên bản hiện tại để tiếp tục sử dụng? Dữ liệu bộ nhớ tạm cũ sẽ tự động được dọn dẹp sau khi di chuyển hoàn tất.",
+    "tasksCount": "{n} tác vụ tải xuống",
+    "historyCount": "{n} mục lịch sử",
+    "migrateNow": "Di chuyển ngay",
+    "migratingTasks": "Đang di chuyển tác vụ…",
+    "migratingHistory": "Đang di chuyển lịch sử…",
+    "failed": "Di chuyển thất bại: {message}",
+    "retry": "Thử lại",
+    "success": "Di chuyển hoàn tất"
+  }
+}

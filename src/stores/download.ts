@@ -11,7 +11,7 @@ import type { DownloadTask } from "@/types";
 import { useSettingStore } from "@/stores/setting";
 import { formatFileSize } from "@/utils/format";
 import { cleanMultipleTasksResiduals } from "@/utils/taskFiles";
-import { migrateLegacyTasks, normalizeTaskParams } from "@/utils/migration";
+import { normalizeTaskParams } from "@/utils/taskParams";
 import { pushTaskLog, trimTaskLogs } from "@/utils/logs";
 import i18n from "@/locales";
 
@@ -114,19 +114,16 @@ export const useDownloadStore = defineStore("download", () => {
   };
 
   /**
-   * 从后端 SQLite 加载任务列表并自动执行必要的清理与迁移
+   * 从后端 SQLite 加载任务列表并检验已完成任务的文件有效性
    *
-   * 1. 优先触发老版本 IndexedDB 数据的静默平滑迁移；
-   * 2. 从 SQLite 读取全部任务列表（后端冷启动时已将异常退出的进行中任务归一化为错误中断态）；
-   * 3. 异步探测已完成任务的物理输出文件是否存在，若已被外部删除则同步清除失效记录。
+   * 老版本数据迁移由启动弹窗（MigrationModal）显式触发，迁移完成后会调用
+   * 本函数重载；此处只读库，不做任何迁移。
+   * 后端冷启动时已将异常退出的进行中任务归一化为错误中断态。
    *
    * @returns 加载任务完成 Promise
    */
   const loadTasks = async (): Promise<void> => {
     try {
-      // 优先执行老版本 IndexedDB 数据的静默平滑迁移
-      await migrateLegacyTasks();
-
       const dbTasks = await invoke<DownloadTask[]>("db_get_tasks");
       // 老版本迁移来的日志可能是无界的，统一裁剪到环形缓冲上限
       for (const t of dbTasks) {
@@ -529,6 +526,7 @@ export const useDownloadStore = defineStore("download", () => {
     loaded,
     activeCount,
     canStartNow,
+    loadTasks,
     addTask,
     updateTask,
     cancelTask,

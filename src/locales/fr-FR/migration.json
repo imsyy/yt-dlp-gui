@@ -1,0 +1,14 @@
+{
+  "migration": {
+    "title": "Données d'une version précédente détectées",
+    "description": "Des tâches de téléchargement et un historique enregistrés dans une version précédente ont été détectés. Souhaitez-vous les importer dans la version actuelle ? Les anciennes données en cache seront nettoyées automatiquement une fois la migration terminée.",
+    "tasksCount": "{n} tâches de téléchargement",
+    "historyCount": "{n} entrées d'historique",
+    "migrateNow": "Migrer",
+    "migratingTasks": "Migration des tâches…",
+    "migratingHistory": "Migration de l'historique…",
+    "failed": "Échec de la migration : {message}",
+    "retry": "Réessayer",
+    "success": "Migration terminée"
+  }
+}

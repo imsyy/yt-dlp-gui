@@ -1,0 +1,14 @@
+{
+  "migration": {
+    "title": "Datos de versiones anteriores detectados",
+    "description": "Se detectaron tareas de descarga e historial guardados en una versión anterior. ¿Desea importarlos a la versión actual para seguir usándolos? Tras completar la migración, los datos antiguos de la caché se limpiarán automáticamente.",
+    "tasksCount": "{n} tareas de descarga",
+    "historyCount": "{n} entradas de historial",
+    "migrateNow": "Migrar ahora",
+    "migratingTasks": "Migrando tareas…",
+    "migratingHistory": "Migrando historial…",
+    "failed": "Error de migración: {message}",
+    "retry": "Reintentar",
+    "success": "Migración completada"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "migration": {
+    "title": "Altdaten erkannt",
+    "description": "Es wurden gespeicherte Download-Aufgaben und Verlaufsdaten aus einer vorherigen Version gefunden. Möchten Sie diese in die aktuelle Version übernehmen? Nach Abschluss der Übernahme werden alte Cache-Daten automatisch bereinigt.",
+    "tasksCount": "{n} Downloadaufgaben",
+    "historyCount": "{n} Verlaufseinträge",
+    "migrateNow": "Jetzt übernehmen",
+    "migratingTasks": "Downloadaufgaben werden übernommen…",
+    "migratingHistory": "Verlauf wird übernommen…",
+    "failed": "Übernahme fehlgeschlagen: {message}",
+    "retry": "Wiederholen",
+    "success": "Datenübernahme abgeschlossen"
+  }
+}

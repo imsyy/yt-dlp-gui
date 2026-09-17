@@ -1,0 +1,14 @@
+{
+  "migration": {
+    "title": "이전 버전 데이터 감지",
+    "description": "이전 버전에서 저장된 다운로드 작업과 기록을 찾았습니다. 현재 버전으로 가져와 계속 사용하시겠습니까? 마이그레이션이 완료되면 이전 캐시 데이터는 자동으로 정리됩니다.",
+    "tasksCount": "다운로드 작업 {n}개",
+    "historyCount": "기록 {n}개",
+    "migrateNow": "지금 이전",
+    "migratingTasks": "작업 이전 중…",
+    "migratingHistory": "기록 이전 중…",
+    "failed": "이전 실패: {message}",
+    "retry": "다시 시도",
+    "success": "이전 완료"
+  }
+}

@@ -79,6 +79,7 @@ onMounted(async () => {
     <CookieModal />
     <UpdateModal />
     <SetupModal />
+    <MigrationModal />
     <n-layout style="height: 100vh">
       <n-layout-header bordered class="app-header">
         <div class="header-side">

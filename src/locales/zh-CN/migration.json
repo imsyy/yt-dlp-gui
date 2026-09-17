@@ -1,0 +1,14 @@
+{
+  "migration": {
+    "title": "检测到旧版本数据",
+    "description": "检测到您在旧版本中保存的下载任务与解析记录，是否将其导入至当前版本继续使用？迁移完成后将自动清理旧缓存。",
+    "tasksCount": "下载任务 {n} 条",
+    "historyCount": "解析历史 {n} 条",
+    "migrateNow": "立即迁移",
+    "migratingTasks": "正在迁移下载任务…",
+    "migratingHistory": "正在迁移解析历史…",
+    "failed": "迁移失败：{message}",
+    "retry": "重试",
+    "success": "数据迁移完成"
+  }
+}

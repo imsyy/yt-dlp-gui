@@ -1,0 +1,14 @@
+{
+  "migration": {
+    "title": "偵測到舊版本資料",
+    "description": "偵測到您在舊版本中儲存的下載任務與解析紀錄，是否將其匯入至目前版本繼續使用？移轉完成後將自動清理舊快取。",
+    "tasksCount": "下載任務 {n} 筆",
+    "historyCount": "解析歷史 {n} 筆",
+    "migrateNow": "立即遷移",
+    "migratingTasks": "正在遷移下載任務…",
+    "migratingHistory": "正在遷移解析歷史…",
+    "failed": "遷移失敗：{message}",
+    "retry": "重試",
+    "success": "資料遷移完成"
+  }
+}

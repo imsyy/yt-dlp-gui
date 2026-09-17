@@ -1,0 +1,14 @@
+{
+  "migration": {
+    "title": "旧バージョンのデータを検出",
+    "description": "旧バージョンで保存されたダウンロードタスクと解析履歴が見つかりました。現在のバージョンに移行して引き続き利用しますか？移行完了後に以前のキャッシュデータは自動的に整理されます。",
+    "tasksCount": "ダウンロードタスク {n} 件",
+    "historyCount": "解析履歴 {n} 件",
+    "migrateNow": "今すぐ移行",
+    "migratingTasks": "タスクを移行中…",
+    "migratingHistory": "履歴を移行中…",
+    "failed": "移行に失敗しました：{message}",
+    "retry": "再試行",
+    "success": "移行が完了しました"
+  }
+}

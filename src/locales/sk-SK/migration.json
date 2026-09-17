@@ -1,0 +1,14 @@
+{
+  "migration": {
+    "title": "Zistené údaje z predchádzajúcej verzie",
+    "description": "Boli zistené úlohy sťahovania a história z predchádzajúcej verzie. Chcete ich importovať do aktuálnej verzie a pokračovať v používaní? Po dokončení migrácie sa staré údaje vyrovnávacej pamäte automaticky vymažú.",
+    "tasksCount": "{n} úloh sťahovania",
+    "historyCount": "{n} položiek histórie",
+    "migrateNow": "Premigrovať",
+    "migratingTasks": "Migrácia úloh…",
+    "migratingHistory": "Migrácia histórie…",
+    "failed": "Migrácia zlyhala: {message}",
+    "retry": "Opakovať",
+    "success": "Migrácia dokončená"
+  }
+}
