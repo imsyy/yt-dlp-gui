@@ -9,8 +9,6 @@
 import { sendToApp as sendRequest } from "./bridge.js";
 import { createTranslator, resetI18n } from "./i18n.js";
 
-const BADGE_COLOR = "#18A058";
-
 /**
  * 校验指定 URL 是否为受支持的 HTTP/HTTPS 协议网络链接
  *
@@ -173,35 +171,32 @@ chrome.contextMenus.onClicked.addListener((menuInfo, activeTab) => {
   }
 });
 
-// ---------- Action badge ----------
-
 /**
- * 根据指定标签页 URL 的支持状态更新浏览器扩展图标角标文本与背景颜色
+ * 清理指定或全局扩展角标，彻底移除右下角遮挡大方块，恢复原始清爽干净的图标外观
  *
- * @param {number} tabId 标签页 ID
- * @param {string} tabUrl 标签页 URL
+ * @param {number} [targetTabId] 标签页 ID（可选）
  * @returns {Promise<void>}
  */
-const updateBadge = async (tabId, tabUrl) => {
-  const isSupported = isSupportedUrl(tabUrl);
+const clearActionBadge = async (targetTabId) => {
   try {
-    const translator = await createTranslator();
-    await chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR, tabId });
-    await chrome.action.setBadgeText({ text: isSupported ? translator("badgeOn") : "", tabId });
+    if (typeof targetTabId === "number") {
+      await chrome.action.setBadgeText({ text: "", tabId: targetTabId });
+    } else {
+      await chrome.action.setBadgeText({ text: "" });
+    }
   } catch {
-    // 标签页可能已被关闭，忽略异常
+    // 忽略标签页可能已关闭的异常
   }
 };
 
-chrome.tabs.onActivated.addListener(async ({ tabId }) => {
-  try {
-    const targetTab = await chrome.tabs.get(tabId);
-    updateBadge(tabId, targetTab.url);
-  } catch {}
+chrome.tabs.onActivated.addListener(async ({ tabId: activeTabId }) => {
+  await clearActionBadge(activeTabId);
 });
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, targetTab) => {
-  if (changeInfo.url || changeInfo.status === "complete") {
-    updateBadge(tabId, targetTab.url);
-  }
+chrome.tabs.onUpdated.addListener((updatedTabId) => {
+  void clearActionBadge(updatedTabId);
 });
+
+// 扩展安装或启动时重置全局角标
+chrome.runtime.onInstalled.addListener(() => void clearActionBadge());
+chrome.runtime.onStartup.addListener(() => void clearActionBadge());

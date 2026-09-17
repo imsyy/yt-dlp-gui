@@ -62,9 +62,6 @@
   "notifyUnsupported": {
     "message": "该链接不在支持的视频站点列表中。"
   },
-  "badgeOn": {
-    "message": "↓"
-  },
   "modeStandard": {
     "message": "标准模式"
   },

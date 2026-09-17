@@ -20,16 +20,31 @@
   </div>
 
   <main class="body">
-    <!-- 标准模式面板 -->
+    <!-- 标准模式面板：专注于当前活动标签页 -->
     <section id="panel-standard" class="mode-panel">
-      <div id="status" class="pill pill-muted">
-        <span class="dot"></span>
-        <span id="status-text" data-i18n="popupChecking"></span>
+      <div class="active-tab-card">
+        <div class="active-tab-header">
+          <img id="tab-icon" class="active-tab-icon" src="icons/icon16.png" alt="" aria-hidden="true">
+          <div id="tab-title" class="active-tab-title" data-i18n="popupChecking">正在获取当前标签页...</div>
+        </div>
+        <div id="status" class="pill pill-muted">
+          <span class="dot"></span>
+          <span id="status-text" data-i18n="popupChecking">正在识别页面…</span>
+        </div>
       </div>
-      <div id="url-preview" class="url" hidden></div>
+      <div class="url-input-wrap">
+        <input
+          id="url-input"
+          type="text"
+          class="url-input"
+          placeholder="https://..."
+          spellcheck="false"
+          autocomplete="off"
+        >
+      </div>
     </section>
 
-    <!-- 批量模式面板 -->
+    <!-- 批量模式面板：当前窗口标签页多选 -->
     <section id="panel-batch" class="mode-panel" hidden>
       <div class="batch-bar">
         <span class="batch-title" data-i18n="popupBatchTabsTitle">当前窗口可用标签页</span>
@@ -40,13 +55,14 @@
         </div>
       </div>
       <div id="batch-list" class="batch-list"></div>
-      <div id="batch-empty" class="batch-empty" hidden data-i18n="popupNoValidTabs"></div>
+      <div id="batch-empty" class="batch-empty" hidden data-i18n="popupNoValidTabs">未找到有效的网页标签</div>
     </section>
 
+    <!-- 通用 Cookie 发送选项 -->
     <div class="row" id="cookie-row">
       <div class="row-text">
-        <div class="row-label" data-i18n="popupSendCookies"></div>
-        <div class="row-hint" data-i18n="popupSendCookiesHint"></div>
+        <div class="row-label" data-i18n="popupSendCookies">同时发送 Cookie</div>
+        <div class="row-hint" data-i18n="popupSendCookiesHint">下载会员/登录后才能观看的视频时需要</div>
       </div>
       <label class="switch">
         <input type="checkbox" id="send-cookies" checked>
@@ -54,20 +70,22 @@
       </label>
     </div>
 
-    <button class="btn" id="send-btn" disabled>
+    <!-- 发送主按钮 -->
+    <button class="btn" id="send-btn">
       <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>
-      <span id="btn-text" data-i18n="popupSendBtn"></span>
+      <span id="btn-text" data-i18n="popupSendBtn">发送到 YDL GUI</span>
     </button>
 
+    <!-- 故障降级提示 -->
     <div id="fallback" class="fallback" hidden>
-      <div class="fallback-title" data-i18n="popupAppNotFoundTitle"></div>
-      <div class="fallback-desc" data-i18n="popupAppNotFoundDesc"></div>
+      <div class="fallback-title" data-i18n="popupAppNotFoundTitle">应用没有打开？</div>
+      <div class="fallback-desc" data-i18n="popupAppNotFoundDesc">如果没有任何反应，请确认 YDL GUI 已安装并保持运行。</div>
       <a id="fallback-link"
          class="fallback-link"
          href="https://github.com/imsyy/yt-dlp-gui/releases/latest"
          target="_blank"
          rel="noopener"
-         data-i18n="popupDownload"></a>
+         data-i18n="popupDownload">下载 YDL GUI</a>
     </div>
   </main>
 

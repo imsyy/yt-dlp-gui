@@ -62,9 +62,6 @@
   "notifyUnsupported": {
     "message": "This URL is not from a supported video site."
   },
-  "badgeOn": {
-    "message": "↓"
-  },
   "modeStandard": {
     "message": "Standard"
   },

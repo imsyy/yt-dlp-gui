@@ -45,9 +45,9 @@ export const resetI18n = () => {
 };
 
 /**
- * 异步初始化并创建多语言翻译函数
+ * 异步初始化并创建支持占位符替换的多语言翻译函数
  *
- * @returns {Promise<(key: string) => string>} 接收多语言键名并返回翻译文本的高阶函数
+ * @returns {Promise<(key: string, substitutions?: Record<string, string | number>) => string>} 接收多语言键名与替换对象并返回翻译文本的高阶函数
  */
 export const createTranslator = async () => {
   const language = await getLanguage();
@@ -56,5 +56,17 @@ export const createTranslator = async () => {
     const response = await fetch(localeUrl);
     cachedMessages = await response.json();
   }
-  return (translationKey) => cachedMessages[translationKey]?.message || translationKey;
+  return (translationKey, substitutions = {}) => {
+    let messageText = cachedMessages[translationKey]?.message || translationKey;
+    if (typeof substitutions === "object" && substitutions !== null) {
+      for (const [subKey, subVal] of Object.entries(substitutions)) {
+        // 替换 $COUNT$ 或 $count$ 占位符
+        messageText = messageText.replace(
+          new RegExp(`\\$${subKey.toUpperCase()}\\$`, "g"),
+          String(subVal),
+        );
+      }
+    }
+    return messageText;
+  };
 };
