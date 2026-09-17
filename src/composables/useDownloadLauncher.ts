@@ -63,9 +63,9 @@ export const useDownloadLauncher = () => {
     return parts.join(" ") || t("detail.defaultQuality");
   };
 
-  const createPreparingTask = (url: string): string => {
+  const createPreparingTask = async (url: string): Promise<string> => {
     const taskId = `prepare_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    downloadStore.addTask({
+    await downloadStore.addTask({
       id: taskId,
       url,
       title: url,
@@ -117,11 +117,13 @@ export const useDownloadLauncher = () => {
     return taskId;
   };
 
-  const markPreparationError = (taskId: string) => {
+  const markPreparationError = async (taskId: string): Promise<void> => {
     const task = downloadStore.tasks.find((item) => item.id === taskId);
     if (!task || task.status !== "preparing") return;
     task.status = "error";
     task.error = t("home.quickPrepareFailed");
+    // preparing 行已在创建时落库，失败态必须同步回去，否则重启前 DB 里一直是 preparing
+    await downloadStore.updateTask(task);
   };
 
   const launchDownload = async (
@@ -143,12 +145,12 @@ export const useDownloadLauncher = () => {
         const status = await invoke<FfmpegStatus>("get_ffmpeg_status");
         if (!status.installed) {
           statusStore.showFfmpegSetupModal = true;
-          if (preparingTaskId) markPreparationError(preparingTaskId);
+          if (preparingTaskId) await markPreparationError(preparingTaskId);
           return "missing-ffmpeg";
         }
       } catch {
         statusStore.showFfmpegSetupModal = true;
-        if (preparingTaskId) markPreparationError(preparingTaskId);
+        if (preparingTaskId) await markPreparationError(preparingTaskId);
         return "missing-ffmpeg";
       }
     }
@@ -166,7 +168,7 @@ export const useDownloadLauncher = () => {
       window.$message.error(
         t(TEMPLATE_ERROR_KEYS[templateError.code], { char: templateError.char }),
       );
-      if (preparingTaskId) markPreparationError(preparingTaskId);
+      if (preparingTaskId) await markPreparationError(preparingTaskId);
       return "failed";
     }
     const params = {
@@ -233,10 +235,18 @@ export const useDownloadLauncher = () => {
         (candidate) => candidate.id === preparingTaskId,
       );
       if (!preparingTask || preparingTask.status !== "preparing") return "failed";
+      // preparing 行占位用的 prepare_xxx id 即将被 dl_xxx 覆盖，先删旧行避免孤儿记录
+      const stalePreparingId = preparingTask.id;
       Object.assign(preparingTask, task);
-      downloadStore.updateTask(preparingTask);
+      try {
+        await invoke("db_delete_task", { id: stalePreparingId });
+      } catch {
+        // 旧行可能已不存在，继续
+      }
+      // 先落库再起进程，保证后端的状态更新写到已存在的行上
+      await downloadStore.updateTask(preparingTask);
     } else {
-      downloadStore.addTask(task);
+      await downloadStore.addTask(task);
     }
 
     if (shouldQueue) return "queued";
@@ -256,10 +266,10 @@ export const useDownloadLauncher = () => {
             error instanceof Error
               ? error.message
               : String(error) || t("detail.startDownloadFailed");
-          downloadStore.updateTask(failedTask);
+          await downloadStore.updateTask(failedTask);
         }
       } else {
-        downloadStore.removeTask(taskId);
+        await downloadStore.removeTask(taskId);
       }
       return "failed";
     }

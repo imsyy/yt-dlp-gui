@@ -12,6 +12,7 @@ import { useSettingStore } from "@/stores/setting";
 import { formatFileSize } from "@/utils/format";
 import { cleanMultipleTasksResiduals } from "@/utils/taskFiles";
 import { migrateLegacyTasks, normalizeTaskParams } from "@/utils/migration";
+import { pushTaskLog, trimTaskLogs } from "@/utils/logs";
 import i18n from "@/locales";
 
 interface ProgressPayload {
@@ -49,8 +50,8 @@ export const useDownloadStore = defineStore("download", () => {
    */
   const tryStartNext = async (): Promise<void> => {
     const settingStore = useSettingStore();
-    const max = settingStore.maxConcurrentDownloads;
-    if (max > 0 && activeCount.value >= max) return;
+    const max = settingStore.maxConcurrent;
+    if (activeCount.value >= max) return;
 
     const next = tasks.value.find((taskItem) => taskItem.status === "queued");
     if (!next) return;
@@ -69,6 +70,9 @@ export const useDownloadStore = defineStore("download", () => {
         error instanceof Error
           ? error.message
           : String(error) || i18n.global.t("downloads.startFailed");
+      next.speed = "";
+      next.eta = "";
+      await updateTask(next);
     }
   };
 
@@ -79,8 +83,7 @@ export const useDownloadStore = defineStore("download", () => {
    */
   const canStartNow = (): boolean => {
     const settingStore = useSettingStore();
-    const max = settingStore.maxConcurrentDownloads;
-    return max <= 0 || activeCount.value < max;
+    return activeCount.value < settingStore.maxConcurrent;
   };
 
   /**
@@ -125,6 +128,11 @@ export const useDownloadStore = defineStore("download", () => {
       await migrateLegacyTasks();
 
       const dbTasks = await invoke<DownloadTask[]>("db_get_tasks");
+      // 老版本迁移来的日志可能是无界的，统一裁剪到环形缓冲上限
+      for (const t of dbTasks) {
+        if (Array.isArray(t.logs)) trimTaskLogs(t.logs);
+        else t.logs = [];
+      }
       tasks.value = dbTasks;
 
       // 异步检验已完成任务的输出文件是否依然存在于磁盘上，不存在则自动清理
@@ -211,7 +219,7 @@ export const useDownloadStore = defineStore("download", () => {
     await listen<{ id: string; line: string }>("download-log", (event) => {
       const task = tasks.value.find((t) => t.id === event.payload.id);
       if (task) {
-        task.logs.push(event.payload.line);
+        pushTaskLog(task.logs, event.payload.line);
       }
     });
 
@@ -223,15 +231,20 @@ export const useDownloadStore = defineStore("download", () => {
           task.status = "completed";
           task.percent = 100;
           task.speed = "";
+          task.eta = "";
           if (event.payload.outputFile) task.outputFile = event.payload.outputFile;
           if (typeof event.payload.fileSizeBytes === "number" && event.payload.fileSizeBytes > 0) {
             task.fileSizeBytes = event.payload.fileSizeBytes;
             task.total = formatFileSize(event.payload.fileSizeBytes);
           }
+          // 已完成任务不再需要运行时日志：清空以节省内存与数据库空间
+          task.logs = [];
           notify(
             i18n.global.t("downloads.notifyComplete"),
             task.title || i18n.global.t("downloads.notifyCompleteBody"),
           );
+          // 后端只落了状态/产物，内存里的 total/清空后的 logs 需要同步回库
+          void updateTask(task);
         }
         updateTaskbarProgress();
         tryStartNext();
@@ -244,6 +257,9 @@ export const useDownloadStore = defineStore("download", () => {
         task.status = "error";
         task.error = event.payload.error;
         task.speed = "";
+        task.eta = "";
+        // 错误诊断依赖日志，保留裁剪后的 logs 并落库
+        void updateTask(task);
       }
       updateTaskbarProgress();
       tryStartNext();
@@ -254,30 +270,36 @@ export const useDownloadStore = defineStore("download", () => {
   setupListeners();
 
   /**
-   * 添加新的下载任务到列表顶部，并异步写入 SQLite 持久化
+   * 添加新的下载任务到列表顶部，并同步写入 SQLite 持久化
+   *
+   * 必须 await：确保行落库后再启动子进程，否则后端的状态更新会写到空行上。
    *
    * @param task 新创建的下载任务对象
    */
-  const addTask = (task: DownloadTask): void => {
+  const addTask = async (task: DownloadTask): Promise<void> => {
     tasks.value.unshift(task);
-    invoke("db_upsert_task", { task }).catch((err) => {
+    try {
+      await invoke("db_upsert_task", { task });
+    } catch (err) {
       console.error("写入任务至数据库失败:", err);
-    });
+    }
   };
 
   /**
-   * 更新已有任务的元数据与状态，并异步同步至 SQLite 数据库
+   * 更新已有任务的元数据与状态，并同步至 SQLite 数据库
    *
    * @param task 待更新的下载任务对象
    */
-  const updateTask = (task: DownloadTask): void => {
+  const updateTask = async (task: DownloadTask): Promise<void> => {
     const idx = tasks.value.findIndex((t) => t.id === task.id);
     if (idx !== -1) {
       Object.assign(tasks.value[idx], task);
     }
-    invoke("db_upsert_task", { task }).catch((err) => {
+    try {
+      await invoke("db_upsert_task", { task });
+    } catch (err) {
       console.error("更新任务至数据库失败:", err);
-    });
+    }
   };
 
   /**
@@ -292,6 +314,8 @@ export const useDownloadStore = defineStore("download", () => {
 
     const hadNoProcess = task.status === "queued" || task.status === "preparing";
     task.status = "cancelled";
+    task.speed = "";
+    task.eta = "";
 
     if (!hadNoProcess) {
       try {
@@ -299,10 +323,9 @@ export const useDownloadStore = defineStore("download", () => {
       } catch {
         // 进程可能已经提前退出
       }
-    } else {
-      // 未真正启动子进程的就绪态任务，前端主动补记一条状态更新
-      invoke("db_upsert_task", { task }).catch(() => {});
     }
+    // 无论后端是否成功标记，都以内存态为准落库，避免 cancelled 回退为 error
+    await updateTask(task);
 
     updateTaskbarProgress();
     tryStartNext();
@@ -322,8 +345,12 @@ export const useDownloadStore = defineStore("download", () => {
     const fullParams = normalizeTaskParams(task.params);
     const oldId = task.id;
 
-    // 先从 SQLite 移除旧任务记录
-    invoke("db_delete_task", { id: oldId }).catch(() => {});
+    // 先从 SQLite 移除旧任务记录，再写入新 ID 行，串行避免乱序留下孤儿行
+    try {
+      await invoke("db_delete_task", { id: oldId });
+    } catch {
+      // 旧行可能已不存在，继续
+    }
 
     task.id = newId;
     task.params = fullParams;
@@ -337,7 +364,7 @@ export const useDownloadStore = defineStore("download", () => {
 
     if (canStartNow()) {
       task.status = "downloading";
-      invoke("db_upsert_task", { task }).catch(() => {});
+      await updateTask(task);
       try {
         await invoke("start_download", {
           params: { id: newId, ...fullParams },
@@ -348,10 +375,11 @@ export const useDownloadStore = defineStore("download", () => {
           error instanceof Error
             ? error.message
             : String(error) || i18n.global.t("downloads.startFailed");
+        await updateTask(task);
       }
     } else {
       task.status = "queued";
-      invoke("db_upsert_task", { task }).catch(() => {});
+      await updateTask(task);
     }
   };
 
@@ -387,7 +415,11 @@ export const useDownloadStore = defineStore("download", () => {
     };
 
     tasks.value.unshift(newTask);
-    invoke("db_upsert_task", { task: newTask }).catch(() => {});
+    try {
+      await invoke("db_upsert_task", { task: newTask });
+    } catch {
+      // 落库失败不阻塞启动，后续 updateTask 会补写
+    }
 
     if (canStartNow()) {
       newTask.status = "downloading";
@@ -402,6 +434,7 @@ export const useDownloadStore = defineStore("download", () => {
             ? error.message
             : String(error) || i18n.global.t("downloads.startFailed");
       }
+      await updateTask(newTask);
     }
   };
 
@@ -424,10 +457,14 @@ export const useDownloadStore = defineStore("download", () => {
    *
    * @param id 任务 ID
    */
-  const removeTask = (id: string): void => {
+  const removeTask = async (id: string): Promise<void> => {
     const idx = tasks.value.findIndex((taskItem) => taskItem.id === id);
     if (idx !== -1) tasks.value.splice(idx, 1);
-    invoke("db_delete_task", { id }).catch(() => {});
+    try {
+      await invoke("db_delete_task", { id });
+    } catch {
+      // 记录已从内存移除，落库失败仅记录
+    }
   };
 
   /**

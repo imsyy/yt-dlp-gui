@@ -3,6 +3,12 @@ import { setI18nLocale, resolveLocale } from "@/locales";
 import { DEFAULT_OUTPUT_TEMPLATE } from "@/utils/output-template";
 import type { HomeDownloadBehavior, HomeMode, YtdlpChannel } from "@/types";
 
+/** 默认最大同时下载数 */
+export const DEFAULT_CONCURRENT_DOWNLOADS = 3;
+/** 最大同时下载数下限/上限 */
+export const MIN_CONCURRENT_DOWNLOADS = 1;
+export const MAX_CONCURRENT_DOWNLOADS = 10;
+
 /**
  * 应用全局偏好配置 Store
  *
@@ -93,8 +99,25 @@ export const useSettingStore = defineStore(
     const defaultRemuxFormat = ref("");
     const defaultLimitRate = ref("");
 
-    /** 最大同时下载数，0 = 不限制 */
-    const maxConcurrentDownloads = ref(0);
+    /** 最大同时下载数（1~10，默认 3） */
+    const maxConcurrentDownloads = ref(3);
+
+    /**
+     * 生效的最大同时下载数（带钳制与老数据兼容）
+     *
+     * 老版本曾用 0 表示"不限制"，升级后统一归一为默认值，避免无上限并发拖垮系统。
+     */
+    const maxConcurrent = computed(() => {
+      const raw = maxConcurrentDownloads.value;
+      if (
+        !Number.isInteger(raw) ||
+        raw < MIN_CONCURRENT_DOWNLOADS ||
+        raw > MAX_CONCURRENT_DOWNLOADS
+      ) {
+        return DEFAULT_CONCURRENT_DOWNLOADS;
+      }
+      return raw;
+    });
 
     /** 下载完成通知模式 */
     const notifyMode = ref<"none" | "app" | "system" | "all">("system");
@@ -174,6 +197,7 @@ export const useSettingStore = defineStore(
       defaultRemuxFormat,
       defaultLimitRate,
       maxConcurrentDownloads,
+      maxConcurrent,
       notifyMode,
       closeToTray,
       showTrayIcon,

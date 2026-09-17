@@ -2,6 +2,7 @@ import localforage from "localforage";
 import { invoke } from "@tauri-apps/api/core";
 import type { DownloadTask, DownloadTaskParams } from "@/types";
 import type { HistoryItem } from "@/stores/history";
+import { trimTaskLogs } from "@/utils/logs";
 
 /** 老版本 IndexedDB 实例 */
 const legacyTasksStorage = localforage.createInstance({
@@ -78,13 +79,22 @@ export const migrateLegacyTasks = async (): Promise<void> => {
           task.status === "queued" ||
           task.status === "preparing";
 
+        const logs = Array.isArray(task.logs) ? [...task.logs] : [];
+        // 已完成任务不需要运行时日志（沿用老版本 IndexedDB 行为，节省空间）；
+        // 其余任务的日志裁剪到环形缓冲上限后再入库
+        if (task.status === "completed") {
+          logs.length = 0;
+        } else {
+          trimTaskLogs(logs);
+        }
+
         return {
           ...task,
           status: isInterrupted ? "error" : task.status,
           error: isInterrupted ? task.error || "应用已升级重启，历史未竟任务已中断" : task.error,
           speed: isInterrupted ? "" : task.speed,
           eta: isInterrupted ? "" : task.eta,
-          logs: Array.isArray(task.logs) ? task.logs : [],
+          logs,
           createdAt: task.createdAt || Date.now(),
           params: normalizeTaskParams(task.params),
         };

@@ -17,6 +17,11 @@ pub fn kill_process(pid: u32) -> Result<(), String> {
 
 #[cfg(not(target_os = "windows"))]
 pub fn kill_process(pid: u32) -> Result<(), String> {
+    // yt-dlp 会按需拉起 ffmpeg 子进程，直接 kill 父进程会留下孤儿。
+    // 先用 pkill 按父 PID 杀一遍子进程树（best-effort，子进程可能已退出），再杀父进程。
+    let _ = std::process::Command::new("pkill")
+        .args(["-9", "-P", &pid.to_string()])
+        .output();
     std::process::Command::new("kill")
         .args(["-9", &pid.to_string()])
         .output()

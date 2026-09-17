@@ -47,12 +47,11 @@ const localStorageMock = {
   }),
 };
 
-// @ts-expect-error mock window in node environment
+// mock window/localStorage in node environment
 globalThis.window = {
   localStorage: localStorageMock,
-};
-// @ts-expect-error mock localStorage in node environment
-globalThis.localStorage = localStorageMock;
+} as unknown as Window & typeof globalThis;
+globalThis.localStorage = localStorageMock as unknown as Storage;
 
 describe("migrateLegacyHistory", () => {
   beforeEach(() => {

@@ -52,6 +52,8 @@ pub async fn start_download(
     cmd.args(&full_args)
         .env("PYTHONUTF8", "1")
         .env("PYTHONIOENCODING", "utf-8");
+    // 应用异常退出时托底杀掉子进程，避免 yt-dlp/ffmpeg 变成孤儿
+    cmd.kill_on_drop(true);
     cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
     #[cfg(target_os = "windows")]
     cmd.creation_flags(CREATE_NO_WINDOW);

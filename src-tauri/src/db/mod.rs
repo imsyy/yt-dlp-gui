@@ -36,6 +36,8 @@ pub fn init_database(app: &AppHandle) -> Result<DatabaseState, Box<dyn std::erro
     conn.pragma_update(None, "journal_mode", "WAL")?;
     conn.pragma_update(None, "foreign_keys", "ON")?;
     conn.pragma_update(None, "synchronous", "NORMAL")?;
+    // 锁等待超时，避免极端并发下直接报 SQLITE_BUSY
+    conn.pragma_update(None, "busy_timeout", "5000")?;
 
     // 执行迁移建表
     schema::run_migrations(&conn)?;
@@ -65,11 +67,17 @@ pub fn db_health_check(state: State<'_, DatabaseState>) -> Result<DbHealthInfo, 
         .filter_map(Result::ok)
         .collect();
 
+    // 真实完整性校验：integrity_check 首行返回 ok 才算健康
+    let healthy: bool = conn
+        .query_row("PRAGMA integrity_check", [], |row| row.get::<_, String>(0))
+        .map(|first_line| first_line.eq_ignore_ascii_case("ok"))
+        .unwrap_or(false);
+
     Ok(DbHealthInfo {
         db_path: state.db_path.to_string_lossy().to_string(),
         sqlite_version,
         tables,
-        healthy: true,
+        healthy,
     })
 }
 

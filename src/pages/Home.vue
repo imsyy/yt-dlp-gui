@@ -279,7 +279,9 @@ const handleSearch = async (): Promise<void> => {
   }
   if (!ensureQuickDownloadConfigured()) return;
   const preparingTaskId =
-    settingStore.homeDownloadBehavior === "quick" ? createPreparingTask(trimmedUrl) : undefined;
+    settingStore.homeDownloadBehavior === "quick"
+      ? await createPreparingTask(trimmedUrl)
+      : undefined;
   if (preparingTaskId) await router.push({ name: "downloads" });
   const fetchedData = await videoStore.fetchVideoInfo(trimmedUrl);
   if (fetchedData) {
@@ -289,7 +291,7 @@ const handleSearch = async (): Promise<void> => {
       router.push({ name: "pending" });
     }
   } else if (preparingTaskId) {
-    markPreparationError(preparingTaskId);
+    await markPreparationError(preparingTaskId);
   }
 };
 
@@ -312,10 +314,12 @@ const handleBatchSearch = async (): Promise<void> => {
 
   batchParsing.value = true;
   let succeededCount = 0;
-  const preparingTasks =
-    settingStore.homeDownloadBehavior === "quick"
-      ? new Map(targetUrls.map((targetUrl) => [targetUrl, createPreparingTask(targetUrl)]))
-      : new Map<string, string>();
+  const preparingTasks = new Map<string, string>();
+  if (settingStore.homeDownloadBehavior === "quick") {
+    for (const targetUrl of targetUrls) {
+      preparingTasks.set(targetUrl, await createPreparingTask(targetUrl));
+    }
+  }
   if (preparingTasks.size > 0) await router.push({ name: "downloads" });
 
   try {
@@ -328,7 +332,7 @@ const handleBatchSearch = async (): Promise<void> => {
         }
       } else {
         const preparingTaskId = preparingTasks.get(targetUrl);
-        if (preparingTaskId) markPreparationError(preparingTaskId);
+        if (preparingTaskId) await markPreparationError(preparingTaskId);
       }
     }
   } finally {

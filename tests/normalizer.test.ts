@@ -3,9 +3,6 @@ import type { VideoFormat } from "@/types";
 import {
   compareVideoFormats,
   detectAudioRole,
-  formatFpsLabel,
-  formatResolutionLabel,
-  normalizeAudioFormat,
   normalizeVideoFormat,
   resolveFileSize,
 } from "@/utils/normalizer";

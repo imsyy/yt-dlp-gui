@@ -14,9 +14,6 @@ pub fn run_migrations(conn: &Connection) -> Result<()> {
     if current_version < CURRENT_SCHEMA_VERSION {
         conn.execute_batch(
             r#"
-            -- 移除不再由数据库托管的应用设置表（保留前端 localStorage 管理）
-            DROP TABLE IF EXISTS app_settings;
-
             -- 核心下载任务表
             CREATE TABLE IF NOT EXISTS tasks (
                 id TEXT PRIMARY KEY,
