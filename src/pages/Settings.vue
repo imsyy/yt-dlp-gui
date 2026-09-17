@@ -298,6 +298,9 @@ watch(
 
 <style scoped lang="scss">
 .settings-page {
+  height: 100%;
+  overflow-y: auto;
+  padding: 16px;
   max-width: 100%;
 }
 

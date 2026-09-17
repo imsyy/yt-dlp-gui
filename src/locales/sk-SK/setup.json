@@ -1,0 +1,15 @@
+{
+  "setup": {
+    "ytdlpTitle": "yt-dlp je nevyhnutný",
+    "ytdlpDesc": "yt-dlp je hlavný nástroj na sťahovanie pre túto aplikáciu a momentálne nie je nainštalovaný. Bez neho nie je možné analyzovať ani stiahnuť žiadne videá.",
+    "ytdlpHint": "Prejdite do nastavení a kliknite na tlačidlo na stiahnutie, čím sa automaticky nainštaluje yt-dlp. Po inštalácii budú k dispozícii všetky funkcie.",
+    "denoTitle": "Demi Runtime je odporúčané",
+    "denoDesc": "YouTube vyžaduje prostredie na spúšťanie JavaScriptu na analýzu informácií o videu",
+    "denoHint": "Deno je prostredie pre spúšťanie kódu v jazyku JavaScript, ktoré potrebuje nástroj yt-dlp na analýzu informácií o videách na YouTube. Jeho inštaláciou sa sprístupní kompletný zoznam formátov vrátane možností vyššej kvality.",
+    "ffmpegTitle": "Na zlúčenie je potrebný program FFmpeg",
+    "ffmpegDesc": "Vybrané video a audio streamy nie je možné zlúčiť, pretože programy FFmpeg alebo FFprobe nie sú k dispozícii.",
+    "ffmpegHint": "Prejdite do nastavení, kde môžete zvoliť inštaláciu zo systému alebo nainštalovať balík FFmpeg spravovaný aplikáciou, a potom spustite sťahovanie znova.",
+    "goToSettings": "Prejsť do nastavení",
+    "later": "Neskôr"
+  }
+}

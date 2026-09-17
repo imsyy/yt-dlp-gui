@@ -1,4 +1,3 @@
-import { watch } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { check as checkForAppUpdate } from "@tauri-apps/plugin-updater";
 import { useSettingStore } from "@/stores/setting";

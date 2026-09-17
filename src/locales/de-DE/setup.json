@@ -1,0 +1,15 @@
+{
+  "setup": {
+    "ytdlpTitle": "yt-dlp erforderlich",
+    "ytdlpDesc": "yt-dlp ist die zentrale Download-Engine dieser App und ist derzeit nicht installiert. Ohne sie können keine Videos analysiert oder heruntergeladen werden.",
+    "ytdlpHint": "Gehe zu den Einstellungen und klicke auf den Download-Button, um yt-dlp automatisch zu installieren. Nach der Installation sind alle Funktionen verfügbar.",
+    "denoTitle": "Deno-Laufzeit empfohlen",
+    "denoDesc": "YouTube benötigt eine JavaScript-Laufzeit, um Videoinformationen zu analysieren",
+    "denoHint": "Deno ist eine JavaScript-Laufzeit, die yt-dlp benötigt, um YouTube-Video-Infos auszuwerten. Mit ihrer Installation erhältst du Zugriff auf die vollständige Format-Liste, einschließlich höherer Qualität.",
+    "goToSettings": "Zu den Einstellungen",
+    "later": "Später",
+    "ffmpegTitle": "FFmpeg wird zum Zusammenführen benötigt",
+    "ffmpegDesc": "Die gewählten Video- und Audiospuren können nicht zusammengeführt werden, weil FFmpeg oder FFprobe nicht verfügbar ist.",
+    "ffmpegHint": "In den Einstellungen eine Systeminstallation auswählen oder das von der App verwaltete FFmpeg installieren und den Download anschließend erneut starten."
+  }
+}

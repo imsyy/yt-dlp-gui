@@ -7,12 +7,6 @@ import { usePendingStore } from "@/stores/pending";
 import { useDownloadLauncher } from "@/composables/useDownloadLauncher";
 import { useI18n } from "vue-i18n";
 import type { VideoInfo } from "@/types";
-import VideoInfoCard from "@/components/home/VideoInfoCard.vue";
-import DownloadOptionsCard from "@/components/home/DownloadOptionsCard.vue";
-import ExtraOptionsCard from "@/components/home/ExtraOptionsCard.vue";
-import SubtitleCard from "@/components/home/SubtitleCard.vue";
-import DownloadDirCard from "@/components/DownloadDirCard.vue";
-import DownloadBar from "@/components/home/DownloadBar.vue";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -302,6 +296,9 @@ const handleDownload = async () => {
 <style scoped lang="scss">
 .pending-page {
   position: relative;
+  height: 100%;
+  overflow-y: auto;
+  padding: 16px;
 
   .tabs-bar {
     margin-bottom: 12px;

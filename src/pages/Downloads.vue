@@ -1,7 +1,4 @@
 <script setup lang="ts">
-import { NCheckbox, NFlex, NLog, type LogInst } from "naive-ui";
-import { revealItemInDir, openUrl } from "@tauri-apps/plugin-opener";
-import { invoke } from "@tauri-apps/api/core";
 import { useDownloadStore } from "@/stores/download";
 import { useI18n } from "vue-i18n";
 import type { DownloadTask } from "@/types";
@@ -9,20 +6,57 @@ import type { DownloadTask } from "@/types";
 const { t } = useI18n();
 const downloadStore = useDownloadStore();
 
-const activeTasks = computed(() =>
+/** 当前激活的分类标签页 */
+type DownloadCategory = "all" | "downloading" | "completed" | "cancelled" | "failed";
+const activeCategory = ref<DownloadCategory>("all");
+
+/** 全部任务总数 */
+const totalTasksCount = computed<number>(() => downloadStore.tasks.length);
+
+/** 正在进行的任务（准备中、排队中、下载中、后处理中） */
+const activeTasks = computed<DownloadTask[]>(() =>
   downloadStore.tasks.filter(
-    (t) =>
-      t.status === "preparing" ||
-      t.status === "downloading" ||
-      t.status === "postprocessing" ||
-      t.status === "paused" ||
-      t.status === "queued",
+    (downloadTask) =>
+      downloadTask.status === "preparing" ||
+      downloadTask.status === "downloading" ||
+      downloadTask.status === "postprocessing" ||
+      downloadTask.status === "queued",
   ),
 );
 
-const finishedTasks = computed(() =>
-  downloadStore.tasks.filter(
-    (t) => t.status === "completed" || t.status === "error" || t.status === "cancelled",
+/** 进行中任务按创建时间倒序排列 */
+const sortedActiveTasks = computed<DownloadTask[]>(() =>
+  [...activeTasks.value].sort(
+    (firstTask, secondTask) => secondTask.createdAt - firstTask.createdAt,
+  ),
+);
+
+/** 仅已成功完成的任务 */
+const completedTasks = computed<DownloadTask[]>(() =>
+  downloadStore.tasks.filter((downloadTask) => downloadTask.status === "completed"),
+);
+
+/** 仅已主动取消的任务 */
+const cancelledTasks = computed<DownloadTask[]>(() =>
+  downloadStore.tasks.filter((downloadTask) => downloadTask.status === "cancelled"),
+);
+
+/** 取消任务按创建时间倒序排列 */
+const sortedCancelledTasks = computed<DownloadTask[]>(() =>
+  [...cancelledTasks.value].sort(
+    (firstTask, secondTask) => secondTask.createdAt - firstTask.createdAt,
+  ),
+);
+
+/** 仅下载失败/异常的任务 */
+const failedTasks = computed<DownloadTask[]>(() =>
+  downloadStore.tasks.filter((downloadTask) => downloadTask.status === "error"),
+);
+
+/** 失败任务按创建时间倒序排列 */
+const sortedFailedTasks = computed<DownloadTask[]>(() =>
+  [...failedTasks.value].sort(
+    (firstTask, secondTask) => secondTask.createdAt - firstTask.createdAt,
   ),
 );
 
@@ -31,651 +65,381 @@ interface DateGroup {
   tasks: DownloadTask[];
 }
 
+/** 将时间戳格式化为相对日期标签（今天/昨天/前天/年月日） */
 const formatDateLabel = (timestamp: number): string => {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const diff = today.getTime() - target.getTime();
-  const dayMs = 86400000;
+  const targetDate = new Date(timestamp);
+  const nowDate = new Date();
+  const todayZero = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate());
+  const targetZero = new Date(
+    targetDate.getFullYear(),
+    targetDate.getMonth(),
+    targetDate.getDate(),
+  );
+  const diffMilliseconds = todayZero.getTime() - targetZero.getTime();
+  const oneDayMilliseconds = 86400000;
 
-  if (diff === 0) return t("downloads.today");
-  if (diff === dayMs) return t("downloads.yesterday");
-  if (diff === dayMs * 2) return t("downloads.dayBeforeYesterday");
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  if (diffMilliseconds === 0) return t("downloads.today");
+  if (diffMilliseconds === oneDayMilliseconds) return t("downloads.yesterday");
+  if (diffMilliseconds === oneDayMilliseconds * 2) return t("downloads.dayBeforeYesterday");
+  return `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, "0")}-${String(targetDate.getDate()).padStart(2, "0")}`;
 };
 
-const groupByDate = (tasks: DownloadTask[]): DateGroup[] => {
-  const sorted = [...tasks].sort((a, b) => b.createdAt - a.createdAt);
-  const map = new Map<string, DownloadTask[]>();
-  for (const task of sorted) {
-    const label = formatDateLabel(task.createdAt);
-    if (!map.has(label)) map.set(label, []);
-    map.get(label)!.push(task);
+/** 仅用于已完成历史记录的日期分组 */
+const groupByDate = (taskList: DownloadTask[]): DateGroup[] => {
+  const sortedList = [...taskList].sort(
+    (firstTask, secondTask) => secondTask.createdAt - firstTask.createdAt,
+  );
+  const groupMap = new Map<string, DownloadTask[]>();
+  for (const downloadTask of sortedList) {
+    const label = formatDateLabel(downloadTask.createdAt);
+    if (!groupMap.has(label)) groupMap.set(label, []);
+    groupMap.get(label)!.push(downloadTask);
   }
-  return Array.from(map.entries()).map(([label, tasks]) => ({ label, tasks }));
+  return Array.from(groupMap.entries()).map(([label, tasks]) => ({ label, tasks }));
 };
 
-const activeGroups = computed(() => groupByDate(activeTasks.value));
-const finishedGroups = computed(() => groupByDate(finishedTasks.value));
+const completedGroups = computed<DateGroup[]>(() => groupByDate(completedTasks.value));
 
-const expandedLogs = reactive(new Set<string>());
-
-const toggleLog = (id: string) => {
-  if (expandedLogs.has(id)) {
-    expandedLogs.delete(id);
-  } else {
-    expandedLogs.add(id);
-  }
-};
-
-const logContent = (task: DownloadTask) => {
-  return task.logs.join("\n") || t("downloads.noLogs");
-};
-
-// 日志自动滚动到底部
-const logRefs = new Map<string, LogInst>();
-const setLogRef = (id: string) => (el: unknown) => {
-  if (el) logRefs.set(id, el as LogInst);
-  else logRefs.delete(id);
-};
-
-watch(
-  () =>
-    [...expandedLogs].map((id) => {
-      const task = downloadStore.tasks.find((t) => t.id === id);
-      return task ? task.logs.length : 0;
-    }),
-  () => {
-    nextTick(() => {
-      for (const id of expandedLogs) {
-        logRefs.get(id)?.scrollTo({ position: "bottom", silent: true });
-      }
-    });
-  },
-);
-
-type ProgressStatus = "default" | "success" | "error" | "warning";
-const progressStatus = (task: DownloadTask): ProgressStatus => {
-  switch (task.status) {
-    case "completed":
-      return "success";
-    case "error":
-      return "error";
-    case "paused":
-    case "queued":
-      return "warning";
-    case "postprocessing":
-      return "warning";
-    default:
-      return "default";
-  }
-};
-
-const statusLabel = (task: DownloadTask) => {
-  switch (task.status) {
-    case "preparing":
-      return t("downloads.status.preparing");
-    case "queued":
-      return t("downloads.status.queued");
-    case "downloading":
-      return t("downloads.status.downloading");
-    case "postprocessing":
-      return t("downloads.status.postprocessing");
-    case "paused":
-      return t("downloads.status.paused");
-    case "completed":
-      return t("downloads.status.completed");
-    case "error":
-      return t("downloads.status.error");
-    case "cancelled":
-      return t("downloads.status.cancelled");
-    default:
-      return "";
-  }
-};
-
-const statusType = (task: DownloadTask): "default" | "success" | "error" | "warning" | "info" => {
-  switch (task.status) {
-    case "preparing":
-      return "info";
-    case "completed":
-      return "success";
-    case "error":
-      return "error";
-    case "paused":
-    case "queued":
-      return "warning";
-    case "downloading":
-    case "postprocessing":
-      return "info";
-    default:
-      return "default";
-  }
-};
-
-const sizeProgress = (task: DownloadTask) => {
-  if (!task.downloaded && !task.total) return "";
-  if (task.downloaded && task.total) return `${task.downloaded} / ${task.total}`;
-  if (task.total) return task.total;
-  return "";
-};
-
-const coverErrors = reactive(new Set<string>());
-
-const handleOpenFolder = async (task: DownloadTask) => {
-  try {
-    if (task.outputFile) {
-      const [exists] = await invoke<boolean[]>("check_files_exist", {
-        paths: [task.outputFile],
-      });
-      if (exists) {
-        await revealItemInDir(task.outputFile);
-        return;
-      }
-      window.$dialog.warning({
-        title: t("downloads.fileNotExist"),
-        content: t("downloads.fileDeletedOrMoved"),
-        positiveText: t("common.remove"),
-        negativeText: t("common.cancel"),
-        onPositiveClick: () => {
-          downloadStore.removeTask(task.id);
-        },
-      });
-      return;
-    }
-    await revealItemInDir(task.params.downloadDir);
-  } catch (e: unknown) {
-    window.$message.error(
-      e instanceof Error ? e.message : String(e) || t("downloads.openFolderFailed"),
-    );
-  }
-};
-
-const handleOpenSource = async (url: string) => {
-  try {
-    await openUrl(url);
-  } catch (e: unknown) {
-    window.$message.error(e instanceof Error ? e.message : String(e));
-  }
-};
-
-const handlePause = async (id: string) => {
-  try {
-    await downloadStore.pauseTask(id);
-  } catch (e: unknown) {
-    window.$message.error(e instanceof Error ? e.message : String(e) || t("downloads.pauseFailed"));
-  }
-};
-
-const handleResume = async (id: string) => {
-  try {
-    await downloadStore.resumeTask(id);
-  } catch (e: unknown) {
-    window.$message.error(
-      e instanceof Error ? e.message : String(e) || t("downloads.resumeFailed"),
-    );
-  }
-};
-
-const handleCancel = (id: string) => {
-  window.$dialog.error({
-    title: t("downloads.cancelAndDelete"),
-    content: t("downloads.confirmCancelAndDelete"),
-    positiveText: t("downloads.cancelAndDelete"),
-    negativeText: t("common.back"),
-    onPositiveClick: async () => {
-      try {
-        await downloadStore.cancelTask(id);
-      } catch (e: unknown) {
-        window.$message.error(
-          e instanceof Error ? e.message : String(e) || t("downloads.cancelFailed"),
-        );
-      }
-    },
-  });
-};
-
-const handleRetry = async (id: string) => {
-  try {
-    await downloadStore.retryTask(id);
-  } catch (e: unknown) {
-    window.$message.error(e instanceof Error ? e.message : String(e) || t("downloads.retryFailed"));
-  }
-};
-
-const deleteFileChecked = ref(false);
-
-const handleRemove = (task: DownloadTask) => {
-  deleteFileChecked.value = false;
-  const hasFile = task.status === "completed" && !!task.outputFile;
+/** 清空所有已取消任务记录 */
+const handleClearCancelled = () => {
   window.$dialog.warning({
-    title: t("downloads.removeTask"),
-    content: () =>
-      h(NFlex, { vertical: true, size: 12 }, () => [
-        t("downloads.confirmRemoveTask"),
-        hasFile
-          ? h(
-              NCheckbox,
-              {
-                checked: deleteFileChecked.value,
-                "onUpdate:checked": (v: boolean) => {
-                  deleteFileChecked.value = v;
-                },
-              },
-              { default: () => t("downloads.alsoDeleteFiles") },
-            )
-          : null,
-      ]),
-    positiveText: t("common.remove"),
-    negativeText: t("common.cancel"),
-    onPositiveClick: async () => {
-      if (hasFile && deleteFileChecked.value && task.outputFile) {
-        try {
-          await invoke("delete_file", { path: task.outputFile });
-        } catch {
-          // 文件可能已不存在，忽略
-        }
-      }
-      downloadStore.removeTask(task.id);
-    },
-  });
-};
-
-const handleClearFinished = () => {
-  window.$dialog.warning({
-    title: t("downloads.clearCompleted"),
-    content: t("downloads.confirmClearCompleted"),
+    title: t("downloads.clearCancelled"),
+    content: t("downloads.confirmClearCancelled"),
     positiveText: t("common.clear"),
     negativeText: t("common.cancel"),
     onPositiveClick: () => {
-      downloadStore.clearFinished();
+      downloadStore.clearCancelled();
+    },
+  });
+};
+
+/** 清空所有下载失败任务记录 */
+const handleClearFailed = () => {
+  window.$dialog.warning({
+    title: t("downloads.clearFailed"),
+    content: t("downloads.confirmClearFailed"),
+    positiveText: t("common.clear"),
+    negativeText: t("common.cancel"),
+    onPositiveClick: () => {
+      downloadStore.clearFailed();
+    },
+  });
+};
+
+/** 重新尝试所有失败的任务 */
+const handleRetryAllFailed = () => {
+  window.$dialog.info({
+    title: t("downloads.retryAll"),
+    content: t("downloads.confirmRetryAllFailed"),
+    positiveText: t("downloads.retryAll"),
+    negativeText: t("common.cancel"),
+    onPositiveClick: async () => {
+      try {
+        for (const failedTask of failedTasks.value) {
+          await downloadStore.retryTask(failedTask.id);
+        }
+      } catch (error: unknown) {
+        window.$message.error(
+          error instanceof Error ? error.message : String(error) || t("downloads.retryFailed"),
+        );
+      }
     },
   });
 };
 </script>
 
 <template>
-  <n-flex vertical :size="24">
-    <div class="section">
-      <n-flex align="center" :size="8" style="margin-bottom: 12px">
-        <n-icon size="16"><icon-mdi-download /></n-icon>
-        <n-text strong>{{ $t("downloads.downloading") }}</n-text>
-        <n-tag v-if="activeTasks.length > 0" size="small" round :bordered="false" type="info">
-          {{ activeTasks.length }}
-        </n-tag>
-      </n-flex>
+  <div class="downloads-page">
+    <n-tabs
+      v-model:value="activeCategory"
+      type="line"
+      justify-content="space-evenly"
+      class="downloads-tabs"
+    >
+      <n-tab-pane name="all">
+        <template #tab>
+          <span>{{ $t("downloads.all") }}</span>
+          <span v-if="totalTasksCount > 0" class="tab-count">({{ totalTasksCount }})</span>
+        </template>
+        <n-scrollbar class="tab-scrollbar">
+          <div class="tab-pane-content">
+            <div v-if="totalTasksCount === 0" class="section-empty">
+              <n-empty :description="$t('downloads.noFinishedTasks')" size="small" />
+            </div>
+            <n-flex v-else vertical :size="20">
+              <!-- 下载中分区 -->
+              <div v-if="activeTasks.length > 0" class="section">
+                <n-flex align="center" :size="8" class="section-title-bar">
+                  <n-icon size="16"><icon-mdi-download /></n-icon>
+                  <n-text strong>{{ $t("downloads.downloading") }}</n-text>
+                  <n-tag size="small" round :bordered="false" type="info">
+                    {{ activeTasks.length }}
+                  </n-tag>
+                </n-flex>
+                <n-flex vertical :size="10">
+                  <DownloadCard v-for="task in sortedActiveTasks" :key="task.id" :task="task" />
+                </n-flex>
+              </div>
 
-      <div v-if="activeTasks.length === 0" class="section-empty">
-        <n-empty :description="$t('downloads.noActiveTasks')" size="small" />
-      </div>
-      <template v-else>
-        <div v-for="group in activeGroups" :key="'a-' + group.label" class="date-group">
-          <n-text depth="3" class="date-label">{{ group.label }}</n-text>
-          <n-flex vertical :size="10">
-            <n-card v-for="task in group.tasks" :key="task.id" size="small" class="task-card">
-              <n-flex :size="14">
-                <div class="task-thumbnail">
-                  <img
-                    v-if="task.thumbnail && !coverErrors.has(task.id)"
-                    :src="task.thumbnail"
-                    @error="coverErrors.add(task.id)"
-                  />
-                  <div v-else class="thumbnail-placeholder">
-                    <icon-mdi-video-outline />
-                  </div>
-                </div>
-                <n-flex justify="between" vertical class="task-info">
-                  <n-flex align="center" :size="8" class="task-header">
-                    <n-tag size="small" :bordered="false" round type="info">
-                      {{ task.formatLabel }}
-                    </n-tag>
-                    <n-ellipsis :line-clamp="1" :tooltip="false" class="task-title">
-                      {{ task.title }}
-                    </n-ellipsis>
+              <!-- 已完成分区 -->
+              <div v-if="completedTasks.length > 0" class="section">
+                <CompletedTasksSection
+                  :groups="completedGroups"
+                  :total-count="completedTasks.length"
+                />
+              </div>
+
+              <!-- 已取消分区 -->
+              <div v-if="cancelledTasks.length > 0" class="section">
+                <n-flex align="center" :size="8" class="section-title-bar">
+                  <n-icon size="16"><icon-mdi-cancel /></n-icon>
+                  <n-text strong>{{ $t("downloads.cancelledTab") }}</n-text>
+                  <n-tag size="small" round :bordered="false" type="default">
+                    {{ cancelledTasks.length }}
+                  </n-tag>
+                  <n-button
+                    size="tiny"
+                    strong
+                    secondary
+                    type="error"
+                    style="margin-left: auto"
+                    @click="handleClearCancelled"
+                  >
+                    <template #icon>
+                      <n-icon size="14"><icon-mdi-delete-sweep-outline /></n-icon>
+                    </template>
+                    {{ $t("downloads.clearCancelled") }}
+                  </n-button>
+                </n-flex>
+                <n-flex vertical :size="10">
+                  <DownloadCard v-for="task in sortedCancelledTasks" :key="task.id" :task="task" />
+                </n-flex>
+              </div>
+
+              <!-- 下载失败分区 -->
+              <div v-if="failedTasks.length > 0" class="section">
+                <n-flex align="center" :size="8" class="section-title-bar">
+                  <n-icon size="16"><icon-mdi-alert-circle-outline /></n-icon>
+                  <n-text strong>{{ $t("downloads.failedTab") }}</n-text>
+                  <n-tag size="small" round :bordered="false" type="error">
+                    {{ failedTasks.length }}
+                  </n-tag>
+                  <n-flex align="center" size="small" style="margin-left: auto">
+                    <n-button
+                      size="tiny"
+                      strong
+                      secondary
+                      type="primary"
+                      @click="handleRetryAllFailed"
+                    >
+                      <template #icon>
+                        <n-icon size="14"><icon-mdi-refresh /></n-icon>
+                      </template>
+                      {{ $t("downloads.retryAll") }}
+                    </n-button>
+                    <n-button size="tiny" strong secondary type="error" @click="handleClearFailed">
+                      <template #icon>
+                        <n-icon size="14"><icon-mdi-delete-sweep-outline /></n-icon>
+                      </template>
+                      {{ $t("downloads.clearFailed") }}
+                    </n-button>
                   </n-flex>
-                  <n-progress
-                    :percentage="task.percent"
-                    :show-indicator="false"
-                    :status="progressStatus(task)"
-                    :processing="
-                      task.status === 'preparing' ||
-                      task.status === 'downloading' ||
-                      task.status === 'postprocessing'
-                    "
-                    style="width: 100%"
-                  />
-                  <n-flex align="center" justify="space-between">
-                    <n-flex align="center">
-                      <n-tag size="small" :bordered="false" round :type="statusType(task)">
-                        {{ statusLabel(task) }}
-                      </n-tag>
-                      <n-text v-if="sizeProgress(task)" depth="3">
-                        {{ sizeProgress(task) }}
-                      </n-text>
-                      <n-text
-                        v-if="task.speed && task.status === 'downloading'"
-                        depth="3"
-                        class="task-stat"
-                      >
-                        {{ task.speed }}
-                      </n-text>
-                      <n-text depth="3" class="task-stat">{{ task.percent.toFixed(1) }}%</n-text>
-                      <n-text
-                        v-if="task.eta && task.status === 'downloading'"
-                        depth="3"
-                        class="task-stat"
-                      >
-                        ETA {{ task.eta }}
-                      </n-text>
-                    </n-flex>
-                    <n-flex align="center" size="small">
-                      <n-button size="tiny" strong secondary @click="handleOpenSource(task.url)">
-                        <template #icon>
-                          <n-icon size="16"><icon-mdi-open-in-new /></n-icon>
-                        </template>
-                      </n-button>
-                      <n-button size="tiny" strong secondary @click="toggleLog(task.id)">
-                        <template #icon>
-                          <n-icon size="16">
-                            <icon-mdi-chevron-up v-if="expandedLogs.has(task.id)" />
-                            <icon-mdi-text-long v-else />
-                          </n-icon>
-                        </template>
-                      </n-button>
-                      <n-divider vertical style="margin: 0 2px" />
-                      <template
-                        v-if="task.status === 'downloading' || task.status === 'postprocessing'"
-                      >
-                        <n-button size="tiny" strong secondary @click="handlePause(task.id)">
-                          <template #icon>
-                            <n-icon size="16"><icon-mdi-pause /></n-icon>
-                          </template>
-                        </n-button>
-                        <n-button
-                          size="tiny"
-                          strong
-                          secondary
-                          type="error"
-                          @click="handleCancel(task.id)"
-                        >
-                          <template #icon>
-                            <n-icon size="16"><icon-mdi-close-circle-outline /></n-icon>
-                          </template>
-                        </n-button>
-                      </template>
-                      <template v-else-if="task.status === 'queued' || task.status === 'preparing'">
-                        <n-button
-                          size="tiny"
-                          strong
-                          secondary
-                          type="error"
-                          @click="handleCancel(task.id)"
-                        >
-                          <template #icon>
-                            <n-icon size="16"><icon-mdi-close-circle-outline /></n-icon>
-                          </template>
-                        </n-button>
-                      </template>
-                      <template v-else-if="task.status === 'paused'">
-                        <n-button
-                          size="tiny"
-                          strong
-                          secondary
-                          type="primary"
-                          @click="handleResume(task.id)"
-                        >
-                          <template #icon>
-                            <n-icon size="16"><icon-mdi-play /></n-icon>
-                          </template>
-                        </n-button>
-                        <n-button
-                          size="tiny"
-                          strong
-                          secondary
-                          type="error"
-                          @click="handleCancel(task.id)"
-                        >
-                          <template #icon>
-                            <n-icon size="16"><icon-mdi-close-circle-outline /></n-icon>
-                          </template>
-                        </n-button>
-                      </template>
-                    </n-flex>
-                  </n-flex>
-                  <n-collapse-transition :show="expandedLogs.has(task.id)">
-                    <div class="task-log">
-                      <n-log
-                        :ref="setLogRef(task.id)"
-                        :log="logContent(task)"
-                        :rows="8"
-                        :font-size="12"
-                        :trim="false"
-                      />
-                    </div>
-                  </n-collapse-transition>
+                </n-flex>
+                <n-flex vertical :size="10">
+                  <DownloadCard v-for="task in sortedFailedTasks" :key="task.id" :task="task" />
+                </n-flex>
+              </div>
+            </n-flex>
+          </div>
+        </n-scrollbar>
+      </n-tab-pane>
+
+      <!-- 2. 下载中 Tab -->
+      <n-tab-pane name="downloading">
+        <template #tab>
+          <span>{{ $t("downloads.downloading") }}</span>
+          <span v-if="activeTasks.length > 0" class="tab-count">({{ activeTasks.length }})</span>
+        </template>
+        <n-scrollbar class="tab-scrollbar">
+          <div class="tab-pane-content">
+            <div v-if="activeTasks.length === 0" class="section-empty">
+              <n-empty :description="$t('downloads.noActiveTasks')" size="small" />
+            </div>
+            <div v-else>
+              <n-flex align="center" :size="8" class="section-title-bar">
+                <n-icon size="16"><icon-mdi-download /></n-icon>
+                <n-text strong>{{ $t("downloads.downloading") }}</n-text>
+                <n-tag size="small" round :bordered="false" type="info">
+                  {{ activeTasks.length }}
+                </n-tag>
+              </n-flex>
+              <n-flex vertical :size="10">
+                <DownloadCard v-for="task in sortedActiveTasks" :key="task.id" :task="task" />
+              </n-flex>
+            </div>
+          </div>
+        </n-scrollbar>
+      </n-tab-pane>
+
+      <!-- 3. 已完成 Tab -->
+      <n-tab-pane name="completed">
+        <template #tab>
+          <span>{{ $t("downloads.completed") }}</span>
+          <span v-if="completedTasks.length > 0" class="tab-count">
+            ({{ completedTasks.length }})
+          </span>
+        </template>
+        <n-scrollbar class="tab-scrollbar">
+          <div class="tab-pane-content">
+            <CompletedTasksSection :groups="completedGroups" :total-count="completedTasks.length" />
+          </div>
+        </n-scrollbar>
+      </n-tab-pane>
+
+      <!-- 4. 已取消 Tab -->
+      <n-tab-pane name="cancelled">
+        <template #tab>
+          <span>{{ $t("downloads.cancelledTab") }}</span>
+          <span v-if="cancelledTasks.length > 0" class="tab-count">
+            ({{ cancelledTasks.length }})
+          </span>
+        </template>
+        <n-scrollbar class="tab-scrollbar">
+          <div class="tab-pane-content">
+            <div v-if="cancelledTasks.length === 0" class="section-empty">
+              <n-empty :description="$t('downloads.noFinishedTasks')" size="small" />
+            </div>
+            <div v-else>
+              <n-flex align="center" :size="8" class="section-title-bar">
+                <n-icon size="16"><icon-mdi-cancel /></n-icon>
+                <n-text strong>{{ $t("downloads.cancelledTab") }}</n-text>
+                <n-tag size="small" round :bordered="false" type="default">
+                  {{ cancelledTasks.length }}
+                </n-tag>
+                <n-button
+                  size="tiny"
+                  strong
+                  secondary
+                  type="error"
+                  style="margin-left: auto"
+                  @click="handleClearCancelled"
+                >
+                  <template #icon>
+                    <n-icon size="14"><icon-mdi-delete-sweep-outline /></n-icon>
+                  </template>
+                  {{ $t("downloads.clearCancelled") }}
+                </n-button>
+              </n-flex>
+              <n-flex vertical :size="10">
+                <DownloadCard v-for="task in sortedCancelledTasks" :key="task.id" :task="task" />
+              </n-flex>
+            </div>
+          </div>
+        </n-scrollbar>
+      </n-tab-pane>
+
+      <!-- 5. 下载失败 Tab -->
+      <n-tab-pane name="failed">
+        <template #tab>
+          <span>{{ $t("downloads.failedTab") }}</span>
+          <span v-if="failedTasks.length > 0" class="tab-count">({{ failedTasks.length }})</span>
+        </template>
+        <n-scrollbar class="tab-scrollbar">
+          <div class="tab-pane-content">
+            <div v-if="failedTasks.length === 0" class="section-empty">
+              <n-empty :description="$t('downloads.noFinishedTasks')" size="small" />
+            </div>
+            <div v-else>
+              <n-flex align="center" :size="8" class="section-title-bar">
+                <n-icon size="16"><icon-mdi-alert-circle-outline /></n-icon>
+                <n-text strong>{{ $t("downloads.failedTab") }}</n-text>
+                <n-tag size="small" round :bordered="false" type="error">
+                  {{ failedTasks.length }}
+                </n-tag>
+                <n-flex align="center" size="small" style="margin-left: auto">
+                  <n-button
+                    size="tiny"
+                    strong
+                    secondary
+                    type="primary"
+                    @click="handleRetryAllFailed"
+                  >
+                    <template #icon>
+                      <n-icon size="14"><icon-mdi-refresh /></n-icon>
+                    </template>
+                    {{ $t("downloads.retryAll") }}
+                  </n-button>
+                  <n-button size="tiny" strong secondary type="error" @click="handleClearFailed">
+                    <template #icon>
+                      <n-icon size="14"><icon-mdi-delete-sweep-outline /></n-icon>
+                    </template>
+                    {{ $t("downloads.clearFailed") }}
+                  </n-button>
                 </n-flex>
               </n-flex>
-            </n-card>
-          </n-flex>
-        </div>
-      </template>
-    </div>
-
-    <div class="section">
-      <n-flex align="center" :size="8" style="margin-bottom: 12px">
-        <n-icon size="16"><icon-mdi-check-circle-outline /></n-icon>
-        <n-text strong>{{ $t("downloads.completed") }}</n-text>
-        <n-tag v-if="finishedTasks.length > 0" size="small" round :bordered="false" type="success">
-          {{ finishedTasks.length }}
-        </n-tag>
-        <n-button
-          v-if="finishedTasks.length > 0"
-          size="tiny"
-          strong
-          secondary
-          type="error"
-          style="margin-left: auto"
-          @click="handleClearFinished"
-        >
-          <template #icon>
-            <n-icon size="14"><icon-mdi-delete-sweep-outline /></n-icon>
-          </template>
-          {{ $t("common.clear") }}
-        </n-button>
-      </n-flex>
-
-      <div v-if="finishedTasks.length === 0" class="section-empty">
-        <n-empty :description="$t('downloads.noFinishedTasks')" size="small" />
-      </div>
-      <template v-else>
-        <div v-for="group in finishedGroups" :key="'f-' + group.label" class="date-group">
-          <n-text depth="3" class="date-label">{{ group.label }}</n-text>
-          <n-flex vertical :size="10">
-            <n-card v-for="task in group.tasks" :key="task.id" size="small" class="task-card">
-              <n-flex :size="14">
-                <div class="task-thumbnail">
-                  <img
-                    v-if="task.thumbnail && !coverErrors.has(task.id)"
-                    :src="task.thumbnail"
-                    @error="coverErrors.add(task.id)"
-                  />
-                  <div v-else class="thumbnail-placeholder">
-                    <icon-mdi-video-outline />
-                  </div>
-                </div>
-                <n-flex justify="between" vertical class="task-info">
-                  <n-flex align="center" :size="8" class="task-header">
-                    <n-tag size="small" :bordered="false" round type="info">
-                      {{ task.formatLabel }}
-                    </n-tag>
-                    <n-ellipsis :line-clamp="1" :tooltip="false" class="task-title">
-                      {{ task.title }}
-                    </n-ellipsis>
-                  </n-flex>
-                  <n-progress
-                    :percentage="task.percent"
-                    :show-indicator="false"
-                    :status="progressStatus(task)"
-                    style="width: 100%"
-                  />
-                  <n-flex align="center" justify="space-between">
-                    <n-flex align="center">
-                      <n-tag size="small" :bordered="false" round :type="statusType(task)">
-                        {{ statusLabel(task) }}
-                      </n-tag>
-                      <template v-if="task.status !== 'completed'">
-                        <n-text v-if="sizeProgress(task)" depth="3">
-                          {{ sizeProgress(task) }}
-                        </n-text>
-                        <n-text depth="3">{{ task.percent.toFixed(1) }}%</n-text>
-                      </template>
-                    </n-flex>
-                    <n-flex align="center" size="small">
-                      <n-button size="tiny" strong secondary @click="handleOpenSource(task.url)">
-                        <template #icon>
-                          <n-icon size="16"><icon-mdi-open-in-new /></n-icon>
-                        </template>
-                      </n-button>
-                      <n-button size="tiny" strong secondary @click="toggleLog(task.id)">
-                        <template #icon>
-                          <n-icon size="16">
-                            <icon-mdi-chevron-up v-if="expandedLogs.has(task.id)" />
-                            <icon-mdi-text-long v-else />
-                          </n-icon>
-                        </template>
-                      </n-button>
-                      <n-divider vertical style="margin: 0 2px" />
-                      <n-button
-                        v-if="task.status === 'completed'"
-                        size="tiny"
-                        strong
-                        secondary
-                        type="primary"
-                        @click="handleOpenFolder(task)"
-                      >
-                        <template #icon>
-                          <n-icon size="16"><icon-mdi-folder-open-outline /></n-icon>
-                        </template>
-                      </n-button>
-                      <n-button
-                        v-if="task.status === 'error' || task.status === 'cancelled'"
-                        size="tiny"
-                        strong
-                        secondary
-                        type="primary"
-                        @click="handleRetry(task.id)"
-                      >
-                        <template #icon>
-                          <n-icon size="16"><icon-mdi-refresh /></n-icon>
-                        </template>
-                      </n-button>
-                      <n-button
-                        type="error"
-                        size="tiny"
-                        strong
-                        secondary
-                        @click="handleRemove(task)"
-                      >
-                        <template #icon>
-                          <n-icon size="16"><icon-mdi-delete-outline /></n-icon>
-                        </template>
-                      </n-button>
-                    </n-flex>
-                  </n-flex>
-                  <n-collapse-transition :show="expandedLogs.has(task.id)">
-                    <div class="task-log">
-                      <n-log
-                        :ref="setLogRef(task.id)"
-                        :log="logContent(task)"
-                        :rows="8"
-                        :font-size="12"
-                        :trim="false"
-                      />
-                    </div>
-                  </n-collapse-transition>
-                </n-flex>
+              <n-flex vertical :size="10">
+                <DownloadCard v-for="task in sortedFailedTasks" :key="task.id" :task="task" />
               </n-flex>
-            </n-card>
-          </n-flex>
-        </div>
-      </template>
-    </div>
-  </n-flex>
+            </div>
+          </div>
+        </n-scrollbar>
+      </n-tab-pane>
+    </n-tabs>
+  </div>
 </template>
 
 <style scoped lang="scss">
-.section-empty {
-  padding: 24px 0;
+.downloads-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.date-group {
+.downloads-tabs {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+
+  :deep(.n-tabs-nav) {
+    flex-shrink: 0;
+    padding: 12px 16px 0;
+  }
+
+  :deep(.n-tabs-pane-wrapper) {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  :deep(.n-tab-pane) {
+    height: 100%;
+    padding: 0;
+    overflow: hidden;
+  }
+}
+
+.tab-scrollbar {
+  height: 100%;
+}
+
+.tab-pane-content {
+  padding: 16px 16px 24px 16px;
+}
+
+.tab-count {
+  margin-left: 4px;
+  font-size: 12px;
+  opacity: 0.75;
+  line-height: normal;
+}
+
+.section-title-bar {
   margin-bottom: 12px;
 }
 
-.date-label {
-  display: block;
-  font-size: 12px;
-  margin-bottom: 8px;
-}
-
-.task-card {
-  :deep(.n-card__content) {
-    padding: 14px;
-  }
-}
-
-.task-thumbnail {
-  flex-shrink: 0;
-  width: 120px;
-  height: 68px;
-  border-radius: 6px;
-  overflow: hidden;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
-
-  .thumbnail-placeholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--n-color-modal);
-    font-size: 28px;
-    opacity: 0.4;
-  }
-}
-
-.task-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.task-stat {
-  font-variant-numeric: tabular-nums;
-}
-
-.task-header {
-  min-width: 0;
-
-  .task-title {
-    flex: 1;
-    min-width: 0;
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 1.4;
-  }
-}
-
-.task-log {
-  border-radius: 8px;
-  padding: 6px 0 6px 6px;
-  overflow: hidden;
-  background: var(--n-color-modal);
+.section-empty {
+  padding: 32px 0;
 }
 </style>

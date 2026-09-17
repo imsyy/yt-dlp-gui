@@ -141,11 +141,7 @@ const formatHistoryTime = (historyTimestamp: number): string => {
   const now = new Date();
   const targetDate = new Date(historyTimestamp);
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const targetDay = new Date(
-    targetDate.getFullYear(),
-    targetDate.getMonth(),
-    targetDate.getDate(),
-  );
+  const targetDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
   const dayDifference = (today.getTime() - targetDay.getTime()) / 86400000;
   const timeString = `${String(targetDate.getHours()).padStart(2, "0")}:${String(targetDate.getMinutes()).padStart(2, "0")}`;
 
@@ -484,7 +480,7 @@ const handleBatchSearch = async (): Promise<void> => {
           <template #icon>
             <n-icon size="14"><icon-mdi-content-paste /></n-icon>
           </template>
-          {{ $t("home.pasteFromClipboard") }}
+          {{ $t("common.paste") }}
         </n-button>
         <n-button
           size="small"
@@ -580,12 +576,14 @@ const handleBatchSearch = async (): Promise<void> => {
 .home-page {
   height: 100%;
   position: relative;
+  overflow-y: auto;
+  padding: 16px;
 }
 
 .search-view {
-  padding-top: 40px;
   height: 100%;
   min-height: 300px;
+  padding-bottom: 40px;
 
   .hero-logo {
     user-select: none;

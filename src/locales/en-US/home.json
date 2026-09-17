@@ -1,0 +1,33 @@
+{
+  "home": {
+    "slogan": "Paste a video link, download instantly",
+    "inputPlaceholder": "Enter video URL...",
+    "parse": "Parse",
+    "pasteFromClipboard": "Paste",
+    "parseHistory": "History",
+    "noHistory": "No history yet",
+    "enterValidUrl": "Please enter a valid URL",
+    "standardMode": "Standard",
+    "batchMode": "Batch",
+    "batchPlaceholder": "Paste one video URL per line; duplicates are removed automatically\nPress Ctrl + Enter to start parsing",
+    "parseBatch": "Parse {count} URLs",
+    "batchEmpty": "Enter at least one valid URL",
+    "batchLimit": "Up to {count} URLs can be parsed at once",
+    "batchPasted": "Detected {count} URLs from the clipboard",
+    "batchComplete": "Batch parsing complete: {succeeded} succeeded, {failed} failed",
+    "batchAllFailed": "All URLs failed to parse",
+    "pendingBehavior": "Open pending options after parsing",
+    "quickBehavior": "Download immediately with default options",
+    "quickSettings": "Quick download settings",
+    "quickPrepareFailed": "Failed to fetch video information",
+    "maxQuality": "Maximum quality",
+    "tips": [
+      "Having download issues? Go to Settings to configure cookies or update yt-dlp",
+      "Supports thousands of websites including YouTube, Bilibili, Twitter, etc.",
+      "Choose video-only or audio-only mode to download as needed",
+      "Make sure to set a download directory before downloading",
+      "Installing Deno runtime is recommended for YouTube to get full format list",
+      "Use keyboard Up/Down keys to browse parse history"
+    ]
+  }
+}

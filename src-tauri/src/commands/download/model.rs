@@ -35,8 +35,8 @@ impl Default for DownloadState {
 }
 
 /// 下载任务参数（从前端传入）
-#[derive(serde::Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Default, serde::Deserialize)]
+#[serde(default, rename_all = "camelCase")]
 pub struct DownloadParams {
     pub id: String,
     pub url: String,

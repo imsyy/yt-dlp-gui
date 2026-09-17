@@ -1,0 +1,15 @@
+{
+  "setup": {
+    "ytdlpTitle": "Cần yt-dlp",
+    "ytdlpDesc": "yt-dlp là engine tải xuống cốt lõi của ứng dụng và hiện chưa được cài. Nếu thiếu, không video nào có thể được phân tích hay tải xuống.",
+    "ytdlpHint": "Vào Cài đặt và bấm nút tải xuống để tự động cài yt-dlp. Sau khi cài xong, mọi tính năng sẽ khả dụng.",
+    "denoTitle": "Khuyến nghị môi trường Deno",
+    "denoDesc": "YouTube cần môi trường chạy JavaScript để phân tích thông tin video",
+    "denoHint": "Deno là môi trường JavaScript mà yt-dlp cần để phân tích thông tin video YouTube. Cài Deno cho phép truy cập danh sách định dạng đầy đủ, gồm cả chất lượng cao hơn.",
+    "goToSettings": "Đến Cài đặt",
+    "later": "Để sau",
+    "ffmpegTitle": "Cần FFmpeg để ghép video và âm thanh",
+    "ffmpegDesc": "Không tìm thấy FFmpeg hay FFprobe khả dụng nên không thể ghép luồng video và âm thanh đã chọn.",
+    "ffmpegHint": "Hãy vào Cài đặt để chọn bản cài trên hệ thống hoặc cài FFmpeg do ứng dụng quản lý, rồi bắt đầu tải lại."
+  }
+}

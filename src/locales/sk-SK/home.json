@@ -1,0 +1,33 @@
+{
+  "home": {
+    "slogan": "Vložte odkaz na video a sťahujte okamžite",
+    "inputPlaceholder": "Zadajte URL videa...",
+    "parse": "Analyzovať",
+    "pasteFromClipboard": "Vložiť",
+    "parseHistory": "História",
+    "noHistory": "Zatiaľ žiadna história",
+    "enterValidUrl": "Zadajte prosím platnú URL adresu",
+    "standardMode": "Štandard",
+    "batchMode": "Dávka",
+    "batchPlaceholder": "Do každého riadku vložte jednu URL adresu videa; duplicitné položky sa automaticky odstránia\nStlačte klávesovú skratku Ctrl + Enter na spustenie analýzy",
+    "parseBatch": "Analyzovať {count} URL adries",
+    "batchEmpty": "Zadajte aspoň jednu platnú URL adresu",
+    "batchLimit": "Zároveň je možné analyzovať až {count} URL adries",
+    "batchPasted": "Zistilo sa {count} URL adries zo schránky",
+    "batchComplete": "Hromadné spracovanie dokončené: {succeeded} úspešné, {failed} neúspešné",
+    "batchAllFailed": "Ani jedna URL adresa sa nepodarila analyzovať",
+    "pendingBehavior": "Po analýze otvoriť čakajúce položky",
+    "quickBehavior": "Stiahnuť ihneď s predvolenými nastaveniami",
+    "quickSettings": "Nastavenia rýchleho sťahovania",
+    "quickPrepareFailed": "Nepodarilo sa načítať informácie o videu",
+    "maxQuality": "Najvyššia kvalita",
+    "tips": [
+      "Máte problémy so sťahovaním? Prejdite do Nastavení, kde môžete nakonfigurovať súbory cookie alebo aktualizovať yt-dlp",
+      "Podporuje tisíce webových stránok, vrátane YouTube, Bilibili, Twitteru atď.",
+      "Podľa potreby si vyberte režim „len video“ alebo „len zvuk“ na stiahnutie",
+      "Pred začatím sťahovania nezabudnite nastaviť adresár na ukladanie súborov",
+      "Na získanie úplného zoznamu formátov na YouTube sa odporúča nainštalovať runtime Deno",
+      "Na prechádzanie históriou analýzy použite klávesy „Hore“ a „Dole“ na klávesnici"
+    ]
+  }
+}

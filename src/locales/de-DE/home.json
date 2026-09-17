@@ -1,0 +1,33 @@
+{
+  "home": {
+    "slogan": "Video-Link einfügen, sofort herunterladen",
+    "inputPlaceholder": "Video-URL eingeben...",
+    "parse": "Analysieren",
+    "pasteFromClipboard": "Einfügen",
+    "parseHistory": "Verlauf",
+    "noHistory": "Noch kein Verlauf",
+    "enterValidUrl": "Bitte eine gültige URL eingeben",
+    "standardMode": "Standardmodus",
+    "batchMode": "Stapelmodus",
+    "batchPlaceholder": "Eine Video-URL pro Zeile einfügen; Duplikate werden automatisch entfernt\nMit Strg + Eingabetaste die Analyse starten",
+    "parseBatch": "{count} URLs analysieren",
+    "batchEmpty": "Mindestens eine gültige URL eingeben",
+    "batchLimit": "Es können bis zu {count} URLs gleichzeitig analysiert werden",
+    "batchPasted": "{count} URLs aus der Zwischenablage erkannt",
+    "batchComplete": "Stapelverarbeitung abgeschlossen: {succeeded} erfolgreich, {failed} fehlgeschlagen",
+    "batchAllFailed": "Keine URL konnte analysiert werden",
+    "pendingBehavior": "Nach der Analyse die Downloadoptionen öffnen",
+    "quickBehavior": "Sofort mit den Standardoptionen herunterladen",
+    "quickSettings": "Schnell-Download-Einstellungen",
+    "quickPrepareFailed": "Videoinformationen konnten nicht abgerufen werden",
+    "maxQuality": "Maximale Qualität",
+    "tips": [
+      "Probleme beim Download? In den Einstellungen Cookies konfigurieren oder yt-dlp aktualisieren",
+      "Unterstützt tausende Websites, u. a. YouTube, Bilibili, Twitter usw.",
+      "Wähle Nur-Video- oder Nur-Audio-Modus nach Bedarf",
+      "Vor dem Start unbedingt einen Download-Ordner festlegen",
+      "Für YouTube empfohlen: Deno-Laufzeit installieren, um die vollständige Format-Liste zu erhalten",
+      "Mit den Pfeiltasten Hoch/Runter durch den Verlauf blättern"
+    ]
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "home": {
+    "slogan": "Beillesztés, letöltés",
+    "inputPlaceholder": "Videó hivatkozásának megadása…",
+    "parse": "Beolvasás",
+    "pasteFromClipboard": "Beillesztés",
+    "parseHistory": "Előzmények",
+    "noHistory": "Még nincsenek korábbi elemek",
+    "enterValidUrl": "Adjon meg egy érvényes URL-t",
+    "standardMode": "Normál mód",
+    "batchMode": "Kötegelt mód",
+    "batchPlaceholder": "Illesszen be soronként egy videó URL-t; az ismétlődések automatikusan törlődnek\nAz elemzés indításához nyomja meg a Ctrl + Enter billentyűket",
+    "parseBatch": "{count} URL elemzése",
+    "batchEmpty": "Adjon meg legalább egy érvényes URL-t",
+    "batchLimit": "Egyszerre legfeljebb {count} URL elemezhető",
+    "batchPasted": "{count} URL észlelve a vágólapon",
+    "batchComplete": "A kötegelt elemzés befejeződött: {succeeded} sikeres, {failed} sikertelen",
+    "batchAllFailed": "Egyik URL elemzése sem sikerült",
+    "pendingBehavior": "Letöltési beállítások megnyitása az elemzés után",
+    "quickBehavior": "Azonnali letöltés az alapértelmezett beállításokkal",
+    "quickSettings": "Gyors letöltés beállításai",
+    "quickPrepareFailed": "Nem sikerült lekérni a videó adatait",
+    "maxQuality": "Legjobb minőség",
+    "tips": [
+      "Ha problémákba ütközik, akkor a beállításokban adja meg a használandó sütiket vagy frissítse a yt-dlp-t",
+      "Rengeteg webhely támogatott, többek között a YouTube, Bilibili és a Twitter is",
+      "A videó nélküli és hang nélküli letöltés is támogatott",
+      "Ne felejtse el megadni a letöltési könyvtárat",
+      "Az összes támogatott YouTube-formátum eléréséhez javasolt a Deno futtatókörnyezet telepítése is",
+      "Az előzmények között a felfelé- és lefelé nyílgombokkal is lehet lépkedni"
+    ]
+  }
+}

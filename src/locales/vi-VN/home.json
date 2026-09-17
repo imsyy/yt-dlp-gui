@@ -1,0 +1,33 @@
+{
+  "home": {
+    "slogan": "Dán liên kết video, tải xuống ngay lập tức",
+    "inputPlaceholder": "Nhập URL video...",
+    "parse": "Phân tích",
+    "pasteFromClipboard": "Dán",
+    "parseHistory": "Lịch sử",
+    "noHistory": "Chưa có lịch sử",
+    "enterValidUrl": "Vui lòng nhập URL hợp lệ",
+    "standardMode": "Chế độ tiêu chuẩn",
+    "batchMode": "Chế độ hàng loạt",
+    "batchPlaceholder": "Dán một URL video trên mỗi dòng; các URL trùng lặp sẽ tự động bị loại bỏ\nNhấn Ctrl + Enter để bắt đầu phân tích",
+    "parseBatch": "Phân tích {count} URL",
+    "batchEmpty": "Nhập ít nhất một URL hợp lệ",
+    "batchLimit": "Có thể phân tích tối đa {count} URL cùng lúc",
+    "batchPasted": "Đã phát hiện {count} URL từ bảng nhớ tạm",
+    "batchComplete": "Phân tích hàng loạt hoàn tất: {succeeded} thành công, {failed} thất bại",
+    "batchAllFailed": "Không thể phân tích bất kỳ URL nào",
+    "pendingBehavior": "Mở tùy chọn tải xuống sau khi phân tích",
+    "quickBehavior": "Tải xuống ngay với tùy chọn mặc định",
+    "quickSettings": "Cài đặt tải xuống nhanh",
+    "quickPrepareFailed": "Không thể lấy thông tin video",
+    "maxQuality": "Chất lượng tối đa",
+    "tips": [
+      "Gặp sự cố tải xuống? Vào Cài đặt để cấu hình cookie hoặc cập nhật yt-dlp",
+      "Hỗ trợ hàng nghìn trang web bao gồm YouTube, Bilibili, Twitter, v.v.",
+      "Chọn chế độ chỉ video hoặc chỉ âm thanh tùy nhu cầu",
+      "Hãy đặt thư mục tải xuống trước khi bắt đầu",
+      "Nên cài đặt môi trường Deno cho YouTube để có danh sách định dạng đầy đủ",
+      "Dùng phím mũi tên Lên/Xuống để duyệt lịch sử"
+    ]
+  }
+}

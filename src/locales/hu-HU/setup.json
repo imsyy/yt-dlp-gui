@@ -1,0 +1,15 @@
+{
+  "setup": {
+    "ytdlpTitle": "yt-dlp szükséges",
+    "ytdlpDesc": "A yt-dlp ezen alkalmazás letöltési függősége, de jelenleg nincs telepítve. Enélkül egy videót sem lehet beolvasni vagy letölteni.",
+    "ytdlpHint": "Váltson át a Beállítások fülre és kattintson a Letöltés gombra a yt-dlp automatikus letöltéséhez. A telepítés után minden funkció elérhető lesz.",
+    "denoTitle": "A Deno futtatókörnyezet telepítse ajánlott",
+    "denoDesc": "A YouTube-nak JavaScript-futtatókörnyezetre van szüksége a videóinformációk elemzéséhez",
+    "denoHint": "A Deno egy, a yt-dlp által használt JavaScript-futtatókörnyezet a videóadatok beolvasására. Ha telepíti a Denót, akkor minden formátumi- és minőséglehetőség elérhetővé válik.",
+    "goToSettings": "Ugrás a beállításokhoz",
+    "later": "Majd később",
+    "ffmpegTitle": "Hang és videó egyesítéséhez FFmpeg szükséges",
+    "ffmpegDesc": "A kijelölt video- és hangsávok nem egyesíthetők, mert nem található használható FFmpeg vagy FFprobe.",
+    "ffmpegHint": "Nyissa meg a Beállításokat, válassza a rendszerre telepített változatot vagy telepítse az alkalmazás által kezelt FFmpeg-et, majd indítsa újra a letöltést."
+  }
+}

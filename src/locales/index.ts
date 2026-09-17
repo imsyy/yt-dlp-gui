@@ -1,21 +1,5 @@
 import { createI18n } from "vue-i18n";
-import zhCN from "./zh-CN.json";
-import enUS from "./en-US.json";
-import jaJP from "./ja-JP.json";
-import koKR from "./ko-KR.json";
-import esES from "./es-ES.json";
-import ruRU from "./ru-RU.json";
-import zhTW from "./zh-TW.json";
-import arEG from "./ar-EG.json";
-import deDE from "./de-DE.json";
-import frFR from "./fr-FR.json";
-import huHU from "./hu-HU.json";
-import ptBR from "./pt-BR.json";
-import viVN from "./vi-VN.json";
-import ukUA from "./uk-UA.json";
-import skSK from "./sk-SK.json";
-
-// ==================== 语言注册表（新增语言只改这里 + 创建翻译文件） ====================
+import type { LocaleMessageValue } from "vue-i18n";
 
 export interface LocaleEntry {
   /** 语言代码 */
@@ -25,114 +9,218 @@ export interface LocaleEntry {
   /** 原生显示名称 */
   label: string;
   /** navigator.language 前缀匹配规则 */
-  match: (lang: string) => boolean;
+  match: (languageCandidate: string) => boolean;
   /** 是否为从右向左书写的语言 */
   rtl?: boolean;
 }
 
-// 顺序按 ISO 639-1 语言代码字母序（世界通用顺序）；中文按地区代码细分
+// 顺序按 ISO 639-1 语言代码字母序
 export const localeEntries: LocaleEntry[] = [
   {
     code: "ar-EG",
     flag: "🇪🇬",
     label: "العربية",
-    match: (lang) => lang.startsWith("ar"),
+    match: (languageCandidate) => languageCandidate.startsWith("ar"),
     rtl: true,
   },
-  { code: "de-DE", flag: "🇩🇪", label: "Deutsch", match: (lang) => lang.startsWith("de") },
-  { code: "en-US", flag: "🇺🇸", label: "English", match: (lang) => lang.startsWith("en") },
-  { code: "es-ES", flag: "🇪🇸", label: "Español", match: (lang) => lang.startsWith("es") },
-  { code: "fr-FR", flag: "🇫🇷", label: "Français", match: (lang) => lang.startsWith("fr") },
-  { code: "hu-HU", flag: "🇭🇺", label: "Magyar", match: (lang) => lang.startsWith("hu") },
-  { code: "ja-JP", flag: "🇯🇵", label: "日本語", match: (lang) => lang.startsWith("ja") },
-  { code: "ko-KR", flag: "🇰🇷", label: "한국어", match: (lang) => lang.startsWith("ko") },
-  { code: "pt-BR", flag: "🇧🇷", label: "Português", match: (lang) => lang.startsWith("pt") },
-  { code: "ru-RU", flag: "🇷🇺", label: "Русский", match: (lang) => lang.startsWith("ru") },
-  { code: "uk-UA", flag: "🇺🇦", label: "Українська", match: (lang) => lang.startsWith("uk") },
-  { code: "vi-VN", flag: "🇻🇳", label: "Tiếng Việt", match: (lang) => lang.startsWith("vi") },
-  { code: "sk-SK", flag: "🇸🇰", label: "Slovenčina", match: (lang) => lang.startsWith("sk") },
+  {
+    code: "de-DE",
+    flag: "🇩🇪",
+    label: "Deutsch",
+    match: (languageCandidate) => languageCandidate.startsWith("de"),
+  },
+  {
+    code: "en-US",
+    flag: "🇺🇸",
+    label: "English",
+    match: (languageCandidate) => languageCandidate.startsWith("en"),
+  },
+  {
+    code: "es-ES",
+    flag: "🇪🇸",
+    label: "Español",
+    match: (languageCandidate) => languageCandidate.startsWith("es"),
+  },
+  {
+    code: "fr-FR",
+    flag: "🇫🇷",
+    label: "Français",
+    match: (languageCandidate) => languageCandidate.startsWith("fr"),
+  },
+  {
+    code: "hu-HU",
+    flag: "🇭🇺",
+    label: "Magyar",
+    match: (languageCandidate) => languageCandidate.startsWith("hu"),
+  },
+  {
+    code: "ja-JP",
+    flag: "🇯🇵",
+    label: "日本語",
+    match: (languageCandidate) => languageCandidate.startsWith("ja"),
+  },
+  {
+    code: "ko-KR",
+    flag: "🇰🇷",
+    label: "한국어",
+    match: (languageCandidate) => languageCandidate.startsWith("ko"),
+  },
+  {
+    code: "pt-BR",
+    flag: "🇧🇷",
+    label: "Português",
+    match: (languageCandidate) => languageCandidate.startsWith("pt"),
+  },
+  {
+    code: "ru-RU",
+    flag: "🇷🇺",
+    label: "Русский",
+    match: (languageCandidate) => languageCandidate.startsWith("ru"),
+  },
+  {
+    code: "uk-UA",
+    flag: "🇺🇦",
+    label: "Українська",
+    match: (languageCandidate) => languageCandidate.startsWith("uk"),
+  },
+  {
+    code: "vi-VN",
+    flag: "🇻🇳",
+    label: "Tiếng Việt",
+    match: (languageCandidate) => languageCandidate.startsWith("vi"),
+  },
+  {
+    code: "sk-SK",
+    flag: "🇸🇰",
+    label: "Slovenčina",
+    match: (languageCandidate) => languageCandidate.startsWith("sk"),
+  },
   {
     code: "zh-CN",
     flag: "🇨🇳",
     label: "简体中文",
-    match: (lang) => lang === "zh-CN" || lang === "zh-SG" || lang === "zh",
+    match: (languageCandidate) =>
+      languageCandidate === "zh-CN" || languageCandidate === "zh-SG" || languageCandidate === "zh",
   },
-  { code: "zh-TW", flag: "🇭🇰", label: "繁體中文", match: (lang) => lang.startsWith("zh") },
+  {
+    code: "zh-TW",
+    flag: "🇭🇰",
+    label: "繁體中文",
+    match: (languageCandidate) => languageCandidate.startsWith("zh"),
+  },
 ];
 
-/** locale code → entry 快速查找 */
-const localeMap = new Map(localeEntries.map((e) => [e.code, e]));
+/** locale code → entry 快速查找映射表 */
+const localeMap = new Map(localeEntries.map((localeEntry) => [localeEntry.code, localeEntry]));
 
-// ==================== 工具函数 ====================
+/**
+ * 自动扫描并以同步方式加载各语言子目录下的所有模块 JSON 文件
+ * 文件路径格式形如：./zh-CN/home.json, ./en-US/settings.json
+ */
+const localeModules = import.meta.glob<{ default: Record<string, LocaleMessageValue> }>(
+  "./*/*.json",
+  {
+    eager: true,
+  },
+);
 
-/** 根据系统语言返回最匹配的 locale code；未匹配时 fallback 到英文 */
-const getSystemLocale = (): string => {
-  const lang = navigator.language;
-  const matched = localeEntries.find((e) => e.match(lang));
-  return matched ? matched.code : "en-US";
+/**
+ * 遍历扫描结果，将各语言子目录下的模块 JSON 深度合并为完整的命名空间字典树
+ *
+ * @returns 包含所有语言翻译数据的聚合对象
+ */
+const loadLocaleMessages = (): Record<string, Record<string, LocaleMessageValue>> => {
+  const aggregatedMessages: Record<string, Record<string, LocaleMessageValue>> = {};
+
+  for (const moduleFilePath in localeModules) {
+    const matchedPath = moduleFilePath.match(/\.\/([^/]+)\/([^/]+)\.json$/);
+    if (!matchedPath) continue;
+
+    const [, localeCode] = matchedPath;
+    if (!aggregatedMessages[localeCode]) {
+      aggregatedMessages[localeCode] = {};
+    }
+
+    const exportedContent = localeModules[moduleFilePath].default;
+    Object.assign(aggregatedMessages[localeCode], exportedContent);
+  }
+
+  return aggregatedMessages;
 };
 
-/** 从 localStorage 读取用户的语言偏好 */
+/**
+ * 根据系统语言环境返回最匹配的 locale 代码；未匹配时兜底降级至英文
+ *
+ * @returns 匹配到的语言代码
+ */
+const getSystemLocale = (): string => {
+  const systemLanguage = navigator.language;
+  const matchedEntry = localeEntries.find((localeEntry) => localeEntry.match(systemLanguage));
+  return matchedEntry ? matchedEntry.code : "en-US";
+};
+
+/**
+ * 从本地持久化存储中读取用户预设的语言偏好
+ *
+ * @returns 用户选择的语言代码或 null
+ */
 const getSavedLocale = (): string | null => {
   try {
-    const setting = localStorage.getItem("setting");
-    if (setting) {
-      const parsed = JSON.parse(setting);
-      return parsed.locale || null;
+    const persistedSetting = localStorage.getItem("setting");
+    if (persistedSetting) {
+      const parsedSetting = JSON.parse(persistedSetting);
+      return parsedSetting.locale || null;
     }
   } catch {
-    // ignore
+    // 忽略解析异常
   }
   return null;
 };
 
-/** 将 locale 值解析为实际 code */
-export const resolveLocale = (locale: string): string => {
-  if (!locale) return getSystemLocale();
-  return localeMap.has(locale) ? locale : getSystemLocale();
+/**
+ * 将传入的 locale 参数值校验并解析为系统支持的实际语言代码
+ *
+ * @param targetLocale 目标语言代码字符串
+ * @returns 校验合法的实际语言代码
+ */
+export const resolveLocale = (targetLocale: string): string => {
+  if (!targetLocale) return getSystemLocale();
+  return localeMap.has(targetLocale) ? targetLocale : getSystemLocale();
 };
 
-// ==================== i18n 实例 ====================
+/**
+ * 根据指定语言代码返回当前文档书写方向（LTR 或 RTL）
+ *
+ * @param localeCode 目标语言代码
+ * @returns "rtl" 或 "ltr"
+ */
+const getDirection = (localeCode: string): "rtl" | "ltr" =>
+  localeMap.get(localeCode)?.rtl ? "rtl" : "ltr";
 
-const savedLocale = getSavedLocale();
-const defaultLocale = resolveLocale(savedLocale ?? "auto");
+const savedLocalePreference = getSavedLocale();
+const defaultLocaleCode = resolveLocale(savedLocalePreference ?? "auto");
 
 const i18n = createI18n({
   legacy: false,
-  locale: defaultLocale,
+  locale: defaultLocaleCode,
   fallbackLocale: "en-US",
-  messages: {
-    "ar-EG": arEG,
-    "de-DE": deDE,
-    "en-US": enUS,
-    "es-ES": esES,
-    "fr-FR": frFR,
-    "hu-HU": huHU,
-    "ja-JP": jaJP,
-    "ko-KR": koKR,
-    "pt-BR": ptBR,
-    "ru-RU": ruRU,
-    "uk-UA": ukUA,
-    "vi-VN": viVN,
-    "zh-CN": zhCN,
-    "zh-TW": zhTW,
-    "sk-SK": skSK,
-  },
+  messages: loadLocaleMessages(),
 });
 
-/** 根据 locale code 返回文档书写方向 */
-const getDirection = (code: string): "rtl" | "ltr" => (localeMap.get(code)?.rtl ? "rtl" : "ltr");
-
-/** 切换语言（供 settings store 调用） */
-export const setI18nLocale = (locale: string) => {
-  const resolved = resolveLocale(locale);
-  (i18n.global.locale as unknown as { value: string }).value = resolved;
-  document.documentElement.lang = resolved;
-  document.documentElement.dir = getDirection(resolved);
+/**
+ * 动态切换当前应用运行时的多语言环境与文档书写方向
+ *
+ * @param nextLocale 待切换的目标语言代码
+ */
+export const setI18nLocale = (nextLocale: string): void => {
+  const resolvedCode = resolveLocale(nextLocale);
+  i18n.global.locale.value = resolvedCode;
+  document.documentElement.lang = resolvedCode;
+  document.documentElement.dir = getDirection(resolvedCode);
 };
 
-// 初始化时同步 html lang 和 dir
-document.documentElement.lang = defaultLocale;
-document.documentElement.dir = getDirection(defaultLocale);
+// 初始化时同步 html lang 和 dir 属性
+document.documentElement.lang = defaultLocaleCode;
+document.documentElement.dir = getDirection(defaultLocaleCode);
 
 export default i18n;

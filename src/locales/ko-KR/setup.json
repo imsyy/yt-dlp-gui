@@ -1,0 +1,15 @@
+{
+  "setup": {
+    "ytdlpTitle": "yt-dlp 설치 필요",
+    "ytdlpDesc": "yt-dlp는 이 애플리케이션의 핵심 다운로드 도구이지만 현재 설치되어 있지 않습니다. yt-dlp 없이는 동영상을 분석하거나 다운로드할 수 없습니다.",
+    "ytdlpHint": "설정 페이지로 이동하여 다운로드 버튼을 클릭하면 자동으로 yt-dlp가 설치됩니다. 설치 후 모든 기능을 사용할 수 있습니다.",
+    "denoTitle": "Deno 런타임 설치 권장",
+    "denoDesc": "YouTube 동영상 정보를 분석하려면 JavaScript 런타임이 필요합니다",
+    "denoHint": "Deno는 yt-dlp가 YouTube 동영상 정보를 분석하는 데 필요한 JavaScript 런타임입니다. 설치하면 고화질 옵션을 포함한 전체 형식 목록을 사용할 수 있습니다.",
+    "goToSettings": "설정으로 이동",
+    "later": "나중에",
+    "ffmpegTitle": "영상과 오디오 병합에는 FFmpeg이 필요합니다",
+    "ffmpegDesc": "사용할 수 있는 FFmpeg 또는 FFprobe를 찾을 수 없어 선택한 영상 스트림과 오디오 스트림을 병합할 수 없습니다.",
+    "ffmpegHint": "설정에서 시스템 설치 버전을 선택하거나 앱 관리 FFmpeg을 설치한 후 다시 다운로드를 시작하세요."
+  }
+}

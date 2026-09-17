@@ -51,3 +51,11 @@ const handlePaste = async () => {
     </router-view>
   </n-flex>
 </template>
+
+<style scoped lang="scss">
+.toolbox-page {
+  height: 100%;
+  overflow-y: auto;
+  padding: 16px;
+}
+</style>

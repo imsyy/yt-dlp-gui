@@ -1,0 +1,15 @@
+{
+  "setup": {
+    "ytdlpTitle": "yt-dlp Required",
+    "ytdlpDesc": "yt-dlp is the core download engine for this application and is not currently installed. Without it, no videos can be parsed or downloaded.",
+    "ytdlpHint": "Go to Settings and click the download button to automatically install yt-dlp. Once installed, all features will be available.",
+    "denoTitle": "Deno Runtime Recommended",
+    "denoDesc": "YouTube requires a JavaScript runtime to parse video information",
+    "denoHint": "Deno is a JavaScript runtime required by yt-dlp to parse YouTube video info. Installing it enables the full format list, including higher quality options.",
+    "ffmpegTitle": "FFmpeg Required for Merging",
+    "ffmpegDesc": "The selected video and audio streams cannot be combined because FFmpeg or FFprobe is unavailable.",
+    "ffmpegHint": "Go to Settings to use a system installation or install the app-managed FFmpeg bundle, then start the download again.",
+    "goToSettings": "Go to Settings",
+    "later": "Later"
+  }
+}

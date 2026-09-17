@@ -1,7 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { onOpenUrl, getCurrent as getCurrentDeepLink } from "@tauri-apps/plugin-deep-link";
-import { useRouter } from "vue-router";
 import { useSettingStore } from "@/stores/setting";
 import { normalizeDeepLinkVideoUrl } from "@/utils/url";
 import type { BrowserExtensionImport, CliOpenRequest, HomeMode } from "@/types";

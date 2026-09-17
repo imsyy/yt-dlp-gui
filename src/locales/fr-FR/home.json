@@ -1,0 +1,33 @@
+{
+  "home": {
+    "slogan": "Collez un lien vidéo, téléchargez instantanément",
+    "inputPlaceholder": "Entrez l'URL de la vidéo...",
+    "parse": "Analyser",
+    "pasteFromClipboard": "Coller",
+    "parseHistory": "Historique",
+    "noHistory": "Aucun historique",
+    "enterValidUrl": "Veuillez saisir une URL valide",
+    "standardMode": "Mode standard",
+    "batchMode": "Mode par lot",
+    "batchPlaceholder": "Collez une URL de vidéo par ligne ; les doublons sont supprimés automatiquement\nAppuyez sur Ctrl + Entrée pour lancer l’analyse",
+    "parseBatch": "Analyser {count} URL",
+    "batchEmpty": "Saisissez au moins une URL valide",
+    "batchLimit": "Jusqu’à {count} URL peuvent être analysées à la fois",
+    "batchPasted": "{count} URL détectées dans le presse-papiers",
+    "batchComplete": "Analyse par lot terminée : {succeeded} réussies, {failed} échouées",
+    "batchAllFailed": "L’analyse de toutes les URL a échoué",
+    "pendingBehavior": "Ouvrir les options de téléchargement après l’analyse",
+    "quickBehavior": "Télécharger immédiatement avec les options par défaut",
+    "quickSettings": "Paramètres de téléchargement rapide",
+    "quickPrepareFailed": "Impossible de récupérer les informations de la vidéo",
+    "maxQuality": "Qualité maximale",
+    "tips": [
+      "Problèmes de téléchargement ? Allez dans Paramètres pour configurer les cookies ou mettre à jour yt-dlp",
+      "Prend en charge des milliers de sites dont YouTube, Bilibili, Twitter, etc.",
+      "Choisissez le mode vidéo seule ou audio seul selon vos besoins",
+      "Pensez à définir un dossier de téléchargement avant de commencer",
+      "L'installation de Deno est recommandée pour YouTube afin d'obtenir la liste complète des formats",
+      "Utilisez les flèches Haut/Bas pour parcourir l'historique"
+    ]
+  }
+}

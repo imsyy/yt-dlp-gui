@@ -1,0 +1,15 @@
+{
+  "setup": {
+    "ytdlpTitle": "需要安裝 yt-dlp",
+    "ytdlpDesc": "yt-dlp 是本應用的核心下載工具，目前尚未安裝。沒有它將無法解析和下載任何影片。",
+    "ytdlpHint": "請前往設定頁面，點擊下載按鈕即可自動安裝 yt-dlp。安裝完成後即可正常使用所有功能。",
+    "denoTitle": "建議安裝 Deno 執行環境",
+    "denoDesc": "YouTube 需要 JavaScript 執行環境來解析影片資訊",
+    "denoHint": "Deno 是 yt-dlp 解析 YouTube 影片資訊所需的 JavaScript 執行環境。安裝後可取得完整的格式清單，包括更高畫質的選項。",
+    "goToSettings": "前往設定",
+    "later": "稍後再說",
+    "ffmpegTitle": "合併影音需要 FFmpeg",
+    "ffmpegDesc": "目前找不到可用的 FFmpeg 或 FFprobe，所選的視訊與音訊串流無法合併。",
+    "ffmpegHint": "請前往設定選擇系統安裝版，或安裝應用程式管理的 FFmpeg，然後重新開始下載。"
+  }
+}

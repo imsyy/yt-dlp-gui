@@ -1,0 +1,15 @@
+{
+  "setup": {
+    "ytdlpTitle": "yt-dlp requis",
+    "ytdlpDesc": "yt-dlp est le moteur de téléchargement principal de cette application et n'est pas installé. Sans lui, aucune vidéo ne peut être analysée ou téléchargée.",
+    "ytdlpHint": "Allez dans Paramètres et cliquez sur le bouton de téléchargement pour installer yt-dlp automatiquement. Une fois installé, toutes les fonctionnalités seront disponibles.",
+    "denoTitle": "Runtime Deno recommandé",
+    "denoDesc": "YouTube nécessite un environnement d’exécution JavaScript pour analyser les informations de la vidéo",
+    "denoHint": "Deno est un runtime JavaScript dont yt-dlp a besoin pour analyser les infos des vidéos YouTube. Son installation donne accès à la liste complète des formats et aux qualités supérieures.",
+    "goToSettings": "Aller aux Paramètres",
+    "later": "Plus tard",
+    "ffmpegTitle": "FFmpeg requis pour la fusion",
+    "ffmpegDesc": "Les flux vidéo et audio sélectionnés ne peuvent pas être fusionnés car FFmpeg ou FFprobe est introuvable.",
+    "ffmpegHint": "Allez dans les paramètres pour utiliser une installation système ou installer le FFmpeg géré par l’application, puis relancez le téléchargement."
+  }
+}

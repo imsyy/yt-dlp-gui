@@ -124,7 +124,6 @@ export interface NormalizedProgressMetrics {
     | "preparing"
     | "downloading"
     | "postprocessing"
-    | "paused"
     | "completed"
     | "error"
     | "cancelled";
@@ -195,7 +194,6 @@ export interface DownloadTask {
     | "queued"
     | "downloading"
     | "postprocessing"
-    | "paused"
     | "completed"
     | "error"
     | "cancelled";
@@ -204,6 +202,7 @@ export interface DownloadTask {
   eta: string;
   downloaded: string;
   total: string;
+  fileSizeBytes?: number;
   logs: string[];
   error?: string;
   outputFile?: string;

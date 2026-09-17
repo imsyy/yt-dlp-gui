@@ -152,14 +152,6 @@ watch(
         <n-radio-button value="audio">{{ $t("detail.audioOnly") }}</n-radio-button>
       </n-radio-group>
 
-      <n-text
-        v-if="videoFormatOptions.length === 0 && audioFormatOptions.length === 0"
-        depth="3"
-        class="auto-format-hint"
-      >
-        {{ $t("detail.autoFormatHint") }}
-      </n-text>
-
       <n-alert v-if="formatsIncomplete" type="warning" :bordered="false">
         {{ $t("detail.incompleteFormatsHint") }}
       </n-alert>
@@ -210,10 +202,3 @@ watch(
     </n-flex>
   </n-card>
 </template>
-
-<style scoped>
-.auto-format-hint {
-  font-size: 13px;
-  text-wrap: pretty;
-}
-</style>

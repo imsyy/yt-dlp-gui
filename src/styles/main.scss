@@ -23,11 +23,21 @@ img {
   bottom: 80px !important;
 }
 
-// RTL popup 定位修复（n-tooltip / n-popover / n-popselect / n-select 下拉等）。
-// 原因：Naive UI 用 vueuc 的 VBinder 计算 follower 位置，但 VBinder 不感知 RTL，
-// html[dir=rtl] 时算出的 left/right 会镜像错位（参见 naive-ui#97 / #2513）。
-// VBinder 的 follower 通过 Teleport 挂到 body 上的 .v-binder-follower-container，
-// 强制其本身保持 LTR，定位算法走对；popup 内部文字仍由 html dir 控制阅读方向。
 .v-binder-follower-container {
   direction: ltr !important;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.25);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.45);
 }

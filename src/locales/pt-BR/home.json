@@ -1,0 +1,33 @@
+{
+  "home": {
+    "slogan": "Cole um link de vídeo, baixe instantaneamente",
+    "inputPlaceholder": "Digite a URL do vídeo...",
+    "parse": "Analisar",
+    "pasteFromClipboard": "Colar",
+    "parseHistory": "Histórico",
+    "noHistory": "Sem histórico ainda",
+    "enterValidUrl": "Digite uma URL válida",
+    "standardMode": "Modo padrão",
+    "batchMode": "Modo em lote",
+    "batchPlaceholder": "Cole uma URL de vídeo por linha; as duplicadas serão removidas automaticamente\nPressione Ctrl + Enter para iniciar a análise",
+    "parseBatch": "Analisar {count} URLs",
+    "batchEmpty": "Insira pelo menos uma URL válida",
+    "batchLimit": "Até {count} URLs podem ser analisadas de uma vez",
+    "batchPasted": "{count} URLs detectadas na área de transferência",
+    "batchComplete": "Análise em lote concluída: {succeeded} com sucesso, {failed} com falha",
+    "batchAllFailed": "Falha ao analisar todas as URLs",
+    "pendingBehavior": "Abrir as opções de download após a análise",
+    "quickBehavior": "Baixar imediatamente com as opções padrão",
+    "quickSettings": "Configurações de download rápido",
+    "quickPrepareFailed": "Não foi possível obter as informações do vídeo",
+    "maxQuality": "Qualidade máxima",
+    "tips": [
+      "Problemas no download? Vá em Configurações para configurar cookies ou atualizar o yt-dlp",
+      "Suporta milhares de sites, incluindo YouTube, Bilibili, Twitter, etc.",
+      "Escolha o modo apenas vídeo ou apenas áudio conforme sua necessidade",
+      "Defina uma pasta de download antes de começar",
+      "Recomenda-se instalar o runtime Deno para o YouTube e obter a lista completa de formatos",
+      "Use as setas para cima/baixo para navegar pelo histórico"
+    ]
+  }
+}

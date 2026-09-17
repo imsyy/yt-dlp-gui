@@ -115,7 +115,7 @@ const handleSelectFile = async () => {
                 <icon-mdi-content-paste />
               </n-icon>
             </template>
-            {{ $t("home.pasteFromClipboard") }}
+            {{ $t("common.paste") }}
           </n-button>
           <n-button
             size="small"

@@ -31,8 +31,7 @@ const navBadgeCounts = computed<Record<string, number>>(() => ({
     (downloadTask) =>
       downloadTask.status === "downloading" ||
       downloadTask.status === "postprocessing" ||
-      downloadTask.status === "queued" ||
-      downloadTask.status === "paused",
+      downloadTask.status === "queued",
   ).length,
 }));
 
@@ -165,42 +164,16 @@ onMounted(async () => {
       <n-layout
         position="absolute"
         style="top: 56px; bottom: 32px"
-        content-style="padding: 16px; display: flex; flex-direction: column; min-height: 100%;"
+        content-style="display: flex; flex-direction: column; height: 100%; overflow: hidden;"
         :native-scrollbar="false"
       >
-        <div style="flex: 1">
+        <div class="app-route-view">
           <router-view v-slot="{ Component: RouteComponent }">
             <Transition name="fade-slide" mode="out-in">
               <component :is="RouteComponent" />
             </Transition>
           </router-view>
         </div>
-        <n-flex justify="center" align="center" :size="4" class="app-footer">
-          <n-text depth="3" style="font-size: 12px">
-            © {{ new Date().getFullYear() }}
-            <n-button
-              text
-              tag="a"
-              href="https://github.com/imsyy"
-              target="_blank"
-              size="tiny"
-              style="font-size: 12px"
-            >
-              imsyy
-            </n-button>
-            ·
-            <n-button
-              text
-              tag="a"
-              href="https://github.com/imsyy/yt-dlp-gui"
-              target="_blank"
-              size="tiny"
-              style="font-size: 12px"
-            >
-              YDL GUI
-            </n-button>
-          </n-text>
-        </n-flex>
       </n-layout>
       <AppStatusBar />
     </n-layout>
@@ -298,8 +271,12 @@ onMounted(async () => {
   }
 }
 
-.app-footer {
-  padding: 24px 0 4px;
-  flex-shrink: 0;
+.app-route-view {
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 </style>

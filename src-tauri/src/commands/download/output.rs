@@ -206,9 +206,18 @@ pub(super) fn spawn_completion_handler(
 
         if success {
             let (output_file, _) = resolve_output_file(&processes, &task_id);
+            let file_size_bytes = if !output_file.is_empty() {
+                std::fs::metadata(&output_file).ok().map(|metadata| metadata.len())
+            } else {
+                None
+            };
             let _ = app.emit(
                 "download-complete",
-                serde_json::json!({ "id": task_id, "outputFile": output_file }),
+                serde_json::json!({
+                    "id": task_id,
+                    "outputFile": output_file,
+                    "fileSizeBytes": file_size_bytes,
+                }),
             );
         } else if !was_cancelled {
             // 失败时仍清理 --print-to-file 临时文件，避免遗留

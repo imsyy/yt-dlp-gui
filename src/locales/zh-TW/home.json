@@ -1,0 +1,33 @@
+{
+  "home": {
+    "slogan": "貼上影片連結，快速下載",
+    "inputPlaceholder": "請輸入影片連結...",
+    "parse": "解析",
+    "pasteFromClipboard": "貼上",
+    "parseHistory": "解析歷史",
+    "noHistory": "暫無解析記錄",
+    "enterValidUrl": "請輸入有效的網址",
+    "standardMode": "標準模式",
+    "batchMode": "批次模式",
+    "batchPlaceholder": "每行貼上一個影片連結，重複連結會自動移除\n按下 Ctrl + Enter 開始解析",
+    "parseBatch": "解析 {count} 個連結",
+    "batchEmpty": "請至少輸入一個有效連結",
+    "batchLimit": "單次最多可解析 {count} 個連結",
+    "batchPasted": "已從剪貼簿識別 {count} 個連結",
+    "batchComplete": "批次解析完成：成功 {succeeded} 個，失敗 {failed} 個",
+    "batchAllFailed": "所有連結皆解析失敗",
+    "pendingBehavior": "解析後開啟待下載選項",
+    "quickBehavior": "使用預設參數直接下載",
+    "quickSettings": "快速下載設定",
+    "quickPrepareFailed": "無法取得影片資訊",
+    "maxQuality": "最高畫質",
+    "tips": [
+      "遇到下載問題？請前往設定中填寫 Cookie 或更新 yt-dlp 版本",
+      "支援 YouTube、Bilibili、Twitter 等上千個網站",
+      "可選僅影片或僅音訊模式，依需求下載",
+      "下載前請確認已設定下載目錄",
+      "YouTube 影片建議安裝 Deno 執行環境以取得完整格式列表",
+      "可使用鍵盤 上 / 下 鍵來選擇歷史解析記錄"
+    ]
+  }
+}

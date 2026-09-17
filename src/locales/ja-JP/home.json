@@ -1,0 +1,33 @@
+{
+  "home": {
+    "slogan": "動画リンクを貼り付けて、すぐダウンロード",
+    "inputPlaceholder": "動画のURLを入力...",
+    "parse": "解析",
+    "pasteFromClipboard": "貼り付け",
+    "parseHistory": "解析履歴",
+    "noHistory": "解析履歴はありません",
+    "enterValidUrl": "有効なURLを入力してください",
+    "standardMode": "標準モード",
+    "batchMode": "一括モード",
+    "batchPlaceholder": "1行に1つの動画URLを貼り付けてください。重複は自動的に削除されます\nCtrl + Enterで解析を開始します",
+    "parseBatch": "{count}件のURLを解析",
+    "batchEmpty": "有効なURLを1つ以上入力してください",
+    "batchLimit": "一度に解析できるURLは最大{count}件です",
+    "batchPasted": "クリップボードから{count}件のURLを検出しました",
+    "batchComplete": "一括解析が完了しました：成功{succeeded}件、失敗{failed}件",
+    "batchAllFailed": "すべてのURLの解析に失敗しました",
+    "pendingBehavior": "解析後にダウンロード設定を開く",
+    "quickBehavior": "既定の設定ですぐにダウンロード",
+    "quickSettings": "クイックダウンロード設定",
+    "quickPrepareFailed": "動画情報を取得できませんでした",
+    "maxQuality": "最高画質",
+    "tips": [
+      "ダウンロードに問題がある場合は、設定からCookieの設定やyt-dlpの更新をお試しください",
+      "YouTube、Bilibili、Twitterなど多数のサイトに対応しています",
+      "動画のみ・音声のみモードで必要なものだけダウンロードできます",
+      "ダウンロード前に保存先フォルダを設定してください",
+      "YouTubeの動画はDenoランタイムをインストールすると、すべてのフォーマットを取得できます",
+      "キーボードの上下キーで解析履歴を切り替えられます"
+    ]
+  }
+}

@@ -1,8 +1,4 @@
-import type {
-  NormalizedAudioFormat,
-  NormalizedVideoFormat,
-  VideoFormat,
-} from "@/types";
+import type { NormalizedAudioFormat, NormalizedVideoFormat, VideoFormat } from "@/types";
 import { getCodecKey, getCodecLabel } from "./formats.ts";
 
 /** 格式化文件大小为可读字符串（B / KB / MB / GB） */
@@ -23,9 +19,7 @@ export const formatFileSize = (bytes: number): string => {
  * 严格基于 yt-dlp 数据源：确切大小 (filesize) > 官方预估 (filesize_approx)。
  * 若源站未提供，返回 0，显示端统一呈现标准占位符 "—"，不进行人工主观猜测推算。
  */
-export const resolveFileSize = (
-  format: VideoFormat,
-): { size: number; isEstimated: boolean } => {
+export const resolveFileSize = (format: VideoFormat): { size: number; isEstimated: boolean } => {
   if (typeof format.filesize === "number" && format.filesize > 0) {
     return { size: format.filesize, isEstimated: false };
   }
@@ -136,11 +130,7 @@ export const normalizeVideoFormat = (
   const bitrate = format.vbr || format.tbr || 0;
 
   const filesizeLabel =
-    size > 0
-      ? isEstimated
-        ? `~${formatFileSize(size)}`
-        : formatFileSize(size)
-      : "—";
+    size > 0 ? (isEstimated ? `~${formatFileSize(size)}` : formatFileSize(size)) : "—";
 
   return {
     formatId: format.format_id,
@@ -180,11 +170,7 @@ export const normalizeAudioFormat = (
   const bitrate = format.abr || format.tbr || 0;
   const bitrateLabel = bitrate > 0 ? `${Math.round(bitrate)} kbps` : "";
   const filesizeLabel =
-    size > 0
-      ? isEstimated
-        ? `~${formatFileSize(size)}`
-        : formatFileSize(size)
-      : "—";
+    size > 0 ? (isEstimated ? `~${formatFileSize(size)}` : formatFileSize(size)) : "—";
 
   return {
     formatId: format.format_id,
