@@ -64,5 +64,45 @@
   },
   "badgeOn": {
     "message": "↓"
+  },
+  "modeStandard": {
+    "message": "Standard"
+  },
+  "modeBatch": {
+    "message": "Batch"
+  },
+  "popupBatchTabsTitle": {
+    "message": "Tabs in Current Window"
+  },
+  "popupSelectAll": {
+    "message": "Select All"
+  },
+  "popupDeselectAll": {
+    "message": "Deselect All"
+  },
+  "popupSelectedCount": {
+    "message": "$COUNT$ tabs selected",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupSendBatchBtn": {
+    "message": "Batch Send to YDL GUI ($COUNT$)",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupNoValidTabs": {
+    "message": "No valid web tabs found"
+  },
+  "popupWakingApp": {
+    "message": "Waking up YDL GUI…"
+  },
+  "menuSendAllTabs": {
+    "message": "Batch send all tabs to YDL GUI"
   }
 }

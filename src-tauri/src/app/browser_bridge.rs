@@ -28,7 +28,9 @@ pub(crate) struct BrowserBridgeState(Mutex<VecDeque<BrowserImportResult>>);
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct CookieImport {
-    url: String,
+    url: Option<String>,
+    urls: Option<Vec<String>>,
+    mode: Option<String>,
     request_id: String,
     cookies: Vec<BrowserCookie>,
 }
@@ -50,10 +52,12 @@ struct BrowserCookie {
 #[derive(Debug, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct BrowserImportResult {
-    url: String,
-    request_id: String,
-    cookie_file: Option<String>,
-    cookie_count: usize,
+    pub url: String,
+    pub urls: Vec<String>,
+    pub mode: Option<String>,
+    pub request_id: String,
+    pub cookie_file: Option<String>,
+    pub cookie_count: usize,
 }
 
 pub(crate) fn start(app: AppHandle) {
@@ -131,9 +135,30 @@ async fn persist_import(
     app: &AppHandle,
     payload: CookieImport,
 ) -> Result<BrowserImportResult, String> {
-    if !payload.url.starts_with("https://") && !payload.url.starts_with("http://") {
+    let mut target_urls = Vec::new();
+    if let Some(list) = payload.urls {
+        for u in list {
+            let trimmed = u.trim().to_string();
+            if (trimmed.starts_with("https://") || trimmed.starts_with("http://"))
+                && !target_urls.contains(&trimmed)
+            {
+                target_urls.push(trimmed);
+            }
+        }
+    }
+    if let Some(single) = payload.url {
+        let trimmed = single.trim().to_string();
+        if (trimmed.starts_with("https://") || trimmed.starts_with("http://"))
+            && !target_urls.contains(&trimmed)
+        {
+            target_urls.insert(0, trimmed);
+        }
+    }
+    if target_urls.is_empty() {
         return Err("invalid_url".into());
     }
+    let primary_url = target_urls.first().cloned().unwrap_or_default();
+
     if payload.request_id.len() < 8 || payload.request_id.len() > 128 {
         return Err("invalid_request_id".into());
     }
@@ -191,7 +216,9 @@ async fn persist_import(
     };
 
     Ok(BrowserImportResult {
-        url: payload.url,
+        url: primary_url,
+        urls: target_urls,
+        mode: payload.mode,
         request_id: payload.request_id,
         cookie_file,
         cookie_count: lines.len().saturating_sub(2),

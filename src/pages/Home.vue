@@ -7,10 +7,11 @@ import { useHistoryStore } from "@/stores/history";
 import { useSettingStore } from "@/stores/setting";
 import { useDownloadLauncher } from "@/composables/useDownloadLauncher";
 import { useI18n } from "vue-i18n";
-import type { FetchedVideoData } from "@/types";
+import type { FetchedVideoData, HomeMode } from "@/types";
 
-const { t, tm } = useI18n();
+const { t: translate, tm: translateMessage } = useI18n();
 const router = useRouter();
+const route = useRoute();
 const videoStore = useVideoStore();
 const pendingStore = usePendingStore();
 const historyStore = useHistoryStore();
@@ -23,10 +24,16 @@ const batchParsing = ref(false);
 const showQuickSettings = ref(false);
 const BATCH_LIMIT = 50;
 
-const extractUrls = (text: string): string[] =>
+/**
+ * 从多行或空格分隔的文本中提取并去重有效网址
+ *
+ * @param sourceText 输入的文本内容
+ * @returns 提取到的有效 URL 字符串列表
+ */
+const extractUrls = (sourceText: string): string[] =>
   Array.from(
     new Set(
-      text
+      sourceText
         .split(/\s+/)
         .map((item) => item.trim())
         .filter(isValidUrl),
@@ -39,22 +46,27 @@ const isBusy = computed(() => videoStore.fetching || batchParsing.value);
 const historyIndex = ref(-1);
 const showHistory = ref(false);
 
-const handleKeydown = (e: KeyboardEvent) => {
-  if (e.key === "Enter") {
+/**
+ * 监听标准模式输入框键盘事件（Enter 触发搜索，上下键翻查历史记录）
+ *
+ * @param keyboardEvent 键盘按键事件对象
+ */
+const handleKeydown = (keyboardEvent: KeyboardEvent): void => {
+  if (keyboardEvent.key === "Enter") {
     handleSearch();
     return;
   }
 
   if (historyStore.urls.length === 0) return;
 
-  if (e.key === "ArrowUp") {
-    e.preventDefault();
+  if (keyboardEvent.key === "ArrowUp") {
+    keyboardEvent.preventDefault();
     if (historyIndex.value < historyStore.urls.length - 1) {
       historyIndex.value++;
     }
     url.value = historyStore.urls[historyIndex.value];
-  } else if (e.key === "ArrowDown") {
-    e.preventDefault();
+  } else if (keyboardEvent.key === "ArrowDown") {
+    keyboardEvent.preventDefault();
     if (historyIndex.value > 0) {
       historyIndex.value--;
       url.value = historyStore.urls[historyIndex.value];
@@ -65,89 +77,158 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 };
 
-const handleInput = () => {
+/**
+ * 输入框内容变动时重置历史记录索引游标
+ */
+const handleInput = (): void => {
   historyIndex.value = -1;
 };
 
-const selectHistory = (item: string) => {
-  url.value = item;
+/**
+ * 从历史记录抽屉中选中指定 URL 填充到输入框并关闭抽屉
+ *
+ * @param selectedUrl 用户选中的历史 URL
+ */
+const selectHistory = (selectedUrl: string): void => {
+  url.value = selectedUrl;
   showHistory.value = false;
   historyIndex.value = -1;
 };
 
-const handlePaste = async () => {
+/**
+ * 读取系统剪贴板内容并根据当前模式自动填充到对应输入框
+ *
+ * @returns Promise<void>
+ */
+const handlePaste = async (): Promise<void> => {
   try {
-    const text = await readText();
-    const trimmed = text.trim();
-    if (!trimmed) {
-      window.$message.warning(t("clipboard.empty"));
+    const clipboardContent = await readText();
+    const trimmedContent = clipboardContent.trim();
+    if (!trimmedContent) {
+      window.$message.warning(translate("clipboard.empty"));
       return;
     }
     if (settingStore.homeMode === "batch") {
-      const urls = extractUrls(trimmed);
-      if (urls.length === 0) {
-        window.$message.warning(t("clipboard.invalidUrl"));
+      const parsedUrls = extractUrls(trimmedContent);
+      if (parsedUrls.length === 0) {
+        window.$message.warning(translate("clipboard.invalidUrl"));
         return;
       }
-      batchInput.value = urls.join("\n");
-      window.$message.success(t("home.batchPasted", { count: urls.length }));
+      batchInput.value = parsedUrls.join("\n");
+      window.$message.success(translate("home.batchPasted", { count: parsedUrls.length }));
     } else {
-      if (!isValidUrl(trimmed)) {
-        window.$message.warning(t("clipboard.invalidUrl"));
+      if (!isValidUrl(trimmedContent)) {
+        window.$message.warning(translate("clipboard.invalidUrl"));
         return;
       }
-      url.value = trimmed;
+      url.value = trimmedContent;
       historyIndex.value = -1;
-      window.$message.success(t("clipboard.pasteSuccess"));
+      window.$message.success(translate("clipboard.pasteSuccess"));
     }
   } catch {
-    window.$message.warning(t("clipboard.readFailed"));
+    window.$message.warning(translate("clipboard.readFailed"));
   }
 };
 
-/** 格式化历史记录时间 */
-const formatHistoryTime = (time: number): string => {
-  if (!time) return "";
+/**
+ * 将毫秒时间戳转换为易读的历史时间字符串（如“今天 14:30”或日期时间）
+ *
+ * @param historyTimestamp 历史记录产生的时间戳
+ * @returns 格式化后的时间字符串
+ */
+const formatHistoryTime = (historyTimestamp: number): string => {
+  if (!historyTimestamp) return "";
   const now = new Date();
-  const d = new Date(time);
+  const targetDate = new Date(historyTimestamp);
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const diff = (today.getTime() - target.getTime()) / 86400000;
-  const timeStr = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  const targetDay = new Date(
+    targetDate.getFullYear(),
+    targetDate.getMonth(),
+    targetDate.getDate(),
+  );
+  const dayDifference = (today.getTime() - targetDay.getTime()) / 86400000;
+  const timeString = `${String(targetDate.getHours()).padStart(2, "0")}:${String(targetDate.getMinutes()).padStart(2, "0")}`;
 
-  if (diff === 0) return `${t("downloads.today")} ${timeStr}`;
-  if (diff === 1) return `${t("downloads.yesterday")} ${timeStr}`;
-  if (diff === 2) return `${t("downloads.dayBeforeYesterday")} ${timeStr}`;
-  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")} ${timeStr}`;
+  if (dayDifference === 0) return `${translate("downloads.today")} ${timeString}`;
+  if (dayDifference === 1) return `${translate("downloads.yesterday")} ${timeString}`;
+  if (dayDifference === 2) return `${translate("downloads.dayBeforeYesterday")} ${timeString}`;
+  return `${targetDate.getFullYear()}/${String(targetDate.getMonth() + 1).padStart(2, "0")}/${String(targetDate.getDate()).padStart(2, "0")} ${timeString}`;
 };
 
 const currentTipIndex = ref(0);
 let tipTimer: ReturnType<typeof setInterval> | null = null;
 
-const route = useRoute();
+/**
+ * 响应来自深链接、命令行或浏览器扩展的外部 URL 导入：
+ * 自动识别并适配标准模式与批量模式：
+ * 1. 明确指定 batch 模式或导入多个链接时，自动切入批量模式并去重追加到批量输入框；
+ * 2. 明确指定 standard 模式时，切入标准模式并自动执行单条解析；
+ * 3. 未显式指定模式时，尊重当前客户端所处的模式，避免在批量模式下打乱用户界面。
+ *
+ * @param routeQuery 包含 url、urls、mode 等参数的路由 Query 对象
+ */
+const applyExternalImport = (routeQuery: Record<string, unknown>): void => {
+  const targetMode = routeQuery.mode as HomeMode | undefined;
+  let importedUrls: string[] = [];
+
+  if (typeof routeQuery.urls === "string") {
+    try {
+      const parsedUrlArray = JSON.parse(routeQuery.urls);
+      if (Array.isArray(parsedUrlArray)) {
+        importedUrls = parsedUrlArray.filter(
+          (urlCandidate): urlCandidate is string =>
+            typeof urlCandidate === "string" && isValidUrl(urlCandidate),
+        );
+      }
+    } catch {
+      importedUrls = extractUrls(routeQuery.urls);
+    }
+  }
+
+  if (typeof routeQuery.url === "string") {
+    const singleUrl = routeQuery.url.trim();
+    if (isValidUrl(singleUrl) && !importedUrls.includes(singleUrl)) {
+      importedUrls.push(singleUrl);
+    }
+  }
+
+  if (importedUrls.length === 0) return;
+
+  router.replace({ name: "home", query: {} });
+
+  const effectiveMode: HomeMode =
+    targetMode || (importedUrls.length > 1 ? "batch" : settingStore.homeMode);
+
+  if (effectiveMode === "batch") {
+    settingStore.homeMode = "batch";
+    const existingUrls = extractUrls(batchInput.value);
+    const mergedUrls = Array.from(new Set([...existingUrls, ...importedUrls]));
+    batchInput.value = mergedUrls.join("\n");
+    window.$message.success(translate("home.batchPasted", { count: importedUrls.length }));
+  } else {
+    settingStore.homeMode = "standard";
+    url.value = importedUrls[0];
+    historyIndex.value = -1;
+    handleSearch();
+  }
+};
 
 onMounted(() => {
   tipTimer = setInterval(() => {
-    const tips = tm("home.tips");
-    currentTipIndex.value = (currentTipIndex.value + 1) % tips.length;
+    const tipsList = translateMessage("home.tips") as string[];
+    currentTipIndex.value = (currentTipIndex.value + 1) % tipsList.length;
   }, 4000);
-  // 从深链接 query 参数自动填充 URL 并触发解析
-  const deepLinkUrl = route.query.url as string | undefined;
-  if (deepLinkUrl) {
-    url.value = deepLinkUrl;
-    router.replace({ name: "home", query: {} });
-    handleSearch();
+  if (route.query.url || route.query.urls) {
+    applyExternalImport(route.query);
   }
 });
 
-// 监听 query 变化（已在首页时收到新深链接）
+// 监听 query 变化（已在首页时收到新导入或深链接）
 watch(
-  () => route.query.url,
-  (newUrl) => {
-    if (newUrl && typeof newUrl === "string") {
-      url.value = newUrl;
-      router.replace({ name: "home", query: {} });
-      handleSearch();
+  () => [route.query.url, route.query.urls, route.query._t],
+  ([newUrl, newUrls]) => {
+    if (newUrl || newUrls) {
+      applyExternalImport(route.query);
     }
   },
 );
@@ -156,43 +237,59 @@ onUnmounted(() => {
   if (tipTimer) clearInterval(tipTimer);
 });
 
-/** 解析视频链接，获取视频信息与可用格式 */
+/**
+ * 处理视频解析成功后的数据分发（加入待下载列表或发起快速下载任务）
+ *
+ * @param videoData 解析成功的视频详细元数据
+ * @param preparingTaskId 提前占位的准备中任务 ID（可选）
+ * @returns Promise<boolean> 是否成功提交处理
+ */
 const handleParsedData = async (
-  data: FetchedVideoData,
+  videoData: FetchedVideoData,
   preparingTaskId?: string,
 ): Promise<boolean> => {
   if (settingStore.homeDownloadBehavior === "pending") {
-    pendingStore.add(data);
+    pendingStore.add(videoData);
     return true;
   }
 
-  const result = await launchDownload(createPendingItem(data, true), preparingTaskId);
-  return result === "started" || result === "queued";
+  const downloadResult = await launchDownload(createPendingItem(videoData, true), preparingTaskId);
+  return downloadResult === "started" || downloadResult === "queued";
 };
 
+/**
+ * 校验快速下载模式所需配置（如下载路径是否已设置）
+ *
+ * @returns boolean 配置是否就绪
+ */
 const ensureQuickDownloadConfigured = (): boolean => {
   if (settingStore.homeDownloadBehavior !== "quick" || settingStore.downloadDir) return true;
-  window.$message.warning(t("detail.setDownloadDirFirst"));
+  window.$message.warning(translate("detail.setDownloadDirFirst"));
   showQuickSettings.value = true;
   return false;
 };
 
-const handleSearch = async () => {
-  const trimmed = url.value.trim();
-  if (!trimmed) return;
-  if (!isValidUrl(trimmed)) {
-    window.$message.warning(t("home.enterValidUrl"));
+/**
+ * 执行标准模式下的单条视频链接解析与下载提交流程
+ *
+ * @returns Promise<void>
+ */
+const handleSearch = async (): Promise<void> => {
+  const trimmedUrl = url.value.trim();
+  if (!trimmedUrl) return;
+  if (!isValidUrl(trimmedUrl)) {
+    window.$message.warning(translate("home.enterValidUrl"));
     return;
   }
   if (!ensureQuickDownloadConfigured()) return;
   const preparingTaskId =
-    settingStore.homeDownloadBehavior === "quick" ? createPreparingTask(trimmed) : undefined;
+    settingStore.homeDownloadBehavior === "quick" ? createPreparingTask(trimmedUrl) : undefined;
   if (preparingTaskId) await router.push({ name: "downloads" });
-  const data = await videoStore.fetchVideoInfo(trimmed);
-  if (data) {
-    historyStore.add(trimmed, data.videoInfo.title);
-    const submitted = await handleParsedData(data, preparingTaskId);
-    if (submitted && settingStore.homeDownloadBehavior === "pending") {
+  const fetchedData = await videoStore.fetchVideoInfo(trimmedUrl);
+  if (fetchedData) {
+    historyStore.add(trimmedUrl, fetchedData.videoInfo.title);
+    const hasSubmitted = await handleParsedData(fetchedData, preparingTaskId);
+    if (hasSubmitted && settingStore.homeDownloadBehavior === "pending") {
       router.push({ name: "pending" });
     }
   } else if (preparingTaskId) {
@@ -200,33 +297,39 @@ const handleSearch = async () => {
   }
 };
 
-/** 批量解析去重后的链接；逐项执行可避免同时启动过多 yt-dlp 进程 */
-const handleBatchSearch = async () => {
-  const urls = batchUrls.value;
-  if (urls.length === 0) {
-    window.$message.warning(t("home.batchEmpty"));
+/**
+ * 批量解析去重后的链接列表（逐项顺序解析以防瞬时占用过多系统进程）
+ *
+ * @returns Promise<void>
+ */
+const handleBatchSearch = async (): Promise<void> => {
+  const targetUrls = batchUrls.value;
+  if (targetUrls.length === 0) {
+    window.$message.warning(translate("home.batchEmpty"));
     return;
   }
-  if (urls.length > BATCH_LIMIT) {
-    window.$message.warning(t("home.batchLimit", { count: BATCH_LIMIT }));
+  if (targetUrls.length > BATCH_LIMIT) {
+    window.$message.warning(translate("home.batchLimit", { count: BATCH_LIMIT }));
     return;
   }
   if (!ensureQuickDownloadConfigured()) return;
 
   batchParsing.value = true;
-  let succeeded = 0;
+  let succeededCount = 0;
   const preparingTasks =
     settingStore.homeDownloadBehavior === "quick"
-      ? new Map(urls.map((targetUrl) => [targetUrl, createPreparingTask(targetUrl)]))
+      ? new Map(targetUrls.map((targetUrl) => [targetUrl, createPreparingTask(targetUrl)]))
       : new Map<string, string>();
   if (preparingTasks.size > 0) await router.push({ name: "downloads" });
 
   try {
-    for (const targetUrl of urls) {
-      const data = await videoStore.fetchVideoInfo(targetUrl, { silent: true });
-      if (data) {
-        historyStore.add(targetUrl, data.videoInfo.title);
-        if (await handleParsedData(data, preparingTasks.get(targetUrl))) succeeded += 1;
+    for (const targetUrl of targetUrls) {
+      const fetchedData = await videoStore.fetchVideoInfo(targetUrl, { silent: true });
+      if (fetchedData) {
+        historyStore.add(targetUrl, fetchedData.videoInfo.title);
+        if (await handleParsedData(fetchedData, preparingTasks.get(targetUrl))) {
+          succeededCount += 1;
+        }
       } else {
         const preparingTaskId = preparingTasks.get(targetUrl);
         if (preparingTaskId) markPreparationError(preparingTaskId);
@@ -236,14 +339,17 @@ const handleBatchSearch = async () => {
     batchParsing.value = false;
   }
 
-  if (succeeded > 0) {
+  if (succeededCount > 0) {
     window.$message.success(
-      t("home.batchComplete", { succeeded, failed: urls.length - succeeded }),
+      translate("home.batchComplete", {
+        succeeded: succeededCount,
+        failed: targetUrls.length - succeededCount,
+      }),
     );
     batchInput.value = "";
     if (settingStore.homeDownloadBehavior === "pending") router.push({ name: "pending" });
   } else {
-    window.$message.error(t("home.batchAllFailed"));
+    window.$message.error(translate("home.batchAllFailed"));
   }
 };
 </script>

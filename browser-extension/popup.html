@@ -14,13 +14,34 @@
     </select>
   </header>
 
-  <main class="body">
-    <div id="status" class="pill pill-muted">
-      <span class="dot"></span>
-      <span id="status-text" data-i18n="popupChecking"></span>
-    </div>
+  <div class="mode-tabs">
+    <button id="mode-standard-btn" class="mode-tab active" type="button" data-i18n="modeStandard">标准模式</button>
+    <button id="mode-batch-btn" class="mode-tab" type="button" data-i18n="modeBatch">批量模式</button>
+  </div>
 
-    <div id="url-preview" class="url" hidden></div>
+  <main class="body">
+    <!-- 标准模式面板 -->
+    <section id="panel-standard" class="mode-panel">
+      <div id="status" class="pill pill-muted">
+        <span class="dot"></span>
+        <span id="status-text" data-i18n="popupChecking"></span>
+      </div>
+      <div id="url-preview" class="url" hidden></div>
+    </section>
+
+    <!-- 批量模式面板 -->
+    <section id="panel-batch" class="mode-panel" hidden>
+      <div class="batch-bar">
+        <span class="batch-title" data-i18n="popupBatchTabsTitle">当前窗口可用标签页</span>
+        <div class="batch-actions">
+          <button id="batch-select-all" class="text-btn" type="button" data-i18n="popupSelectAll">全选</button>
+          <span class="sep">/</span>
+          <button id="batch-deselect-all" class="text-btn" type="button" data-i18n="popupDeselectAll">全不选</button>
+        </div>
+      </div>
+      <div id="batch-list" class="batch-list"></div>
+      <div id="batch-empty" class="batch-empty" hidden data-i18n="popupNoValidTabs"></div>
+    </section>
 
     <div class="row" id="cookie-row">
       <div class="row-text">

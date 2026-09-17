@@ -53,6 +53,18 @@ where
             {
                 options.request.url = Some(argument)
             }
+            _ if options.request.url.is_none() && argument.starts_with("ytdlp-gui://") => {
+                if let Ok(parsed) = url::Url::parse(&argument) {
+                    if parsed.host_str() == Some("download") {
+                        for (k, v) in parsed.query_pairs() {
+                            if k == "url" && !v.is_empty() {
+                                options.request.url = Some(v.to_string());
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
             _ => {}
         }
     }

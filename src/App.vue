@@ -1,26 +1,19 @@
 <script setup lang="ts">
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
-import { exit } from "@tauri-apps/plugin-process";
-import { check } from "@tauri-apps/plugin-updater";
-import { onOpenUrl, getCurrent as getCurrentDeepLink } from "@tauri-apps/plugin-deep-link";
 import IconMdiHome from "~icons/mdi/home";
 import IconMdiPlaylistPlay from "~icons/mdi/playlist-play";
 import IconMdiDownload from "~icons/mdi/download";
 import IconMdiToolbox from "~icons/mdi/toolbox";
 import type { Component } from "vue";
-import type { BrowserExtensionImport, CliOpenRequest } from "@/types";
 import { useThemeVars } from "naive-ui";
-import { useI18n } from "vue-i18n";
 import { useSettingStore } from "@/stores/setting";
 import { useDownloadStore } from "@/stores/download";
 import { usePendingStore } from "@/stores/pending";
-import { useStatusStore } from "@/stores/status";
 import { localeEntries } from "@/locales";
-import { normalizeDeepLinkVideoUrl } from "@/utils/url";
+import { useExternalImports } from "@/composables/useExternalImports";
+import { useTrayManager } from "@/composables/useTrayManager";
+import { useAppBootstrap } from "@/composables/useAppBootstrap";
 
-const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
 const settingStore = useSettingStore();
@@ -28,79 +21,30 @@ const downloadStore = useDownloadStore();
 const pendingStore = usePendingStore();
 const themeVars = useThemeVars();
 
-const applyToolSources = () =>
-  invoke("set_tool_sources", {
-    ytdlp: settingStore.ytdlpSource,
-    deno: settingStore.denoSource,
-    ffmpeg: settingStore.ffmpegSource,
-  });
-
-/** 后端通道状态随应用重启丢失，启动与切换时以后端持久化的前端值为准 */
-const applyYtdlpChannel = () =>
-  invoke("set_ytdlp_channel", { channel: settingStore.ytdlpChannel }).catch(() => {});
-
-watch(
-  () => [settingStore.ytdlpSource, settingStore.denoSource, settingStore.ffmpegSource],
-  () => applyToolSources(),
-);
-
-watch(
-  () => settingStore.ytdlpChannel,
-  () => applyYtdlpChannel(),
-);
+const { bootstrap } = useAppBootstrap();
+const { setupTray, handleQuitRequest } = useTrayManager();
+const { setupExternalImportListeners } = useExternalImports();
 
 const navBadgeCounts = computed<Record<string, number>>(() => ({
   pending: pendingStore.items.length,
   downloads: downloadStore.tasks.filter(
-    (t) =>
-      t.status === "downloading" ||
-      t.status === "postprocessing" ||
-      t.status === "queued" ||
-      t.status === "paused",
+    (downloadTask) =>
+      downloadTask.status === "downloading" ||
+      downloadTask.status === "postprocessing" ||
+      downloadTask.status === "queued" ||
+      downloadTask.status === "paused",
   ).length,
 }));
 
-/** 同步托盘菜单语言 */
-const syncTrayMenu = () => {
-  invoke("update_tray_menu", {
-    showLabel: t("tray.show"),
-    quitLabel: t("tray.quit"),
-  });
-};
-
-watch(() => settingStore.locale, syncTrayMenu);
-
-const syncTrayVisibility = async () => {
-  try {
-    await invoke("set_tray_visible", { visible: settingStore.showTrayIcon });
-  } catch (error) {
-    console.error("[YDL GUI] failed to update tray visibility:", error);
-  }
-};
-
-watch(() => settingStore.showTrayIcon, () => void syncTrayVisibility());
-
-/** 处理退出请求，有下载任务时弹出确认框 */
-const handleQuitRequest = () => {
-  if (downloadStore.activeCount > 0) {
-    window.$dialog.warning({
-      title: t("tray.quitConfirmTitle"),
-      content: t("tray.quitConfirmContent"),
-      positiveText: t("common.cancel"),
-      negativeText: t("tray.quit"),
-      onNegativeClick: () => exit(0),
-    });
-  } else {
-    exit(0);
-  }
-};
-
-const localeOptions = localeEntries.map((e) => ({ label: `${e.flag} ${e.label}`, value: e.code }));
+const localeOptions = localeEntries.map((localeEntry) => ({
+  label: `${localeEntry.flag} ${localeEntry.label}`,
+  value: localeEntry.code,
+}));
 
 const currentRoute = computed(() => {
-  const name = (route.name as string) ?? "";
-  if (name.startsWith("toolbox")) return "toolbox";
-  return name;
+  const routeName = (route.name as string) ?? "";
+  if (routeName.startsWith("toolbox")) return "toolbox";
+  return routeName;
 });
 
 const navItems: { key: string; icon: Component; labelKey: string }[] = [
@@ -110,113 +54,24 @@ const navItems: { key: string; icon: Component; labelKey: string }[] = [
   { key: "toolbox", icon: IconMdiToolbox, labelKey: "nav.toolbox" },
 ];
 
-const win = getCurrentWindow();
+const currentAppWindow = getCurrentWindow();
 
-// 关闭窗口时的行为
-win.onCloseRequested(async (event) => {
+// 窗口关闭事件拦截
+currentAppWindow.onCloseRequested(async (closeEvent) => {
   if (settingStore.showTrayIcon && settingStore.closeToTray) {
-    event.preventDefault();
-    await win.hide();
+    closeEvent.preventDefault();
+    await currentAppWindow.hide();
   } else {
-    event.preventDefault();
+    closeEvent.preventDefault();
     handleQuitRequest();
   }
 });
 
-// 监听托盘退出请求
-listen("tray-quit-requested", () => handleQuitRequest());
-
-/** 同一 URL 短时间内重复送达时去重，避免 onOpenUrl + getCurrent 同时触发 */
-let lastDeepLink = "";
-let lastDeepLinkAt = 0;
-const handleDeepLink = (deepLinkUrl: string) => {
-  const now = Date.now();
-  if (deepLinkUrl === lastDeepLink && now - lastDeepLinkAt < 1500) return;
-  lastDeepLink = deepLinkUrl;
-  lastDeepLinkAt = now;
-  try {
-    const url = new URL(deepLinkUrl);
-    if (url.host !== "download") return;
-    const videoUrl = url.searchParams.get("url");
-    if (!videoUrl) return;
-    router.push({ name: "home", query: { url: normalizeDeepLinkVideoUrl(videoUrl) } });
-  } catch {
-    // 无效的深链接 URL，忽略
-  }
-};
-
-const handleCliOpenRequest = (request: CliOpenRequest) => {
-  if (request.cookieFile) {
-    settingStore.cookieFile = request.cookieFile;
-    settingStore.cookieMode = "file";
-  }
-  if (request.downloadDir) settingStore.downloadDir = request.downloadDir;
-  if (request.url) router.push({ name: "home", query: { url: request.url } });
-};
-
-const handleBrowserExtensionImport = (imported: BrowserExtensionImport) => {
-  console.log("[YDL GUI] browser extension import received:", imported);
-  if (imported.cookieFile) {
-    settingStore.cookieFile = imported.cookieFile;
-    settingStore.cookieMode = "file";
-  }
-  router.push({ name: "home", query: { url: normalizeDeepLinkVideoUrl(imported.url) } });
-};
-
-const consumeBrowserExtensionImports = async () => {
-  const pending = await invoke<BrowserExtensionImport[]>("take_browser_extension_imports");
-  pending.forEach(handleBrowserExtensionImport);
-};
-
-/** 启动时自动检查应用更新 */
-const checkAppUpdate = async () => {
-  try {
-    const statusStore = useStatusStore();
-    const update = await check();
-    if (update) {
-      statusStore.updateVersion = update.version;
-      statusStore.updateNotes = update.body || "";
-      statusStore.showUpdateModal = true;
-    }
-  } catch {
-    // 静默失败，不打扰用户
-  }
-};
-
 onMounted(async () => {
-  await applyToolSources();
-  await applyYtdlpChannel();
-  await listen("browser-extension-import-ready", () => void consumeBrowserExtensionImports());
-  await consumeBrowserExtensionImports();
-  await listen<CliOpenRequest>("cli-open-request", (event) => {
-    handleCliOpenRequest(event.payload);
-  });
-  const cliRequest = await invoke<CliOpenRequest | null>("take_cli_open_request");
-  if (cliRequest) handleCliOpenRequest(cliRequest);
-  await syncTrayVisibility();
-  win.show();
-  syncTrayMenu();
-  if (settingStore.autoCheckUpdate) {
-    checkAppUpdate();
-  }
-  // 冷启动：应用是被深链接拉起的，立刻读取触发 URL 并填充
-  // （onOpenUrl 在监听器注册前到达的事件可能丢失，必须用 getCurrent 兜底）
-  try {
-    const initial = await getCurrentDeepLink();
-    if (initial?.length) {
-      for (const u of initial) handleDeepLink(u);
-    }
-  } catch {
-    // 插件不可用时静默忽略
-  }
-  // 应用运行期间收到的深链接
-  onOpenUrl((urls) => {
-    for (const u of urls) handleDeepLink(u);
-  });
-  // single-instance 转发的深链接（应用已运行时再次唤起）
-  listen<string>("deep-link-url", (event) => {
-    handleDeepLink(event.payload);
-  });
+  await bootstrap();
+  await setupExternalImportListeners();
+  await setupTray();
+  await currentAppWindow.show();
 });
 </script>
 

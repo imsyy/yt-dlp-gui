@@ -1,9 +1,9 @@
 /**
  * Background service worker for YDL GUI Helper.
- * Responsibilities:
- *   - register right-click context menus on install/startup
- *   - keep the action badge in sync with whether the active tab is supported
- *   - deliver requests through the acknowledged local bridge
+ * 负责：
+ *   - 扩展安装与启动时注册右键上下文菜单
+ *   - 监听活动标签页变化并同步更新工具栏角标（Badge）状态
+ *   - 通过本地 HTTP 桥接将当前网页、选中文本链接或全部标签页发送至桌面客户端
  */
 
 import { sendToApp as sendRequest } from "./bridge.js";
@@ -11,61 +11,110 @@ import { createTranslator, resetI18n } from "./i18n.js";
 
 const BADGE_COLOR = "#18A058";
 
-function isSupportedUrl(url) {
+/**
+ * 校验指定 URL 是否为受支持的 HTTP/HTTPS 协议网络链接
+ *
+ * @param {string} url 待检测的地址字符串
+ * @returns {boolean} 是否为有效的网络地址
+ */
+const isSupportedUrl = (url) => {
   if (!url) return false;
   try {
     return ["http:", "https:"].includes(new URL(url).protocol);
   } catch {
     return false;
   }
-}
+};
 
-async function notify(messageKey) {
-  const t = await createTranslator();
+/**
+ * 触发系统级 Chrome 通知提醒用户导入状态
+ *
+ * @param {string} messageKey 语言包消息键名
+ * @returns {Promise<void>}
+ */
+const notify = async (messageKey) => {
+  const translator = await createTranslator();
   chrome.notifications?.create({
     type: "basic",
     iconUrl: "icons/icon128.png",
-    title: t("notifyTitle"),
-    message: t(messageKey),
+    title: translator("notifyTitle"),
+    message: translator(messageKey),
   });
-}
+};
 
-async function sendToApp(videoUrl, { withCookies = true, tabId } = {}) {
-  if (!isSupportedUrl(videoUrl)) {
+/**
+ * 筛选并发送网页链接及 Cookie 至 YDL GUI 桌面客户端
+ *
+ * @param {string | string[]} target 单个目标链接或链接数组
+ * @param {object} [options={}] 配置项
+ * @param {boolean} [options.withCookies=true] 是否附带 Cookie
+ * @param {"standard" | "batch"} [options.mode="standard"] 导入模式（标准或批量）
+ * @param {number} [options.tabId] 来源标签页 ID
+ * @param {Array<{url: string, tabId?: number}>} [options.items=[]] 批量标签项信息
+ * @returns {Promise<void>}
+ */
+const sendToApp = async (
+  target,
+  { withCookies = true, mode = "standard", tabId, items = [] } = {},
+) => {
+  let targetUrls = [];
+  if (Array.isArray(target)) {
+    targetUrls = target.filter(isSupportedUrl);
+  } else if (typeof target === "string" && isSupportedUrl(target)) {
+    targetUrls = [target];
+  }
+
+  if (targetUrls.length === 0) {
     notify("notifyUnsupported");
     return;
   }
+
   try {
-    const result = await sendRequest(videoUrl, withCookies, tabId);
-    notify(result ? "notifySent" : "notifyFailed");
+    const isSuccess = await sendRequest(targetUrls, {
+      withCookies,
+      mode,
+      tabId,
+      items,
+    });
+    notify(isSuccess ? "notifySent" : "notifyFailed");
   } catch {
     notify("notifyFailed");
   }
-}
+};
 
 // ---------- Context menus ----------
 
-async function setupMenus() {
-  const t = await createTranslator();
+/**
+ * 注册浏览器右键上下文菜单（支持页面、链接、划词文本与扩展图标右键全标签页导入）
+ *
+ * @returns {Promise<void>}
+ */
+const setupMenus = async () => {
+  const translator = await createTranslator();
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: "ydl-send-page",
-      title: t("menuSendPage"),
+      title: translator("menuSendPage"),
       contexts: ["page", "frame"],
       documentUrlPatterns: ["http://*/*", "https://*/*"],
     });
     chrome.contextMenus.create({
       id: "ydl-send-link",
-      title: t("menuSendLink"),
+      title: translator("menuSendLink"),
       contexts: ["link"],
     });
     chrome.contextMenus.create({
       id: "ydl-send-selection",
-      title: t("menuSendSelection"),
+      title: translator("menuSendSelection"),
       contexts: ["selection"],
     });
+    chrome.contextMenus.create({
+      id: "ydl-send-all-tabs",
+      title: translator("menuSendAllTabs"),
+      contexts: ["action"],
+    });
   });
-}
+};
 
 chrome.runtime.onInstalled.addListener(setupMenus);
 chrome.runtime.onStartup.addListener(setupMenus);
@@ -76,47 +125,83 @@ chrome.storage.onChanged.addListener((changes) => {
   }
 });
 
-chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === "ydl-send-page") {
-    const target = info.frameUrl || info.pageUrl || tab?.url;
-    if (target) sendToApp(target, { tabId: tab?.id });
+chrome.contextMenus.onClicked.addListener((menuInfo, activeTab) => {
+  if (menuInfo.menuItemId === "ydl-send-page") {
+    const targetUrl = menuInfo.frameUrl || menuInfo.pageUrl || activeTab?.url;
+    if (targetUrl) {
+      sendToApp(targetUrl, { mode: "standard", tabId: activeTab?.id });
+    }
     return;
   }
-  if (info.menuItemId === "ydl-send-link") {
-    if (info.linkUrl) sendToApp(info.linkUrl, { tabId: tab?.id });
+
+  if (menuInfo.menuItemId === "ydl-send-link") {
+    if (menuInfo.linkUrl) {
+      sendToApp(menuInfo.linkUrl, { mode: "standard", tabId: activeTab?.id });
+    }
     return;
   }
-  if (info.menuItemId === "ydl-send-selection") {
-    const text = (info.selectionText || "").trim();
-    // selection might wrap http(s) URL with whitespace — use first token.
-    const candidate = text.split(/\s+/).find((s) => /^https?:\/\//i.test(s));
-    if (candidate) sendToApp(candidate, { tabId: tab?.id });
-    else notify("notifyUnsupported");
+
+  if (menuInfo.menuItemId === "ydl-send-selection") {
+    const selectionContent = (menuInfo.selectionText || "").trim();
+    // 选中文本可能夹带空白字符，提取首个符合 http(s) 的链接
+    const matchedUrl = selectionContent
+      .split(/\s+/)
+      .find((token) => /^https?:\/\//i.test(token));
+    if (matchedUrl) {
+      sendToApp(matchedUrl, { mode: "standard", tabId: activeTab?.id });
+    } else {
+      notify("notifyUnsupported");
+    }
+    return;
+  }
+
+  if (menuInfo.menuItemId === "ydl-send-all-tabs") {
+    chrome.tabs.query({ currentWindow: true }).then((allTabs) => {
+      const validTabs = (allTabs || []).filter((tabItem) => isSupportedUrl(tabItem.url));
+      if (validTabs.length > 0) {
+        sendToApp(
+          validTabs.map((tabItem) => tabItem.url),
+          {
+            mode: "batch",
+            items: validTabs.map((tabItem) => ({ url: tabItem.url, tabId: tabItem.id })),
+          },
+        );
+      } else {
+        notify("notifyUnsupported");
+      }
+    });
   }
 });
 
 // ---------- Action badge ----------
 
-async function updateBadge(tabId, url) {
-  const supported = isSupportedUrl(url);
+/**
+ * 根据指定标签页 URL 的支持状态更新浏览器扩展图标角标文本与背景颜色
+ *
+ * @param {number} tabId 标签页 ID
+ * @param {string} tabUrl 标签页 URL
+ * @returns {Promise<void>}
+ */
+const updateBadge = async (tabId, tabUrl) => {
+  const isSupported = isSupportedUrl(tabUrl);
   try {
-    const t = await createTranslator();
+    const translator = await createTranslator();
     await chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR, tabId });
-    await chrome.action.setBadgeText({ text: supported ? t("badgeOn") : "", tabId });
+    await chrome.action.setBadgeText({ text: isSupported ? translator("badgeOn") : "", tabId });
   } catch {
-    // tab might be gone; ignore
+    // 标签页可能已被关闭，忽略异常
   }
-}
+};
 
 chrome.tabs.onActivated.addListener(async ({ tabId }) => {
   try {
-    const tab = await chrome.tabs.get(tabId);
-    updateBadge(tabId, tab.url);
+    const targetTab = await chrome.tabs.get(tabId);
+    updateBadge(tabId, targetTab.url);
   } catch {}
 });
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, targetTab) => {
   if (changeInfo.url || changeInfo.status === "complete") {
-    updateBadge(tabId, tab.url);
+    updateBadge(tabId, targetTab.url);
   }
 });

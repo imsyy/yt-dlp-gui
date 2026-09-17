@@ -11,6 +11,8 @@ export interface CliOpenRequest {
 
 export interface BrowserExtensionImport {
   url: string;
+  urls?: string[];
+  mode?: HomeMode;
   requestId: string;
   cookieFile: string | null;
   cookieCount: number;

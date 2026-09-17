@@ -64,5 +64,45 @@
   },
   "badgeOn": {
     "message": "↓"
+  },
+  "modeStandard": {
+    "message": "标准模式"
+  },
+  "modeBatch": {
+    "message": "批量模式"
+  },
+  "popupBatchTabsTitle": {
+    "message": "当前窗口可用标签页"
+  },
+  "popupSelectAll": {
+    "message": "全选"
+  },
+  "popupDeselectAll": {
+    "message": "全不选"
+  },
+  "popupSelectedCount": {
+    "message": "已选 $COUNT$ 个标签页",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupSendBatchBtn": {
+    "message": "批量发送到 YDL GUI ($COUNT$)",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupNoValidTabs": {
+    "message": "未找到有效的网页标签"
+  },
+  "popupWakingApp": {
+    "message": "正在唤醒 YDL GUI 应用…"
+  },
+  "menuSendAllTabs": {
+    "message": "批量发送所有标签页到 YDL GUI"
   }
 }

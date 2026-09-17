@@ -31,6 +31,11 @@ pub(crate) fn take_cli_open_request(
 /// 打开随应用分发的浏览器扩展源码目录，供浏览器直接加载。
 #[tauri::command]
 pub(crate) fn reveal_browser_extension(app: tauri::AppHandle) -> Result<String, String> {
+    #[cfg(any(windows, target_os = "linux"))]
+    {
+        use tauri_plugin_deep_link::DeepLinkExt;
+        let _ = app.deep_link().register_all();
+    }
     let target = app
         .path()
         .resolve("browser-extension", BaseDirectory::Resource)

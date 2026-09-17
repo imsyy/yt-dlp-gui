@@ -1,6 +1,14 @@
 const BRIDGE_URL = "http://127.0.0.1:17654";
 
-export async function collectCookies(url, tabId) {
+/**
+ * 收集指定页面 URL 相关的浏览器 Cookie
+ * 优先按当前 Tab 所在的 cookie store 查询，兜底按域名及父域查询
+ *
+ * @param {string} url 目标网页完整 URL
+ * @param {number} [tabId] 当前标签页 ID（可选）
+ * @returns {Promise<Array<{domain: string, hostOnly: boolean, path: string, secure: boolean, httpOnly: boolean, expirationDate?: number, name: string, value: string}>>} 提取的标准 Cookie 数组
+ */
+export const collectCookies = async (url, tabId) => {
   const parsed = new URL(url);
   const hostname = parsed.hostname;
 
@@ -8,29 +16,21 @@ export async function collectCookies(url, tabId) {
   let storeIds = [];
   if (Number.isInteger(tabId)) {
     const stores = await chrome.cookies.getAllCookieStores();
-    console.log("[YDL GUI] all cookie stores:", stores);
-    const store = stores.find((candidate) => candidate.tabIds.includes(tabId));
-    if (store) storeIds.push(store.id);
+    const matchedStore = stores.find((candidate) => candidate.tabIds.includes(tabId));
+    if (matchedStore) storeIds.push(matchedStore.id);
   }
-  // 兜底：如果没找到 store，或者第一次查询结果为空，
-  // 就遍历所有 cookie store（多配置文件 / 容器场景）
+  // 兜底：如果没找到 store，或者第一次查询结果为空，就遍历所有 cookie store
   if (storeIds.length === 0) {
     const stores = await chrome.cookies.getAllCookieStores();
-    storeIds = stores.map((s) => s.id);
+    storeIds = stores.map((storeCandidate) => storeCandidate.id);
   }
   if (!storeIds.includes("0")) storeIds.push("0");
-
-  console.log("[YDL GUI] storeIds to query:", storeIds);
 
   const allCookies = [];
   const seen = new Set();
   for (const storeId of storeIds) {
     const details = { url, storeId };
-    console.log(`[YDL GUI] cookie getAll:`, details);
     const cookies = await chrome.cookies.getAll(details);
-    console.log(
-      `[YDL GUI] storeId=${storeId}: collected ${cookies?.length || 0} cookies`,
-    );
     for (const cookie of cookies || []) {
       const key = `${cookie.domain}|${cookie.path}|${cookie.name}|${storeId}`;
       if (!seen.has(key)) {
@@ -42,15 +42,11 @@ export async function collectCookies(url, tabId) {
 
   // 兜底：如果按 url 查询仍为空，尝试按 domain 查询
   if (allCookies.length === 0) {
-    console.log("[YDL GUI] url query returned 0, trying domain query...");
     for (const storeId of storeIds) {
       const domainCookies = await chrome.cookies.getAll({
         domain: hostname,
         storeId,
       });
-      console.log(
-        `[YDL GUI] domain=${hostname}, storeId=${storeId}: collected ${domainCookies?.length || 0} cookies`,
-      );
       for (const cookie of domainCookies || []) {
         const key = `${cookie.domain}|${cookie.path}|${cookie.name}|${storeId}`;
         if (!seen.has(key)) {
@@ -67,9 +63,6 @@ export async function collectCookies(url, tabId) {
           domain: `.${parentDomain}`,
           storeId,
         });
-        console.log(
-          `[YDL GUI] domain=.${parentDomain}, storeId=${storeId}: collected ${parentCookies?.length || 0} cookies`,
-        );
         for (const cookie of parentCookies || []) {
           const key = `${cookie.domain}|${cookie.path}|${cookie.name}|${storeId}`;
           if (!seen.has(key)) {
@@ -81,21 +74,6 @@ export async function collectCookies(url, tabId) {
     }
   }
 
-  console.log(
-    `[YDL GUI] total unique cookies collected: ${allCookies.length}`,
-  );
-  if (allCookies.length) {
-    console.table(
-      allCookies.map((c) => ({
-        domain: c.domain,
-        name: c.name,
-        path: c.path,
-        hostOnly: c.hostOnly,
-        secure: c.secure,
-        httpOnly: c.httpOnly,
-      })),
-    );
-  }
   return allCookies.map((cookie) => ({
     domain: cookie.domain,
     hostOnly: cookie.hostOnly,
@@ -106,9 +84,40 @@ export async function collectCookies(url, tabId) {
     name: cookie.name,
     value: cookie.value,
   }));
-}
+};
 
-async function request(path, options = {}, timeout = 2500) {
+/**
+ * 批量收集多个标签页 URL 的 Cookie 并进行全局去重
+ *
+ * @param {Array<{url: string, tabId?: number}>} items 待收集的网页信息列表
+ * @returns {Promise<Array<object>>} 去重后的 Cookie 数组
+ */
+export const collectCookiesForUrls = async (items) => {
+  const allCookies = [];
+  const seen = new Set();
+  for (const item of items) {
+    if (!item?.url) continue;
+    const cookies = await collectCookies(item.url, item.tabId);
+    for (const cookie of cookies) {
+      const key = `${cookie.domain}|${cookie.path}|${cookie.name}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        allCookies.push(cookie);
+      }
+    }
+  }
+  return allCookies;
+};
+
+/**
+ * 发送带超时控制与 JSON 解析的本地 HTTP 桥接请求
+ *
+ * @param {string} path 请求接口相对路径
+ * @param {RequestInit} [options] Fetch 配置项
+ * @param {number} [timeout=2500] 超时时间（毫秒）
+ * @returns {Promise<any>} 响应数据
+ */
+const request = async (path, options = {}, timeout = 2500) => {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
   try {
@@ -122,44 +131,131 @@ async function request(path, options = {}, timeout = 2500) {
   } finally {
     clearTimeout(timer);
   }
-}
+};
 
-export async function isAppReady() {
+/**
+ * 检查桌面端应用的本地 HTTP 桥接服务是否已准备就绪
+ *
+ * @returns {Promise<boolean>} 应用是否正常运行中
+ */
+export const isAppReady = async () => {
   try {
     const health = await request("/v1/health", {}, 800);
     return health?.app === "ydl-gui" && health?.version === 1;
   } catch {
     return false;
   }
-}
+};
 
-export async function wakeApp() {
+/**
+ * 通过 Windows 协议深链接冷启动拉起桌面应用，并轮询等待服务可用：
+ * 预留 28 次 * 300ms（约 8.4 秒）冷启动缓冲，就绪后平滑销毁唤醒标签页
+ *
+ * @returns {Promise<boolean>} 是否成功唤醒并就绪
+ */
+export const wakeApp = async () => {
   const wakeUrl = `ytdlp-gui://bridge/wake?requestId=${crypto.randomUUID()}`;
-  const tab = await chrome.tabs.create({ url: wakeUrl, active: false });
-  setTimeout(() => tab?.id && chrome.tabs.remove(tab.id).catch(() => {}), 1200);
-  for (let attempt = 0; attempt < 12; attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 250));
-    if (await isAppReady()) return true;
+  let tab = null;
+  try {
+    tab = await chrome.tabs.create({ url: wakeUrl, active: false });
+  } catch (err) {
+    console.warn("[YDL GUI] failed to create wake tab:", err);
   }
-  return false;
-}
 
-export async function sendToApp(url, withCookies, tabId) {
+  const cleanupTab = () => {
+    if (tab?.id) {
+      chrome.tabs.remove(tab.id).catch(() => {});
+      tab = null;
+    }
+  };
+
+  for (let attempt = 0; attempt < 28; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    if (await isAppReady()) {
+      cleanupTab();
+      return true;
+    }
+  }
+
+  cleanupTab();
+  return false;
+};
+
+/**
+ * 将单个或多个网页链接及对应 Cookies 发送至 YDL GUI 桌面端
+ *
+ * @param {string | string[]} target 单个目标 URL 或 URL 列表
+ * @param {object | boolean} [options={}] 配置项（或布尔值表示 withCookies）
+ * @param {boolean} [options.withCookies=true] 是否一并提取并发送 Cookie
+ * @param {"standard" | "batch"} [options.mode="standard"] 目标模式（标准或批量）
+ * @param {number} [options.tabId] 单个标签页 ID
+ * @param {Array<{url: string, tabId?: number}>} [options.items] 批量标签页信息列表
+ * @param {number} [legacyTabId] 兼容旧签名的 tabId 参数
+ * @returns {Promise<any>} 后端返回的处理结果
+ */
+export const sendToApp = async (target, options = {}, legacyTabId = null) => {
+  let urls = [];
+  let withCookies = true;
+  let mode = "standard";
+  let tabId = undefined;
+  let items = [];
+
+  if (typeof options === "boolean") {
+    withCookies = options;
+    tabId = legacyTabId;
+  } else if (options && typeof options === "object") {
+    if (typeof options.withCookies === "boolean") withCookies = options.withCookies;
+    if (options.mode) mode = options.mode;
+    if (options.tabId) tabId = options.tabId;
+    if (Array.isArray(options.items)) items = options.items;
+  }
+
+  if (Array.isArray(target)) {
+    urls = target.filter(Boolean);
+  } else if (typeof target === "string" && target) {
+    urls = [target];
+  }
+
+  if (urls.length === 0) {
+    throw new Error("no_urls");
+  }
+
   if (!(await isAppReady()) && !(await wakeApp())) {
     console.warn("[YDL GUI] app is not reachable at", BRIDGE_URL);
     throw new Error("app_unavailable");
   }
-  const cookies = withCookies ? await collectCookies(url, tabId) : [];
-  console.log(`[YDL GUI] sending to app: url=${url}, cookies=${cookies.length}`);
+
+  let cookies = [];
+  if (withCookies) {
+    if (items.length > 0) {
+      cookies = await collectCookiesForUrls(items);
+    } else if (urls.length === 1) {
+      cookies = await collectCookies(urls[0], tabId);
+    } else {
+      cookies = await collectCookiesForUrls(urls.map((urlItem) => ({ url: urlItem })));
+    }
+  }
+
+  const primaryUrl = urls[0];
+  console.log(
+    `[YDL GUI] sending to app: mode=${mode}, urls=${urls.length}, cookies=${cookies.length}`,
+  );
+
   const result = await request(
     "/v1/import",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url, requestId: crypto.randomUUID(), cookies }),
+      body: JSON.stringify({
+        url: primaryUrl,
+        urls,
+        mode,
+        requestId: crypto.randomUUID(),
+        cookies,
+      }),
     },
     10000,
   );
   console.log("[YDL GUI] app response:", result);
   return result;
-}
+};
