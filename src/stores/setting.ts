@@ -3,6 +3,11 @@ import { setI18nLocale, resolveLocale } from "@/locales";
 import { DEFAULT_OUTPUT_TEMPLATE } from "@/utils/output-template";
 import type { HomeDownloadBehavior, HomeMode, YtdlpChannel } from "@/types";
 
+/**
+ * 应用全局偏好配置 Store
+ *
+ * 负责管理语言、主题、网络代理、下载目录、默认参数等客户端持久化配置（基于 localStorage）。
+ */
 export const useSettingStore = defineStore(
   "setting",
   () => {

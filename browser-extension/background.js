@@ -80,7 +80,7 @@ const sendToApp = async (
   }
 };
 
-// ---------- Context menus ----------
+// Context menus
 
 /**
  * 注册浏览器右键上下文菜单（支持页面、链接、划词文本与扩展图标右键全标签页导入）

@@ -100,7 +100,7 @@ pub fn get_cli_tool_path(tool: &str) -> Option<PathBuf> {
     }
 }
 
-// ========== YouTube extractor 参数（po_token / visitor_data）==========
+// YouTube extractor 参数（po_token / visitor_data）
 
 #[derive(Default, Clone)]
 struct YoutubeExtractorArgs {
@@ -151,7 +151,7 @@ pub fn build_youtube_extractor_args() -> Vec<String> {
     ]
 }
 
-// ========== yt-dlp 发行通道（stable / nightly / master）==========
+// yt-dlp 发行通道（stable / nightly / master）
 
 /// yt-dlp 官方的三个发行通道，详见 yt-dlp README "UPDATE" 章节。
 #[derive(Clone, Copy, PartialEq, Eq, Default)]

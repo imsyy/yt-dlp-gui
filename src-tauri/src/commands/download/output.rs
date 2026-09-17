@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 
 use super::model::DownloadProcessInfo;
 use super::parser;
@@ -211,6 +211,17 @@ pub(super) fn spawn_completion_handler(
             } else {
                 None
             };
+
+            // 真正直接由 Rust 后端写入 SQLite 完成状态与最终产物信息
+            if let Some(db_state) = app.try_state::<crate::db::DatabaseState>() {
+                let _ = crate::db::tasks::mark_task_completed(
+                    &db_state,
+                    &task_id,
+                    &output_file,
+                    file_size_bytes.map(|s| s as i64),
+                );
+            }
+
             let _ = app.emit(
                 "download-complete",
                 serde_json::json!({
@@ -232,6 +243,12 @@ pub(super) fn spawn_completion_handler(
                         .map(|s| format!("err_exit_code:{}", s.code().unwrap_or(-1)))
                         .unwrap_or_else(|e| e.to_string())
                 });
+
+            // 真正直接由 Rust 后端写入 SQLite 错误状态与详情
+            if let Some(db_state) = app.try_state::<crate::db::DatabaseState>() {
+                let _ = crate::db::tasks::mark_task_error(&db_state, &task_id, &error_msg);
+            }
+
             let _ = app.emit(
                 "download-error",
                 serde_json::json!({

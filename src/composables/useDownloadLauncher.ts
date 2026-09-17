@@ -234,6 +234,7 @@ export const useDownloadLauncher = () => {
       );
       if (!preparingTask || preparingTask.status !== "preparing") return "failed";
       Object.assign(preparingTask, task);
+      downloadStore.updateTask(preparingTask);
     } else {
       downloadStore.addTask(task);
     }
@@ -255,6 +256,7 @@ export const useDownloadLauncher = () => {
             error instanceof Error
               ? error.message
               : String(error) || t("detail.startDownloadFailed");
+          downloadStore.updateTask(failedTask);
         }
       } else {
         downloadStore.removeTask(taskId);

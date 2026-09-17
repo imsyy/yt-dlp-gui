@@ -13,6 +13,13 @@ const selectVideoFormat = (formats: VideoFormat[], maxHeight?: number): string =
   );
 };
 
+/**
+ * 根据解析后的视频元数据创建新的待下载任务配置对象
+ *
+ * @param data 解析完成的视频数据
+ * @param quick 是否采用快速下载预设配置
+ * @returns 初始化后的待下载项
+ */
 export const createPendingItem = (data: FetchedVideoData, quick = false): PendingItem => {
   const settingStore = useSettingStore();
   const maxHeight = quick ? settingStore.quickMaxHeight : undefined;
@@ -50,6 +57,11 @@ export const createPendingItem = (data: FetchedVideoData, quick = false): Pendin
   };
 };
 
+/**
+ * 待下载任务配置队列 Store
+ *
+ * 负责在正式开始下载前暂存已解析的视频项、用户参数微调与多任务切换。
+ */
 export const usePendingStore = defineStore("pending", () => {
   const items = ref<PendingItem[]>([]);
   const activeId = ref<string>("");
@@ -58,6 +70,12 @@ export const usePendingStore = defineStore("pending", () => {
     () => items.value.find((i) => i.id === activeId.value) ?? null,
   );
 
+  /**
+   * 将解析出的视频数据加入待下载项列表，并将其激活为当前编辑项
+   *
+   * @param data 解析出的视频数据
+   * @returns 新增待下载项的唯一 ID
+   */
   const add = (data: FetchedVideoData): string => {
     const item = createPendingItem(data);
     items.value.push(item);
@@ -65,7 +83,12 @@ export const usePendingStore = defineStore("pending", () => {
     return item.id;
   };
 
-  const remove = (id: string) => {
+  /**
+   * 移除指定 ID 的待下载项，并自动激活临近项
+   *
+   * @param id 待删除项 ID
+   */
+  const remove = (id: string): void => {
     const idx = items.value.findIndex((i) => i.id === id);
     if (idx === -1) return;
     items.value.splice(idx, 1);
@@ -75,8 +98,13 @@ export const usePendingStore = defineStore("pending", () => {
     }
   };
 
-  /** 刷新当前项：替换源数据并重置依赖源数据的派生字段（格式/分P 选中），保留用户填的额外选项 */
-  const refresh = (id: string, data: FetchedVideoData) => {
+  /**
+   * 刷新当前待下载项的元数据（重新解析后覆盖音视频流信息，保留用户已修改的选项）
+   *
+   * @param id 待下载项 ID
+   * @param data 重新解析获得的视频数据
+   */
+  const refresh = (id: string, data: FetchedVideoData): void => {
     const item = items.value.find((i) => i.id === id);
     if (!item) return;
     item.url = data.url;
@@ -90,7 +118,10 @@ export const usePendingStore = defineStore("pending", () => {
     item.selectedAudioFormat = data.audioFormats[0]?.format_id ?? "";
   };
 
-  const clear = () => {
+  /**
+   * 清空全部待下载项
+   */
+  const clear = (): void => {
     items.value = [];
     activeId.value = "";
   };

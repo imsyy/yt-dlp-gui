@@ -88,6 +88,9 @@ pub async fn start_download(
         );
     }
 
+    // 真正直接由 Rust 后端写入 SQLite 下载中状态
+    let _ = crate::db::tasks::mark_task_downloading(&app.state::<crate::db::DatabaseState>(), &task_id);
+
     let stdout = child.stdout.take().ok_or("err_capture_stdout")?;
     let stderr = child.stderr.take().ok_or("err_capture_stderr")?;
 

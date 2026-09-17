@@ -21,7 +21,7 @@ pub use proxy::*;
 pub use toolbox::*;
 pub use video::*;
 
-// ========== 平台常量 ==========
+// 平台常量
 
 /// Windows: 隐藏控制台窗口标志
 #[cfg(target_os = "windows")]

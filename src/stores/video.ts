@@ -27,10 +27,19 @@ const aggregateSubtitleMap = (
   return merged;
 };
 
+/**
+ * 视频元数据获取 Store
+ *
+ * 负责调用 yt-dlp 解析远程 URL 媒体信息（单视频/播放列表、可用音视频格式、字幕等）。
+ */
 export const useVideoStore = defineStore("video", () => {
   const fetching = ref(false);
 
-  /** 获取当前有效的 Cookie 参数 */
+  /**
+   * 根据当前全局设置解析并获取有效的 Cookie 传入参数
+   *
+   * @returns 包含 cookieFile 或 cookieBrowser 的参数对象
+   */
   const getCookieArgs = async (): Promise<{
     cookieFile: string | null;
     cookieBrowser: string | null;
@@ -50,7 +59,13 @@ export const useVideoStore = defineStore("video", () => {
     return { cookieFile: null, cookieBrowser: null };
   };
 
-  /** 解析视频信息，成功返回结构化结果，失败返回 null */
+  /**
+   * 解析指定 URL 的视频或播放列表元数据
+   *
+   * @param targetUrl 待解析的视频或播放列表地址
+   * @param options 可选配置（如 silent 静默模式，不弹出错误通知框）
+   * @returns 解析成功返回标准化视频数据对象，失败则返回 null
+   */
   const fetchVideoInfo = async (
     targetUrl: string,
     options: { silent?: boolean } = {},
@@ -59,14 +74,12 @@ export const useVideoStore = defineStore("video", () => {
     fetching.value = true;
     try {
       const { cookieFile, cookieBrowser } = await getCookieArgs();
-      const fetchInfo = () =>
-        invoke<VideoInfo>("fetch_video_info", {
-          url: targetUrl,
-          cookieFile,
-          cookieBrowser,
-          proxy: settingStore.proxy || null,
-        });
-      const info = await fetchInfo();
+      const info = await invoke<VideoInfo>("fetch_video_info", {
+        url: targetUrl,
+        cookieFile,
+        cookieBrowser,
+        proxy: settingStore.proxy || null,
+      });
       let videoInfo: VideoInfo;
       let isPlaylist = false;
       let playlistEntries: PlaylistEntry[] = [];

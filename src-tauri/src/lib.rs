@@ -2,6 +2,7 @@ use tauri::{Emitter, Manager};
 
 mod app;
 mod commands;
+mod db;
 mod platform;
 mod utils;
 
@@ -57,6 +58,8 @@ pub fn run() {
                 use tauri_plugin_deep_link::DeepLinkExt;
                 let _ = app.deep_link().register_all();
             }
+            let db_state = db::init_database(app.handle())?;
+            app.manage(db_state);
             app::browser_bridge::start(app.handle().clone());
             app::setup_tray(app)
         })
@@ -106,6 +109,18 @@ pub fn run() {
             commands::tool_fetch_chapters,
             commands::tool_fetch_comments,
             commands::test_proxy,
+            db::db_health_check,
+            db::tasks::db_get_tasks,
+            db::tasks::db_upsert_task,
+            db::tasks::db_upsert_tasks_batch,
+            db::tasks::db_delete_task,
+            db::tasks::db_delete_tasks,
+            db::tasks::db_clear_completed_tasks,
+            db::history::db_get_history,
+            db::history::db_add_history,
+            db::history::db_add_history_batch,
+            db::history::db_remove_history,
+            db::history::db_clear_history,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

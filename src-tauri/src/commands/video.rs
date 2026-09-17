@@ -6,7 +6,7 @@ use tauri::AppHandle;
 
 use super::support;
 
-// ========== Cookie 管理 ==========
+// Cookie 管理
 
 /// 保存 Cookie 文本（Netscape 格式）到应用数据目录
 #[tauri::command]
@@ -83,7 +83,7 @@ mod tests {
     }
 }
 
-// ========== 视频信息 ==========
+// 视频信息
 
 /// 使用 yt-dlp -J 获取视频元信息（标题、格式列表、字幕等）
 #[tauri::command]

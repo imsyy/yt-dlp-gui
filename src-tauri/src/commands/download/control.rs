@@ -1,5 +1,7 @@
 //! 下载任务的取消与进程终止。
 
+use crate::db::tasks::mark_task_cancelled;
+use crate::db::DatabaseState;
 use crate::platform::process;
 
 use super::model::DownloadState;
@@ -8,6 +10,7 @@ use super::model::DownloadState;
 #[tauri::command]
 pub async fn cancel_download(
     state: tauri::State<'_, DownloadState>,
+    db_state: tauri::State<'_, DatabaseState>,
     id: String,
     delete_files: bool,
 ) -> Result<(), String> {
@@ -19,6 +22,9 @@ pub async fn cancel_download(
     };
 
     process::kill_process(pid)?;
+
+    // 真正直接由 Rust 后端写入 SQLite 取消状态，无需前端调度
+    let _ = mark_task_cancelled(&db_state, &id);
 
     if delete_files {
         for file in &files {
