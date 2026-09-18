@@ -44,6 +44,16 @@ pub fn run() {
                 let _ = w.set_focus();
             }
         }))
+        .plugin(
+            // 记住窗口尺寸、位置与最大化状态，下次启动自动恢复
+            tauri_plugin_window_state::Builder::default()
+                .with_state_flags(
+                    tauri_plugin_window_state::StateFlags::SIZE
+                        | tauri_plugin_window_state::StateFlags::POSITION
+                        | tauri_plugin_window_state::StateFlags::MAXIMIZED,
+                )
+                .build(),
+        )
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
@@ -53,6 +63,11 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_deep_link::init())
         .setup(|app| {
+            // 窗口状态恢复（尤其是最大化）可能会让窗口在此时提前显示出来，
+            // 这里重新隐藏，统一交给前端 bootstrap 完成后调用 show()，避免启动白屏闪烁。
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.hide();
+            }
             #[cfg(any(windows, target_os = "linux"))]
             {
                 use tauri_plugin_deep_link::DeepLinkExt;
@@ -122,6 +137,20 @@ pub fn run() {
             db::history::db_remove_history,
             db::history::db_clear_history,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            // 退出前显式销毁窗口，让 WebView2 在进程结束前走完正常的销毁流程。
+            //
+            // Windows 上 Tauri 的 cleanup_before_exit 对窗口只做 hide()、不做销毁，
+            // 进程随即终止，Chromium 注销窗口类时发现 Chrome_WidgetWin_0 仍有窗口，
+            // 于是打印 "Failed to unregister class Chrome_WidgetWin_0. Error = 1412"。
+            //
+            // 该回调在插件 on_event 之后触发，窗口状态此刻已保存完毕，销毁窗口不会丢状态。
+            if let tauri::RunEvent::Exit = event {
+                if let Some(window) = app_handle.get_webview_window("main") {
+                    let _ = window.destroy();
+                }
+            }
+        });
 }

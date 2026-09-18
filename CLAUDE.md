@@ -58,3 +58,4 @@ cd src-tauri && cargo check
 - All yt-dlp commands set `PYTHONUTF8=1` environment variable and use `--ignore-config --color never`
 - Deno is optional — used as JS runtime for yt-dlp when installed (`--js-runtimes` flag)
 - Cookie support: text (Netscape format saved to file) or direct file path
+- Window state (size / position / maximized) is persisted by `tauri-plugin-window-state` (`tauri.conf.json` `minWidth`/`minHeight` = 800×600). The plugin is configured with `SIZE | POSITION | MAXIMIZED` only — deliberately **not** `VISIBLE`, because the main window starts with `visible: false` and is shown by the frontend after bootstrap. `lib.rs` re-hides the window at the start of `setup` because restoring a maximized state can surface the hidden window early.

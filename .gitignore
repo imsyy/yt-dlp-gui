@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# AI
+.workbuddy-ai
+.claude
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
