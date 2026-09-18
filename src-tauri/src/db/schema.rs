@@ -1,6 +1,6 @@
 use rusqlite::{Connection, Result};
 
-const CURRENT_SCHEMA_VERSION: i32 = 1;
+const CURRENT_SCHEMA_VERSION: i32 = 2;
 
 /// 获取当前数据库 user_version
 pub fn get_schema_version(conn: &Connection) -> Result<i32> {
@@ -55,6 +55,20 @@ pub fn run_migrations(conn: &Connection) -> Result<()> {
     } else {
         ensure_task_columns(conn)?;
     }
+
+    conn.execute_batch(
+        r#"
+        DROP TABLE IF EXISTS tool_results;
+
+        CREATE TABLE IF NOT EXISTS tool_snapshots (
+            tool TEXT PRIMARY KEY NOT NULL,
+            url TEXT NOT NULL,
+            title TEXT NOT NULL DEFAULT '',
+            result_json TEXT NOT NULL,
+            updated_at INTEGER NOT NULL
+        );
+        "#,
+    )?;
 
     Ok(())
 }

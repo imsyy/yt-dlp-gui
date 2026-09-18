@@ -127,6 +127,7 @@ declare module 'vue' {
     SetupModal: typeof import('./src/components/SetupModal.vue')['default']
     SubtitleCard: typeof import('./src/components/home/SubtitleCard.vue')['default']
     ToolManager: typeof import('./src/components/ToolManager.vue')['default']
+    ToolUrlInput: typeof import('./src/components/toolbox/ToolUrlInput.vue')['default']
     UpdateModal: typeof import('./src/components/UpdateModal.vue')['default']
     VideoInfoCard: typeof import('./src/components/home/VideoInfoCard.vue')['default']
   }

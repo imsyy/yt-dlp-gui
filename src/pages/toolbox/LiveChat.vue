@@ -6,16 +6,20 @@ import { isValidUrl } from "@/utils/validate";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import { useVideoStore } from "@/stores/video";
+import { goToolList, loadToolSnapshot, saveToolSnapshot } from "@/utils/toolbox";
 import { useI18n } from "vue-i18n";
 import type { LiveChatMessage } from "@/types";
 import type { DataTableColumns, DataTableRowKey } from "naive-ui";
 
 const { t } = useI18n();
+const router = useRouter();
 const settingStore = useSettingStore();
 const statusStore = useStatusStore();
 const videoStore = useVideoStore();
-const toolUrl = inject<Ref<string>>("toolUrl")!;
 
+const goBack = () => goToolList(router);
+
+const url = ref("");
 const loading = ref(false);
 const saving = ref(false);
 const messages = ref<LiveChatMessage[]>([]);
@@ -24,7 +28,11 @@ const filterText = ref("");
 const debouncedFilter = refDebounced(filterText, 300);
 const useRegex = ref(false);
 
-const urlValid = computed(() => isValidUrl(toolUrl.value.trim()));
+interface LiveChatSnapshot {
+  messages: LiveChatMessage[];
+}
+
+const urlValid = computed(() => isValidUrl(url.value.trim()));
 
 const fieldDefs = computed(
   () =>
@@ -130,6 +138,7 @@ const rowKey = (row: LiveChatMessage) => row.idx;
 
 /** 获取弹幕数据 */
 const handleFetch = async () => {
+  const trimmedUrl = url.value.trim();
   loading.value = true;
   messages.value = [];
   checkedKeys.value = [];
@@ -137,12 +146,15 @@ const handleFetch = async () => {
   try {
     const { cookieFile, cookieBrowser } = await videoStore.getCookieArgs();
     const result = await invoke<LiveChatMessage[]>("tool_fetch_live_chat", {
-      url: toolUrl.value.trim(),
+      url: trimmedUrl,
       cookieFile,
       cookieBrowser,
       proxy: settingStore.proxy || null,
     });
     messages.value = result;
+    if (result.length > 0) {
+      void saveToolSnapshot("livechat", trimmedUrl, "", { messages: result });
+    }
   } catch (e: unknown) {
     const msg = String(e);
     if (/err_ytdlp_not_installed/.test(msg)) {
@@ -157,6 +169,13 @@ const handleFetch = async () => {
     loading.value = false;
   }
 };
+
+onMounted(async () => {
+  const snapshot = await loadToolSnapshot<LiveChatSnapshot>("livechat");
+  if (!snapshot) return;
+  url.value = snapshot.url;
+  messages.value = snapshot.payload.messages;
+});
 
 /** 构建导出数据：有选中导出选中行，否则导出筛选后的全部行 */
 const buildExportData = () => {
@@ -232,7 +251,7 @@ const handleSave = async () => {
 <template>
   <n-flex vertical :size="12">
     <n-flex align="center" :size="8">
-      <n-button strong secondary size="small" @click="$router.back()">
+      <n-button strong secondary size="small" @click="goBack">
         <template #icon>
           <n-icon><icon-mdi-arrow-left /></n-icon>
         </template>
@@ -246,6 +265,7 @@ const handleSave = async () => {
         <n-text depth="3" style="font-size: 13px">
           {{ $t("toolbox.livechatPageDesc") }}
         </n-text>
+        <ToolUrlInput v-model="url" />
         <n-button
           type="primary"
           :loading="loading"

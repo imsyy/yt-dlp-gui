@@ -6,16 +6,20 @@ import { isValidUrl } from "@/utils/validate";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import { useVideoStore } from "@/stores/video";
+import { goToolList, loadToolSnapshot, saveToolSnapshot } from "@/utils/toolbox";
 import { useI18n } from "vue-i18n";
 import type { CommentsInfo, VideoComment } from "@/types";
 import type { DataTableColumns, DataTableRowKey } from "naive-ui";
 
 const { t } = useI18n();
+const router = useRouter();
 const settingStore = useSettingStore();
 const statusStore = useStatusStore();
 const videoStore = useVideoStore();
-const toolUrl = inject<Ref<string>>("toolUrl")!;
 
+const goBack = () => goToolList(router);
+
+const url = ref("");
 const loading = ref(false);
 const saving = ref(false);
 const comments = ref<VideoComment[]>([]);
@@ -33,7 +37,15 @@ const useRegex = ref(false);
 const checkedKeys = ref<DataTableRowKey[]>([]);
 const exportFormat = ref<"json" | "csv">("json");
 
-const urlValid = computed(() => isValidUrl(toolUrl.value.trim()));
+interface CommentsSnapshot {
+  comments: VideoComment[];
+  videoTitle: string;
+  totalCount: number | null;
+  maxComments: number;
+  sortBy: "top" | "new";
+}
+
+const urlValid = computed(() => isValidUrl(url.value.trim()));
 
 const fieldDefs = computed(
   () =>
@@ -164,6 +176,7 @@ const columns = computed<DataTableColumns<VideoComment>>(() => [
 const rowKey = (row: VideoComment) => row.id;
 
 const handleFetch = async () => {
+  const trimmedUrl = url.value.trim();
   loading.value = true;
   comments.value = [];
   checkedKeys.value = [];
@@ -172,7 +185,7 @@ const handleFetch = async () => {
   try {
     const { cookieFile, cookieBrowser } = await videoStore.getCookieArgs();
     const info = await invoke<CommentsInfo>("tool_fetch_comments", {
-      url: toolUrl.value.trim(),
+      url: trimmedUrl,
       maxComments: maxComments.value,
       sort: sortBy.value,
       cookieFile,
@@ -184,6 +197,14 @@ const handleFetch = async () => {
     comments.value = info.comments || [];
     if (comments.value.length === 0) {
       window.$message.warning(t("toolbox.noCommentsFound"));
+    } else {
+      void saveToolSnapshot("comments", trimmedUrl, videoTitle.value, {
+        comments: comments.value,
+        videoTitle: videoTitle.value,
+        totalCount: totalCount.value,
+        maxComments: maxComments.value,
+        sortBy: sortBy.value,
+      } satisfies CommentsSnapshot);
     }
   } catch (e: unknown) {
     const msg = String(e);
@@ -199,6 +220,17 @@ const handleFetch = async () => {
     loading.value = false;
   }
 };
+
+onMounted(async () => {
+  const snapshot = await loadToolSnapshot<CommentsSnapshot>("comments");
+  if (!snapshot) return;
+  url.value = snapshot.url;
+  comments.value = snapshot.payload.comments;
+  videoTitle.value = snapshot.payload.videoTitle || snapshot.title;
+  totalCount.value = snapshot.payload.totalCount;
+  maxComments.value = snapshot.payload.maxComments;
+  sortBy.value = snapshot.payload.sortBy;
+});
 
 const buildExportData = () => {
   const keys = selectedFields.value;
@@ -276,7 +308,7 @@ const handleSave = async () => {
 <template>
   <n-flex vertical :size="12">
     <n-flex align="center" :size="8">
-      <n-button strong secondary size="small" @click="$router.back()">
+      <n-button strong secondary size="small" @click="goBack">
         <template #icon>
           <n-icon><icon-mdi-arrow-left /></n-icon>
         </template>
@@ -290,6 +322,7 @@ const handleSave = async () => {
         <n-text depth="3" style="font-size: 13px">
           {{ $t("toolbox.commentsPageDesc") }}
         </n-text>
+        <ToolUrlInput v-model="url" />
         <n-flex align="center" :size="8" :wrap="false">
           <n-flex align="center" :size="6">
             <n-text style="font-size: 13px">{{ $t("toolbox.commentMaxCount") }}</n-text>

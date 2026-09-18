@@ -136,6 +136,9 @@ pub fn run() {
             db::history::db_add_history_batch,
             db::history::db_remove_history,
             db::history::db_clear_history,
+            db::tool_snapshots::db_save_tool_snapshot,
+            db::tool_snapshots::db_get_tool_snapshot,
+            db::tool_snapshots::db_clear_tool_snapshot,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

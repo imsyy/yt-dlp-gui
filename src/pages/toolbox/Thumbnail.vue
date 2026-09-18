@@ -6,21 +6,30 @@ import { isValidUrl } from "@/utils/validate";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import { useVideoStore } from "@/stores/video";
+import { goToolList, loadToolSnapshot, saveToolSnapshot } from "@/utils/toolbox";
 import { useI18n } from "vue-i18n";
 import type { ThumbnailInfo, VideoInfo } from "@/types";
 
 const { t } = useI18n();
+const router = useRouter();
 const settingStore = useSettingStore();
 const statusStore = useStatusStore();
 const videoStore = useVideoStore();
-const toolUrl = inject<Ref<string>>("toolUrl")!;
 
+const goBack = () => goToolList(router);
+
+const url = ref("");
 const loading = ref(false);
 const thumbnails = ref<ThumbnailInfo[]>([]);
 const videoTitle = ref("");
 const savingId = ref<string | null>(null);
 
-const urlValid = computed(() => isValidUrl(toolUrl.value.trim()));
+interface ThumbnailSnapshot {
+  thumbnails: ThumbnailInfo[];
+  videoTitle: string;
+}
+
+const urlValid = computed(() => isValidUrl(url.value.trim()));
 
 /** 获取缩略图文件扩展名 */
 const getExtFromUrl = (url: string): string => {
@@ -43,13 +52,14 @@ const getResolutionLabel = (thumb: ThumbnailInfo): string => {
 
 /** 获取视频信息并提取封面列表 */
 const handleFetch = async () => {
+  const trimmedUrl = url.value.trim();
   loading.value = true;
   thumbnails.value = [];
   videoTitle.value = "";
   try {
     const { cookieFile, cookieBrowser } = await videoStore.getCookieArgs();
     const info = await invoke<VideoInfo>("tool_fetch_thumbnails", {
-      url: toolUrl.value.trim(),
+      url: trimmedUrl,
       cookieFile,
       cookieBrowser,
       proxy: settingStore.proxy || null,
@@ -68,8 +78,16 @@ const handleFetch = async () => {
       thumbnails.value = deduped.sort(
         (a, b) => (b.width || 0) * (b.height || 0) - (a.width || 0) * (a.height || 0),
       );
+      void saveToolSnapshot("thumbnail", trimmedUrl, videoTitle.value, {
+        thumbnails: thumbnails.value,
+        videoTitle: videoTitle.value,
+      });
     } else if (info.thumbnail) {
       thumbnails.value = [{ url: info.thumbnail, id: "default" }];
+      void saveToolSnapshot("thumbnail", trimmedUrl, videoTitle.value, {
+        thumbnails: thumbnails.value,
+        videoTitle: videoTitle.value,
+      });
     } else {
       window.$message.warning(t("toolbox.noThumbnailFound"));
     }
@@ -87,6 +105,14 @@ const handleFetch = async () => {
     loading.value = false;
   }
 };
+
+onMounted(async () => {
+  const snapshot = await loadToolSnapshot<ThumbnailSnapshot>("thumbnail");
+  if (!snapshot) return;
+  url.value = snapshot.url;
+  thumbnails.value = snapshot.payload.thumbnails;
+  videoTitle.value = snapshot.payload.videoTitle || snapshot.title;
+});
 
 /** 另存为 */
 const handleSave = async (thumb: ThumbnailInfo) => {
@@ -122,7 +148,7 @@ const handleSave = async (thumb: ThumbnailInfo) => {
 <template>
   <n-flex vertical :size="12">
     <n-flex align="center" :size="8">
-      <n-button strong secondary size="small" @click="$router.back()">
+      <n-button strong secondary size="small" @click="goBack">
         <template #icon>
           <n-icon><icon-mdi-arrow-left /></n-icon>
         </template>
@@ -136,6 +162,7 @@ const handleSave = async (thumb: ThumbnailInfo) => {
         <n-text depth="3" style="font-size: 13px">
           {{ $t("toolbox.thumbnailPageDesc") }}
         </n-text>
+        <ToolUrlInput v-model="url" />
         <n-button
           type="primary"
           :loading="loading"

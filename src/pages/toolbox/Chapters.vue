@@ -7,22 +7,32 @@ import { isValidUrl } from "@/utils/validate";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import { useVideoStore } from "@/stores/video";
+import { goToolList, loadToolSnapshot, saveToolSnapshot } from "@/utils/toolbox";
 import { useI18n } from "vue-i18n";
 import type { Chapter, ChaptersInfo } from "@/types";
 
 const { t } = useI18n();
+const router = useRouter();
 const settingStore = useSettingStore();
 const statusStore = useStatusStore();
 const videoStore = useVideoStore();
-const toolUrl = inject<Ref<string>>("toolUrl")!;
 
+const goBack = () => goToolList(router);
+
+const url = ref("");
 const loading = ref(false);
 const videoTitle = ref("");
 const videoDuration = ref<number | null>(null);
 const chapters = ref<Chapter[]>([]);
 const exportFormat = ref<"json" | "csv">("json");
 
-const urlValid = computed(() => isValidUrl(toolUrl.value.trim()));
+interface ChaptersSnapshot {
+  chapters: Chapter[];
+  videoTitle: string;
+  duration: number | null;
+}
+
+const urlValid = computed(() => isValidUrl(url.value.trim()));
 
 const formatTime = (secs: number): string => {
   if (!Number.isFinite(secs) || secs < 0) return "--:--:--";
@@ -41,6 +51,7 @@ const formatDuration = (start: number, end: number): string => {
 };
 
 const handleFetch = async () => {
+  const trimmedUrl = url.value.trim();
   loading.value = true;
   chapters.value = [];
   videoTitle.value = "";
@@ -48,7 +59,7 @@ const handleFetch = async () => {
   try {
     const { cookieFile, cookieBrowser } = await videoStore.getCookieArgs();
     const info = await invoke<ChaptersInfo>("tool_fetch_chapters", {
-      url: toolUrl.value.trim(),
+      url: trimmedUrl,
       cookieFile,
       cookieBrowser,
       proxy: settingStore.proxy || null,
@@ -58,6 +69,12 @@ const handleFetch = async () => {
     chapters.value = info.chapters || [];
     if (chapters.value.length === 0) {
       window.$message.warning(t("toolbox.noChaptersFound"));
+    } else {
+      void saveToolSnapshot("chapters", trimmedUrl, videoTitle.value, {
+        chapters: chapters.value,
+        videoTitle: videoTitle.value,
+        duration: videoDuration.value,
+      } satisfies ChaptersSnapshot);
     }
   } catch (e: unknown) {
     const msg = String(e);
@@ -73,6 +90,15 @@ const handleFetch = async () => {
     loading.value = false;
   }
 };
+
+onMounted(async () => {
+  const snapshot = await loadToolSnapshot<ChaptersSnapshot>("chapters");
+  if (!snapshot) return;
+  url.value = snapshot.url;
+  chapters.value = snapshot.payload.chapters;
+  videoTitle.value = snapshot.payload.videoTitle || snapshot.title;
+  videoDuration.value = snapshot.payload.duration;
+});
 
 const handleCopy = async (chapter: Chapter) => {
   const text = `${formatTime(chapter.start_time)} - ${formatTime(chapter.end_time)}  ${chapter.title}`;
@@ -136,7 +162,7 @@ const handleSave = async () => {
 <template>
   <n-flex vertical :size="12">
     <n-flex align="center" :size="8">
-      <n-button strong secondary size="small" @click="$router.back()">
+      <n-button strong secondary size="small" @click="goBack">
         <template #icon>
           <n-icon><icon-mdi-arrow-left /></n-icon>
         </template>
@@ -150,6 +176,7 @@ const handleSave = async () => {
         <n-text depth="3" style="font-size: 13px">
           {{ $t("toolbox.chaptersPageDesc") }}
         </n-text>
+        <ToolUrlInput v-model="url" />
         <n-button
           type="primary"
           :loading="loading"

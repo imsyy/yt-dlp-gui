@@ -7,19 +7,23 @@ import { mergeBilingualSrt, mergeBilingualVtt } from "@/utils/subtitle";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import { useVideoStore } from "@/stores/video";
+import { goToolList, loadToolSnapshot, saveToolSnapshot } from "@/utils/toolbox";
 import { useI18n } from "vue-i18n";
 import type { SubtitleInfo, SubtitleTrack } from "@/types";
 import type { SelectOption } from "naive-ui";
 
 const { t } = useI18n();
+const router = useRouter();
 const settingStore = useSettingStore();
 const statusStore = useStatusStore();
 const videoStore = useVideoStore();
-const toolUrl = inject<Ref<string>>("toolUrl")!;
+
+const goBack = () => goToolList(router);
 
 const loading = ref(false);
 const savingKey = ref<string | null>(null);
 const savingBilingual = ref(false);
+const url = ref("");
 const videoTitle = ref("");
 const includeAutoSubs = ref(false);
 const exportFormat = ref("srt");
@@ -36,7 +40,16 @@ const subtitleList = ref<SubItem[]>([]);
 const primaryLang = ref<string | null>(null);
 const secondaryLang = ref<string | null>(null);
 
-const urlValid = computed(() => isValidUrl(toolUrl.value.trim()));
+interface SubtitlesSnapshot {
+  items: SubItem[];
+  videoTitle: string;
+  includeAutoSubs: boolean;
+  exportFormat: string;
+  primaryLang: string | null;
+  secondaryLang: string | null;
+}
+
+const urlValid = computed(() => isValidUrl(url.value.trim()));
 
 const formatOptions = [
   { label: "SRT (.srt)", value: "srt" },
@@ -74,6 +87,7 @@ const langOptions = computed<SelectOption[]>(() =>
 
 /** 获取字幕列表 */
 const handleFetch = async () => {
+  const trimmedUrl = url.value.trim();
   loading.value = true;
   subtitleList.value = [];
   videoTitle.value = "";
@@ -82,7 +96,7 @@ const handleFetch = async () => {
   try {
     const { cookieFile, cookieBrowser } = await videoStore.getCookieArgs();
     const info = await invoke<SubtitleInfo>("tool_fetch_subtitles", {
-      url: toolUrl.value.trim(),
+      url: trimmedUrl,
       cookieFile,
       cookieBrowser,
       proxy: settingStore.proxy || null,
@@ -115,6 +129,15 @@ const handleFetch = async () => {
 
     if (items.length === 0) {
       window.$message.warning(t("toolbox.noSubtitlesFound"));
+    } else {
+      void saveToolSnapshot("subtitles", trimmedUrl, videoTitle.value, {
+        items,
+        videoTitle: videoTitle.value,
+        includeAutoSubs: includeAutoSubs.value,
+        exportFormat: exportFormat.value,
+        primaryLang: primaryLang.value,
+        secondaryLang: secondaryLang.value,
+      } satisfies SubtitlesSnapshot);
     }
   } catch (e: unknown) {
     const msg = String(e);
@@ -130,6 +153,18 @@ const handleFetch = async () => {
     loading.value = false;
   }
 };
+
+onMounted(async () => {
+  const snapshot = await loadToolSnapshot<SubtitlesSnapshot>("subtitles");
+  if (!snapshot) return;
+  url.value = snapshot.url;
+  subtitleList.value = snapshot.payload.items;
+  videoTitle.value = snapshot.payload.videoTitle || snapshot.title;
+  includeAutoSubs.value = snapshot.payload.includeAutoSubs;
+  exportFormat.value = snapshot.payload.exportFormat;
+  primaryLang.value = snapshot.payload.primaryLang;
+  secondaryLang.value = snapshot.payload.secondaryLang;
+});
 
 /** 另存为单个字幕 */
 const handleSave = async (item: SubItem) => {
@@ -239,7 +274,7 @@ const handleSaveBilingual = async () => {
 <template>
   <n-flex vertical :size="12">
     <n-flex align="center" :size="8">
-      <n-button strong secondary size="small" @click="$router.back()">
+      <n-button strong secondary size="small" @click="goBack">
         <template #icon>
           <n-icon><icon-mdi-arrow-left /></n-icon>
         </template>
@@ -253,6 +288,7 @@ const handleSaveBilingual = async () => {
         <n-text depth="3" style="font-size: 13px">
           {{ $t("toolbox.subtitlesPageDesc") }}
         </n-text>
+        <ToolUrlInput v-model="url" />
         <n-button
           type="primary"
           :loading="loading"

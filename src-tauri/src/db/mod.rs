@@ -3,6 +3,7 @@
 pub mod history;
 pub mod schema;
 pub mod tasks;
+pub mod tool_snapshots;
 
 use rusqlite::Connection;
 use std::path::PathBuf;
@@ -99,7 +100,7 @@ mod tests {
             .map(|r| r.unwrap())
             .collect();
 
-        assert_eq!(tables, vec!["parse_history", "tasks"]);
+        assert_eq!(tables, vec!["parse_history", "tasks", "tool_snapshots"]);
     }
 
     #[test]
