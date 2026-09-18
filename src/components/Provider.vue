@@ -42,6 +42,7 @@ import {
 } from "naive-ui";
 import { useI18n } from "vue-i18n";
 import { useSettingStore } from "@/stores/setting";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 // 设置
 const settingStore = useSettingStore();
@@ -73,6 +74,19 @@ const theme = computed(() => {
       ? darkTheme
       : null;
 });
+
+// 同步原生标题栏主题
+const syncNativeTheme = async (): Promise<void> => {
+  try {
+    await getCurrentWindow().setTheme(
+      settingStore.themeMode === "auto" ? null : settingStore.themeMode,
+    );
+  } catch (error) {
+    console.warn("[YDL GUI] failed to sync native window theme:", error);
+  }
+};
+
+watch(() => settingStore.themeMode, () => void syncNativeTheme(), { immediate: true });
 
 // 挂载工具
 const NaiveProviderContent = defineComponent({

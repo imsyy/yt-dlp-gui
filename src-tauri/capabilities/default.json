@@ -11,6 +11,7 @@
     "core:window:allow-set-focus",
     "core:window:allow-unminimize",
     "core:window:allow-set-progress-bar",
+    "core:window:allow-set-theme",
     "opener:default",
     "shell:allow-open",
     "shell:allow-execute",

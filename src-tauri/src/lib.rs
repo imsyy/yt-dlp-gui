@@ -137,20 +137,6 @@ pub fn run() {
             db::history::db_remove_history,
             db::history::db_clear_history,
         ])
-        .build(tauri::generate_context!())
-        .expect("error while building tauri application")
-        .run(|app_handle, event| {
-            // 退出前显式销毁窗口，让 WebView2 在进程结束前走完正常的销毁流程。
-            //
-            // Windows 上 Tauri 的 cleanup_before_exit 对窗口只做 hide()、不做销毁，
-            // 进程随即终止，Chromium 注销窗口类时发现 Chrome_WidgetWin_0 仍有窗口，
-            // 于是打印 "Failed to unregister class Chrome_WidgetWin_0. Error = 1412"。
-            //
-            // 该回调在插件 on_event 之后触发，窗口状态此刻已保存完毕，销毁窗口不会丢状态。
-            if let tauri::RunEvent::Exit = event {
-                if let Some(window) = app_handle.get_webview_window("main") {
-                    let _ = window.destroy();
-                }
-            }
-        });
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }
