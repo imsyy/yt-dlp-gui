@@ -6,7 +6,8 @@ import { isValidUrl } from "@/utils/validate";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import { useVideoStore } from "@/stores/video";
-import { goToolList, loadToolSnapshot, saveToolSnapshot } from "@/utils/toolbox";
+import { goToolList } from "@/utils/toolbox";
+import { useToolTask } from "@/composables/useToolTask";
 import { useI18n } from "vue-i18n";
 import type { ThumbnailInfo, VideoInfo } from "@/types";
 
@@ -19,15 +20,15 @@ const videoStore = useVideoStore();
 const goBack = () => goToolList(router);
 
 const url = ref("");
-const loading = ref(false);
+const {
+  state: taskState,
+  result: taskResult,
+  running: loading,
+  start,
+} = useToolTask<VideoInfo>("thumbnail");
 const thumbnails = ref<ThumbnailInfo[]>([]);
 const videoTitle = ref("");
 const savingId = ref<string | null>(null);
-
-interface ThumbnailSnapshot {
-  thumbnails: ThumbnailInfo[];
-  videoTitle: string;
-}
 
 const urlValid = computed(() => isValidUrl(url.value.trim()));
 
@@ -53,44 +54,13 @@ const getResolutionLabel = (thumb: ThumbnailInfo): string => {
 /** 获取视频信息并提取封面列表 */
 const handleFetch = async () => {
   const trimmedUrl = url.value.trim();
-  loading.value = true;
-  thumbnails.value = [];
-  videoTitle.value = "";
   try {
     const { cookieFile, cookieBrowser } = await videoStore.getCookieArgs();
-    const info = await invoke<VideoInfo>("tool_fetch_thumbnails", {
-      url: trimmedUrl,
+    await start(trimmedUrl, {
       cookieFile,
       cookieBrowser,
       proxy: settingStore.proxy || null,
     });
-    videoTitle.value = info.title || "";
-    const list = info.thumbnails || [];
-    const withSize = list.filter((item) => item.url && item.width && item.height);
-    const seen = new Set<string>();
-    const deduped = withSize.filter((item) => {
-      const key = `${item.width}x${item.height}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-    if (deduped.length > 0) {
-      thumbnails.value = deduped.sort(
-        (a, b) => (b.width || 0) * (b.height || 0) - (a.width || 0) * (a.height || 0),
-      );
-      void saveToolSnapshot("thumbnail", trimmedUrl, videoTitle.value, {
-        thumbnails: thumbnails.value,
-        videoTitle: videoTitle.value,
-      });
-    } else if (info.thumbnail) {
-      thumbnails.value = [{ url: info.thumbnail, id: "default" }];
-      void saveToolSnapshot("thumbnail", trimmedUrl, videoTitle.value, {
-        thumbnails: thumbnails.value,
-        videoTitle: videoTitle.value,
-      });
-    } else {
-      window.$message.warning(t("toolbox.noThumbnailFound"));
-    }
   } catch (e: unknown) {
     const msg = String(e);
     if (/err_ytdlp_not_installed/.test(msg)) {
@@ -101,17 +71,30 @@ const handleFetch = async () => {
     } else {
       showErrorDialog(msg);
     }
-  } finally {
-    loading.value = false;
   }
 };
 
-onMounted(async () => {
-  const snapshot = await loadToolSnapshot<ThumbnailSnapshot>("thumbnail");
-  if (!snapshot) return;
-  url.value = snapshot.url;
-  thumbnails.value = snapshot.payload.thumbnails;
-  videoTitle.value = snapshot.payload.videoTitle || snapshot.title;
+watch(taskState, (state) => {
+  if (state?.url) url.value = state.url;
+});
+
+watch(taskResult, (info) => {
+  if (!info) return;
+  videoTitle.value = info.title || "";
+  const seen = new Set<string>();
+  thumbnails.value = (info.thumbnails || [])
+    .filter((item) => item.url && item.width && item.height)
+    .filter((item) => {
+      const key = `${item.width}x${item.height}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => (b.width || 0) * (b.height || 0) - (a.width || 0) * (a.height || 0));
+  if (thumbnails.value.length === 0 && info.thumbnail) {
+    thumbnails.value = [{ url: info.thumbnail, id: "default" }];
+  }
+  if (thumbnails.value.length === 0) window.$message.warning(t("toolbox.noThumbnailFound"));
 });
 
 /** 另存为 */

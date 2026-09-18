@@ -1,16 +1,17 @@
-//! 直播聊天下载与解析。
+//! 直播聊天下载、流式解析与 JSONL 缓存。
 
+#[cfg(target_os = "windows")]
+use crate::commands::CREATE_NO_WINDOW;
 use crate::{
     commands::{support::append_cookie_proxy_args, support::extract_ytdlp_error},
     utils,
 };
-#[cfg(target_os = "windows")]
-use crate::commands::CREATE_NO_WINDOW;
 use serde_json::Value;
-use tauri::AppHandle;
+use std::path::{Path, PathBuf};
+use tauri::{AppHandle, Manager};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
-/// 直播弹幕消息
-#[derive(serde::Serialize, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct LiveChatMessage {
     pub idx: usize,
     pub time: String,
@@ -22,112 +23,87 @@ pub struct LiveChatMessage {
     pub amount: String,
 }
 
-/// 从单行 JSONL 解析出一条弹幕消息
-fn parse_live_chat_line(line: &str) -> Option<LiveChatMessage> {
-    let v: Value = serde_json::from_str(line).ok()?;
-    let actions = v
-        .pointer("/replayChatItemAction/actions")
-        .and_then(|a| a.as_array())?;
-
-    for action in actions {
-        let item = action.pointer("/addChatItemAction/item")?;
-
-        let (renderer, msg_type) = if let Some(r) = item.get("liveChatTextMessageRenderer") {
-            (r, "text")
-        } else if let Some(r) = item.get("liveChatPaidMessageRenderer") {
-            (r, "paid")
-        } else if let Some(r) = item.get("liveChatMembershipItemRenderer") {
-            (r, "membership")
-        } else {
-            continue;
-        };
-
-        let author = renderer
-            .pointer("/authorName/simpleText")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-
-        let channel_id = renderer
-            .get("authorExternalChannelId")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-
-        let timestamp_usec = renderer
-            .get("timestampUsec")
-            .and_then(|v| v.as_str())
-            .and_then(|s| s.parse::<i64>().ok())
-            .unwrap_or(0);
-
-        let time = renderer
-            .pointer("/timestampText/simpleText")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-
-        let message = extract_runs_text(renderer.pointer("/message/runs"))
-            .or_else(|| extract_runs_text(renderer.pointer("/headerSubtext/runs")))
-            .unwrap_or_default();
-
-        let amount = if msg_type == "paid" {
-            renderer
-                .pointer("/purchaseAmountText/simpleText")
-                .and_then(|v| v.as_str())
-                .unwrap_or("")
-                .to_string()
-        } else {
-            String::new()
-        };
-
-        return Some(LiveChatMessage {
-            idx: 0,
-            time,
-            timestamp_usec,
-            author,
-            channel_id,
-            message,
-            msg_type: msg_type.to_string(),
-            amount,
-        });
-    }
-    None
-}
-
-/// 从 runs 数组中提取拼接文本
-fn extract_runs_text(runs: Option<&Value>) -> Option<String> {
-    let arr = runs?.as_array()?;
-    let text: String = arr
+fn extract_runs_text(value: Option<&Value>) -> Option<String> {
+    let text = value?
+        .as_array()?
         .iter()
-        .filter_map(|r| {
-            r.get("text")
-                .and_then(|t| t.as_str())
-                .map(|s| s.to_string())
-        })
-        .collect::<Vec<_>>()
-        .join("");
-    if text.is_empty() {
-        None
-    } else {
-        Some(text)
-    }
+        .filter_map(|run| run.get("text").and_then(Value::as_str))
+        .collect::<String>();
+    (!text.is_empty()).then_some(text)
 }
 
-/// 获取直播弹幕数据（下载到临时目录，解析后返回结构化数据）
-#[tauri::command]
-pub async fn tool_fetch_live_chat(
-    app: AppHandle,
-    url: String,
-    cookie_file: Option<String>,
-    cookie_browser: Option<String>,
-    proxy: Option<String>,
-) -> Result<Vec<LiveChatMessage>, String> {
-    let ytdlp_path = utils::get_ytdlp_path(&app)?;
-    if !ytdlp_path.exists() {
-        return Err("err_ytdlp_not_installed".to_string());
-    }
+fn parse_live_chat_line(line: &str) -> Option<LiveChatMessage> {
+    let root: Value = serde_json::from_str(line).ok()?;
+    let actions = root
+        .pointer("/replayChatItemAction/actions")
+        .and_then(Value::as_array)?;
+    let item = actions.iter().find_map(|action| {
+        action
+            .pointer("/addChatItemAction/item")
+            .or_else(|| action.pointer("/addLiveChatTickerItemAction/item"))
+    })?;
+    let (renderer, msg_type) = if let Some(renderer) = item.get("liveChatTextMessageRenderer") {
+        (renderer, "text")
+    } else if let Some(renderer) = item.get("liveChatPaidMessageRenderer") {
+        (renderer, "paid")
+    } else if let Some(renderer) = item.get("liveChatMembershipItemRenderer") {
+        (renderer, "membership")
+    } else {
+        return None;
+    };
 
-    // 创建临时目录
+    let author = renderer
+        .pointer("/authorName/simpleText")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_owned();
+    let channel_id = renderer
+        .get("authorExternalChannelId")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_owned();
+    let timestamp_usec = renderer
+        .get("timestampUsec")
+        .and_then(Value::as_str)
+        .and_then(|value| value.parse::<i64>().ok())
+        .unwrap_or_default();
+    let time = renderer
+        .pointer("/timestampText/simpleText")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_owned();
+    let message = extract_runs_text(renderer.pointer("/message/runs"))
+        .or_else(|| extract_runs_text(renderer.pointer("/headerSubtext/runs")))
+        .unwrap_or_default();
+    let amount = renderer
+        .pointer("/purchaseAmountText/simpleText")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_owned();
+
+    Some(LiveChatMessage {
+        idx: 0,
+        time,
+        timestamp_usec,
+        author,
+        channel_id,
+        message,
+        msg_type: msg_type.to_owned(),
+        amount,
+    })
+}
+
+async fn download_live_chat(
+    app: &AppHandle,
+    url: &str,
+    cookie_file: Option<&str>,
+    cookie_browser: Option<&str>,
+    proxy: Option<&str>,
+) -> Result<PathBuf, String> {
+    let ytdlp_path = utils::get_ytdlp_path(app)?;
+    if !ytdlp_path.exists() {
+        return Err("err_ytdlp_not_installed".into());
+    }
     let temp_dir = std::env::temp_dir().join(format!(
         "ytdlp-livechat-{}",
         std::time::SystemTime::now()
@@ -137,100 +113,126 @@ pub async fn tool_fetch_live_chat(
     ));
     tokio::fs::create_dir_all(&temp_dir)
         .await
-        .map_err(|e| format!("err_create_dir:{}", e))?;
-
-    let temp_path = temp_dir.to_string_lossy().to_string();
-    let output_template = format!("{}/%(title).200s.%(ext)s", temp_path);
-
+        .map_err(|error| format!("err_create_dir:{error}"))?;
     let mut args = vec![
-        "--skip-download".to_string(),
-        "--ignore-config".to_string(),
-        "--color".to_string(),
-        "never".to_string(),
-        "--no-warnings".to_string(),
-        "--socket-timeout".to_string(),
-        "15".to_string(),
-        "--retries".to_string(),
-        "3".to_string(),
-        "--write-subs".to_string(),
-        "--sub-langs".to_string(),
-        "live_chat".to_string(),
-        "-o".to_string(),
-        output_template,
+        "--skip-download".into(),
+        "--ignore-config".into(),
+        "--color".into(),
+        "never".into(),
+        "--no-warnings".into(),
+        "--socket-timeout".into(),
+        "15".into(),
+        "--retries".into(),
+        "3".into(),
+        "--write-subs".into(),
+        "--sub-langs".into(),
+        "live_chat".into(),
+        "-o".into(),
+        format!("{}/%(title).200s.%(ext)s", temp_dir.to_string_lossy()),
     ];
-    args.extend(utils::build_js_runtime_args(&app));
-    args.extend(utils::build_ffmpeg_location_args(&app));
-    args.extend(utils::build_plugin_args(&app));
-    append_cookie_proxy_args(
-        &mut args,
-        cookie_file.as_deref(),
-        cookie_browser.as_deref(),
-        proxy.as_deref(),
-    );
-    args.push(url);
+    args.extend(utils::build_js_runtime_args(app));
+    args.extend(utils::build_ffmpeg_location_args(app));
+    args.extend(utils::build_plugin_args(app));
+    append_cookie_proxy_args(&mut args, cookie_file, cookie_browser, proxy);
+    args.push(url.to_owned());
 
-    let mut cmd = tokio::process::Command::new(&ytdlp_path);
-    cmd.args(&args)
+    let mut command = tokio::process::Command::new(ytdlp_path);
+    command
+        .args(&args)
         .env("PYTHONUTF8", "1")
-        .env("PYTHONIOENCODING", "utf-8");
+        .env("PYTHONIOENCODING", "utf-8")
+        .kill_on_drop(false);
     #[cfg(target_os = "windows")]
-    cmd.creation_flags(CREATE_NO_WINDOW);
-
-    let output = match cmd.output().await {
-        Ok(output) => output,
-        Err(e) => {
-            let _ = tokio::fs::remove_dir_all(&temp_dir).await;
-            return Err(format!("err_run_ytdlp:{}", e));
-        }
-    };
-
+    command.creation_flags(CREATE_NO_WINDOW);
+    let output = command
+        .output()
+        .await
+        .map_err(|error| format!("err_run_ytdlp:{error}"))?;
     if !output.status.success() {
-        let _ = tokio::fs::remove_dir_all(&temp_dir).await;
         let stderr = String::from_utf8_lossy(&output.stderr);
+        let _ = tokio::fs::remove_dir_all(&temp_dir).await;
         return Err(extract_ytdlp_error(&stderr));
     }
-
-    // 解析完成后统一清理临时目录
-    let result = parse_live_chat_dir(&temp_dir).await;
-    let _ = tokio::fs::remove_dir_all(&temp_dir).await;
-    result
+    Ok(temp_dir)
 }
 
-/// 从临时目录中查找并解析 live_chat 文件
-async fn parse_live_chat_dir(dir: &std::path::Path) -> Result<Vec<LiveChatMessage>, String> {
-    let mut chat_file = None;
-    let mut entries = tokio::fs::read_dir(dir)
+async fn find_chat_file(directory: &Path) -> Result<PathBuf, String> {
+    let mut entries = tokio::fs::read_dir(directory)
         .await
-        .map_err(|e| format!("err_read_dir:{}", e))?;
-
+        .map_err(|error| format!("err_read_livechat:{error}"))?;
     while let Some(entry) = entries
         .next_entry()
         .await
-        .map_err(|e| format!("err_read_file_list:{}", e))?
+        .map_err(|error| format!("err_read_livechat:{error}"))?
     {
         let name = entry.file_name().to_string_lossy().to_string();
         if name.contains("live_chat") && name.ends_with(".json") {
-            chat_file = Some(entry.path());
-            break;
+            return Ok(entry.path());
         }
     }
+    Err("err_livechat_not_found".into())
+}
 
-    let chat_file = chat_file.ok_or("err_livechat_not_found".to_string())?;
-
-    let content = tokio::fs::read_to_string(&chat_file)
-        .await
-        .map_err(|e| format!("err_read_livechat:{}", e))?;
-
-    let mut messages: Vec<LiveChatMessage> =
-        content.lines().filter_map(parse_live_chat_line).collect();
-
-    for (i, msg) in messages.iter_mut().enumerate() {
-        msg.idx = i;
+pub(crate) async fn fetch_live_chat_to_jsonl(
+    app: &AppHandle,
+    url: &str,
+    cookie_file: Option<&str>,
+    cookie_browser: Option<&str>,
+    proxy: Option<&str>,
+    run_id: &str,
+) -> Result<(String, i64), String> {
+    let temp_dir = download_live_chat(app, url, cookie_file, cookie_browser, proxy).await?;
+    let result = async {
+        let source = find_chat_file(&temp_dir).await?;
+        let relative = format!("tool-results/livechat/{run_id}.jsonl");
+        let final_path = app
+            .path()
+            .app_data_dir()
+            .map_err(|error| error.to_string())?
+            .join(&relative);
+        let part_path = final_path.with_extension("jsonl.part");
+        if let Some(parent) = final_path.parent() {
+            tokio::fs::create_dir_all(parent)
+                .await
+                .map_err(|error| error.to_string())?;
+        }
+        let input = tokio::fs::File::open(source)
+            .await
+            .map_err(|error| format!("err_read_livechat:{error}"))?;
+        let mut lines = BufReader::new(input).lines();
+        let mut output = tokio::fs::File::create(&part_path)
+            .await
+            .map_err(|error| error.to_string())?;
+        let mut total = 0usize;
+        while let Some(line) = lines
+            .next_line()
+            .await
+            .map_err(|error| format!("err_read_livechat:{error}"))?
+        {
+            let Some(mut message) = parse_live_chat_line(&line) else {
+                continue;
+            };
+            message.idx = total;
+            let mut encoded = serde_json::to_vec(&message).map_err(|error| error.to_string())?;
+            encoded.push(b'\n');
+            output
+                .write_all(&encoded)
+                .await
+                .map_err(|error| error.to_string())?;
+            total += 1;
+        }
+        output.flush().await.map_err(|error| error.to_string())?;
+        drop(output);
+        if total == 0 {
+            let _ = tokio::fs::remove_file(&part_path).await;
+            return Err("err_livechat_empty".into());
+        }
+        tokio::fs::rename(part_path, final_path)
+            .await
+            .map_err(|error| error.to_string())?;
+        Ok((relative, total as i64))
     }
-
-    if messages.is_empty() {
-        return Err("err_livechat_empty".to_string());
-    }
-
-    Ok(messages)
+    .await;
+    let _ = tokio::fs::remove_dir_all(temp_dir).await;
+    result
 }

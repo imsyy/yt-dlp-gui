@@ -3,7 +3,7 @@
 pub mod history;
 pub mod schema;
 pub mod tasks;
-pub mod tool_snapshots;
+pub mod tool_tasks;
 
 use rusqlite::Connection;
 use std::path::PathBuf;
@@ -100,7 +100,57 @@ mod tests {
             .map(|r| r.unwrap())
             .collect();
 
-        assert_eq!(tables, vec!["parse_history", "tasks", "tool_snapshots"]);
+        assert_eq!(
+            tables,
+            vec!["parse_history", "tasks", "tool_results", "tool_task_states"]
+        );
+    }
+
+    #[test]
+    fn test_tool_task_state_and_latest_result_are_separate() {
+        let conn = Connection::open_in_memory().unwrap();
+        schema::run_migrations(&conn).unwrap();
+        let state = DatabaseState {
+            conn: Mutex::new(conn),
+            db_path: PathBuf::from(":memory:"),
+        };
+
+        let running = tool_tasks::start_state(
+            &state,
+            "chapters",
+            "chapters_run_1",
+            "https://example.com/video",
+        )
+        .unwrap();
+        assert_eq!(running.status, "running");
+        assert!(tool_tasks::get_result(&state, "chapters").unwrap().is_none());
+
+        tool_tasks::save_json_result(
+            &state,
+            "chapters",
+            "chapters_run_1",
+            r#"{"chapters":[]}"#,
+            0,
+        )
+        .unwrap();
+        let completed = tool_tasks::finish_state(
+            &state,
+            "chapters",
+            "chapters_run_1",
+            "completed",
+            None,
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(completed.status, "completed");
+        assert_eq!(
+            tool_tasks::get_result(&state, "chapters")
+                .unwrap()
+                .unwrap()
+                .0
+                .run_id,
+            "chapters_run_1"
+        );
     }
 
     #[test]

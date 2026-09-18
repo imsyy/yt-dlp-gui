@@ -6,7 +6,8 @@ import { isValidUrl } from "@/utils/validate";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import { useVideoStore } from "@/stores/video";
-import { goToolList, loadToolSnapshot, saveToolSnapshot } from "@/utils/toolbox";
+import { goToolList } from "@/utils/toolbox";
+import { useToolTask } from "@/composables/useToolTask";
 import { useI18n } from "vue-i18n";
 import type { LiveChatMessage } from "@/types";
 import type { DataTableColumns, DataTableRowKey } from "naive-ui";
@@ -20,7 +21,7 @@ const videoStore = useVideoStore();
 const goBack = () => goToolList(router);
 
 const url = ref("");
-const loading = ref(false);
+const { state: taskState, resultMeta, running: loading, start } = useToolTask<never>("livechat");
 const saving = ref(false);
 const messages = ref<LiveChatMessage[]>([]);
 const checkedKeys = ref<DataTableRowKey[]>([]);
@@ -28,9 +29,17 @@ const filterText = ref("");
 const debouncedFilter = refDebounced(filterText, 300);
 const useRegex = ref(false);
 
-interface LiveChatSnapshot {
-  messages: LiveChatMessage[];
+interface LiveChatPage {
+  items: LiveChatMessage[];
+  nextCursor: number | null;
+  hasMore: boolean;
+  total: number;
 }
+
+const pageLoading = ref(false);
+const nextCursor = ref<number | null>(null);
+const hasMore = ref(false);
+const totalCount = ref(0);
 
 const urlValid = computed(() => isValidUrl(url.value.trim()));
 
@@ -111,8 +120,13 @@ const filteredMessages = computed(() => {
   return messages.value.filter((m) => re.test(m.message) || re.test(m.author));
 });
 
-watch(debouncedFilter, () => {
+watch(debouncedFilter, async () => {
   checkedKeys.value = [];
+  await loadPage(true);
+});
+
+watch(useRegex, async () => {
+  if (!regexError.value) await loadPage(true);
 });
 
 const columns = computed<DataTableColumns<LiveChatMessage>>(() => [
@@ -139,22 +153,14 @@ const rowKey = (row: LiveChatMessage) => row.idx;
 /** 获取弹幕数据 */
 const handleFetch = async () => {
   const trimmedUrl = url.value.trim();
-  loading.value = true;
-  messages.value = [];
   checkedKeys.value = [];
-  filterText.value = "";
   try {
     const { cookieFile, cookieBrowser } = await videoStore.getCookieArgs();
-    const result = await invoke<LiveChatMessage[]>("tool_fetch_live_chat", {
-      url: trimmedUrl,
+    await start(trimmedUrl, {
       cookieFile,
       cookieBrowser,
       proxy: settingStore.proxy || null,
     });
-    messages.value = result;
-    if (result.length > 0) {
-      void saveToolSnapshot("livechat", trimmedUrl, "", { messages: result });
-    }
   } catch (e: unknown) {
     const msg = String(e);
     if (/err_ytdlp_not_installed/.test(msg)) {
@@ -165,16 +171,36 @@ const handleFetch = async () => {
     } else {
       showErrorDialog(msg);
     }
-  } finally {
-    loading.value = false;
   }
 };
 
-onMounted(async () => {
-  const snapshot = await loadToolSnapshot<LiveChatSnapshot>("livechat");
-  if (!snapshot) return;
-  url.value = snapshot.url;
-  messages.value = snapshot.payload.messages;
+const loadPage = async (reset = false) => {
+  const meta = resultMeta.value;
+  if (!meta || meta.resultType !== "paged" || pageLoading.value) return;
+  pageLoading.value = true;
+  try {
+    const page = await invoke<LiveChatPage>("tool_read_live_chat_page", {
+      runId: meta.runId,
+      cursor: reset ? null : nextCursor.value,
+      limit: 200,
+      query: debouncedFilter.value.trim() || null,
+      useRegex: useRegex.value,
+    });
+    messages.value = reset ? page.items : [...messages.value, ...page.items];
+    nextCursor.value = page.nextCursor;
+    hasMore.value = page.hasMore;
+    totalCount.value = page.total;
+  } finally {
+    pageLoading.value = false;
+  }
+};
+
+watch(taskState, (state) => {
+  if (state?.url) url.value = state.url;
+});
+
+watch(resultMeta, async (meta) => {
+  if (meta?.resultType === "paged") await loadPage(true);
 });
 
 /** 构建导出数据：有选中导出选中行，否则导出筛选后的全部行 */
@@ -216,7 +242,7 @@ const exportCsv = (data: Record<string, unknown>[]) => {
 /** 导出条数提示 */
 const exportCount = computed(() => {
   if (checkedKeys.value.length > 0) return checkedKeys.value.length;
-  return filteredMessages.value.length;
+  return filterText.value ? filteredMessages.value.length : totalCount.value;
 });
 
 /** 另存为文件 */
@@ -236,9 +262,20 @@ const handleSave = async () => {
 
   saving.value = true;
   try {
-    const data = buildExportData();
-    const content = ext === "json" ? exportJson(data) : exportCsv(data);
-    await invoke("tool_save_text_to_file", { content, filePath });
+    if (checkedKeys.value.length === 0 && resultMeta.value) {
+      await invoke("tool_export_live_chat", {
+        runId: resultMeta.value.runId,
+        filePath,
+        format: ext,
+        selectedFields: selectedFields.value,
+        query: filterText.value.trim() || null,
+        useRegex: useRegex.value,
+      });
+    } else {
+      const data = buildExportData();
+      const content = ext === "json" ? exportJson(data) : exportCsv(data);
+      await invoke("tool_save_text_to_file", { content, filePath });
+    }
     window.$message.success(t("toolbox.chatDataSaved"));
   } catch (e: unknown) {
     window.$message.error(t("common.saveFailed", { e }));
@@ -280,11 +317,7 @@ const handleSave = async () => {
       </n-flex>
     </n-card>
 
-    <n-card
-      v-if="messages.length"
-      size="small"
-      :title="$t('toolbox.chatCount', { n: messages.length })"
-    >
+    <n-card v-if="messages.length" size="small" :title="$t('toolbox.chatCount', { n: totalCount })">
       <template #header-extra>
         <n-flex align="center" :size="8">
           <n-popover trigger="click" placement="bottom-end">
@@ -385,6 +418,9 @@ const handleSave = async () => {
           bordered
           @update:checked-row-keys="(keys: DataTableRowKey[]) => (checkedKeys = keys)"
         />
+        <n-button v-if="hasMore" block secondary :loading="pageLoading" @click="loadPage(false)">
+          {{ $t("common.loadMore") }}
+        </n-button>
       </n-flex>
     </n-card>
   </n-flex>

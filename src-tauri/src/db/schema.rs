@@ -1,109 +1,128 @@
 use rusqlite::{Connection, Result};
 
-const CURRENT_SCHEMA_VERSION: i32 = 2;
+const CURRENT_SCHEMA_VERSION: i32 = 4;
 
-/// 获取当前数据库 user_version
 pub fn get_schema_version(conn: &Connection) -> Result<i32> {
     conn.query_row("PRAGMA user_version", [], |row| row.get(0))
 }
 
-/// 执行数据表与索引初始化与版本迁移
 pub fn run_migrations(conn: &Connection) -> Result<()> {
     let current_version = get_schema_version(conn)?;
 
-    if current_version < CURRENT_SCHEMA_VERSION {
-        conn.execute_batch(
-            r#"
-            -- 核心下载任务表
-            CREATE TABLE IF NOT EXISTS tasks (
-                id TEXT PRIMARY KEY,
-                url TEXT NOT NULL,
-                title TEXT NOT NULL,
-                thumbnail TEXT NOT NULL DEFAULT '',
-                format_label TEXT NOT NULL DEFAULT '',
-                status TEXT NOT NULL,
-                percent REAL NOT NULL DEFAULT 0,
-                speed TEXT NOT NULL DEFAULT '',
-                eta TEXT NOT NULL DEFAULT '',
-                downloaded TEXT NOT NULL DEFAULT '',
-                total TEXT NOT NULL DEFAULT '',
-                file_size_bytes INTEGER,
-                logs TEXT NOT NULL DEFAULT '[]',
-                error TEXT,
-                output_file TEXT,
-                created_at INTEGER NOT NULL,
-                params_json TEXT NOT NULL
-            );
-
-            CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
-            CREATE INDEX IF NOT EXISTS idx_tasks_created_at ON tasks(created_at DESC);
-
-            -- URL 解析历史表（保留最近记录）
-            CREATE TABLE IF NOT EXISTS parse_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                url TEXT UNIQUE NOT NULL,
-                title TEXT NOT NULL,
-                accessed_at INTEGER NOT NULL
-            );
-
-            CREATE INDEX IF NOT EXISTS idx_parse_history_accessed_at ON parse_history(accessed_at DESC);
-            "#,
-        )?;
-
-        ensure_task_columns(conn)?;
-        conn.execute(&format!("PRAGMA user_version = {}", CURRENT_SCHEMA_VERSION), [])?;
-    } else {
-        ensure_task_columns(conn)?;
-    }
-
     conn.execute_batch(
         r#"
-        DROP TABLE IF EXISTS tool_results;
-
-        CREATE TABLE IF NOT EXISTS tool_snapshots (
-            tool TEXT PRIMARY KEY NOT NULL,
+        CREATE TABLE IF NOT EXISTS tasks (
+            id TEXT PRIMARY KEY,
             url TEXT NOT NULL,
-            title TEXT NOT NULL DEFAULT '',
-            result_json TEXT NOT NULL,
-            updated_at INTEGER NOT NULL
+            title TEXT NOT NULL,
+            thumbnail TEXT NOT NULL DEFAULT '',
+            format_label TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL,
+            percent REAL NOT NULL DEFAULT 0,
+            speed TEXT NOT NULL DEFAULT '',
+            eta TEXT NOT NULL DEFAULT '',
+            downloaded TEXT NOT NULL DEFAULT '',
+            total TEXT NOT NULL DEFAULT '',
+            file_size_bytes INTEGER,
+            logs TEXT NOT NULL DEFAULT '[]',
+            error TEXT,
+            output_file TEXT,
+            created_at INTEGER NOT NULL,
+            params_json TEXT NOT NULL
         );
+        CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+        CREATE INDEX IF NOT EXISTS idx_tasks_created_at ON tasks(created_at DESC);
+
+        CREATE TABLE IF NOT EXISTS parse_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            url TEXT UNIQUE NOT NULL,
+            title TEXT NOT NULL,
+            accessed_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_parse_history_accessed_at ON parse_history(accessed_at DESC);
         "#,
     )?;
+    ensure_task_columns(conn)?;
 
+    if current_version < 4 {
+        conn.execute_batch(
+            r#"
+            DROP TABLE IF EXISTS tool_snapshots;
+            DROP TABLE IF EXISTS tool_results;
+
+            CREATE TABLE tool_task_states (
+                tool_id TEXT PRIMARY KEY NOT NULL,
+                run_id TEXT NOT NULL,
+                status TEXT NOT NULL,
+                url TEXT NOT NULL,
+                stage TEXT,
+                progress REAL,
+                error TEXT,
+                started_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            );
+
+            CREATE TABLE tool_results (
+                tool_id TEXT PRIMARY KEY NOT NULL,
+                run_id TEXT NOT NULL,
+                result_type TEXT NOT NULL,
+                result_json TEXT,
+                result_file TEXT,
+                total INTEGER NOT NULL DEFAULT 0,
+                completed_at INTEGER NOT NULL
+            );
+            CREATE INDEX idx_tool_results_run_id ON tool_results(run_id);
+            "#,
+        )?;
+    }
+
+    conn.execute(
+        "UPDATE tool_task_states SET status = 'interrupted', error = 'application restarted', updated_at = ?1 WHERE status = 'running'",
+        [now_millis()],
+    )?;
+    conn.pragma_update(None, "user_version", CURRENT_SCHEMA_VERSION)?;
     Ok(())
 }
 
-/// 兼容补齐 tasks 表缺失字段并严格传播错误
+fn now_millis() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|duration| duration.as_millis() as i64)
+        .unwrap_or_default()
+}
+
 fn ensure_task_columns(conn: &Connection) -> Result<()> {
     let mut stmt = conn.prepare("PRAGMA table_info(tasks)")?;
     let existing_columns: Vec<String> = stmt
         .query_map([], |row| row.get::<_, String>(1))?
         .collect::<Result<Vec<_>, _>>()?;
 
-    if !existing_columns.iter().any(|c| c == "thumbnail") {
+    if !existing_columns.iter().any(|column| column == "thumbnail") {
         conn.execute(
             "ALTER TABLE tasks ADD COLUMN thumbnail TEXT NOT NULL DEFAULT ''",
             [],
         )?;
     }
-    if !existing_columns.iter().any(|c| c == "format_label") {
+    if !existing_columns
+        .iter()
+        .any(|column| column == "format_label")
+    {
         conn.execute(
             "ALTER TABLE tasks ADD COLUMN format_label TEXT NOT NULL DEFAULT ''",
             [],
         )?;
     }
-    if !existing_columns.iter().any(|c| c == "file_size_bytes") {
-        conn.execute(
-            "ALTER TABLE tasks ADD COLUMN file_size_bytes INTEGER",
-            [],
-        )?;
+    if !existing_columns
+        .iter()
+        .any(|column| column == "file_size_bytes")
+    {
+        conn.execute("ALTER TABLE tasks ADD COLUMN file_size_bytes INTEGER", [])?;
     }
-    if !existing_columns.iter().any(|c| c == "logs") {
+    if !existing_columns.iter().any(|column| column == "logs") {
         conn.execute(
             "ALTER TABLE tasks ADD COLUMN logs TEXT NOT NULL DEFAULT '[]'",
             [],
         )?;
     }
-
     Ok(())
 }

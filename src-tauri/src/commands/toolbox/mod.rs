@@ -5,6 +5,7 @@ mod comments;
 mod live_chat;
 mod runner;
 mod subtitles;
+mod tasks;
 mod text;
 mod thumbnails;
 
@@ -12,5 +13,6 @@ pub use chapters::*;
 pub use comments::*;
 pub use live_chat::*;
 pub use subtitles::*;
+pub use tasks::*;
 pub use text::*;
 pub use thumbnails::*;

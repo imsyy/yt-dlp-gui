@@ -7,7 +7,8 @@ import { isValidUrl } from "@/utils/validate";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import { useVideoStore } from "@/stores/video";
-import { goToolList, loadToolSnapshot, saveToolSnapshot } from "@/utils/toolbox";
+import { goToolList } from "@/utils/toolbox";
+import { useToolTask } from "@/composables/useToolTask";
 import { useI18n } from "vue-i18n";
 import type { Chapter, ChaptersInfo } from "@/types";
 
@@ -20,17 +21,16 @@ const videoStore = useVideoStore();
 const goBack = () => goToolList(router);
 
 const url = ref("");
-const loading = ref(false);
+const {
+  state: taskState,
+  result: taskResult,
+  running: loading,
+  start,
+} = useToolTask<ChaptersInfo>("chapters");
 const videoTitle = ref("");
 const videoDuration = ref<number | null>(null);
 const chapters = ref<Chapter[]>([]);
 const exportFormat = ref<"json" | "csv">("json");
-
-interface ChaptersSnapshot {
-  chapters: Chapter[];
-  videoTitle: string;
-  duration: number | null;
-}
 
 const urlValid = computed(() => isValidUrl(url.value.trim()));
 
@@ -52,30 +52,13 @@ const formatDuration = (start: number, end: number): string => {
 
 const handleFetch = async () => {
   const trimmedUrl = url.value.trim();
-  loading.value = true;
-  chapters.value = [];
-  videoTitle.value = "";
-  videoDuration.value = null;
   try {
     const { cookieFile, cookieBrowser } = await videoStore.getCookieArgs();
-    const info = await invoke<ChaptersInfo>("tool_fetch_chapters", {
-      url: trimmedUrl,
+    await start(trimmedUrl, {
       cookieFile,
       cookieBrowser,
       proxy: settingStore.proxy || null,
     });
-    videoTitle.value = info.title || "";
-    videoDuration.value = info.duration ?? null;
-    chapters.value = info.chapters || [];
-    if (chapters.value.length === 0) {
-      window.$message.warning(t("toolbox.noChaptersFound"));
-    } else {
-      void saveToolSnapshot("chapters", trimmedUrl, videoTitle.value, {
-        chapters: chapters.value,
-        videoTitle: videoTitle.value,
-        duration: videoDuration.value,
-      } satisfies ChaptersSnapshot);
-    }
   } catch (e: unknown) {
     const msg = String(e);
     if (/err_ytdlp_not_installed/.test(msg)) {
@@ -86,18 +69,19 @@ const handleFetch = async () => {
     } else {
       showErrorDialog(msg);
     }
-  } finally {
-    loading.value = false;
   }
 };
 
-onMounted(async () => {
-  const snapshot = await loadToolSnapshot<ChaptersSnapshot>("chapters");
-  if (!snapshot) return;
-  url.value = snapshot.url;
-  chapters.value = snapshot.payload.chapters;
-  videoTitle.value = snapshot.payload.videoTitle || snapshot.title;
-  videoDuration.value = snapshot.payload.duration;
+watch(taskState, (state) => {
+  if (state?.url) url.value = state.url;
+});
+
+watch(taskResult, (info) => {
+  if (!info) return;
+  videoTitle.value = info.title || "";
+  videoDuration.value = info.duration ?? null;
+  chapters.value = info.chapters || [];
+  if (chapters.value.length === 0) window.$message.warning(t("toolbox.noChaptersFound"));
 });
 
 const handleCopy = async (chapter: Chapter) => {

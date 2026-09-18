@@ -6,7 +6,8 @@ import { isValidUrl } from "@/utils/validate";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import { useVideoStore } from "@/stores/video";
-import { goToolList, loadToolSnapshot, saveToolSnapshot } from "@/utils/toolbox";
+import { goToolList } from "@/utils/toolbox";
+import { useToolTask } from "@/composables/useToolTask";
 import { useI18n } from "vue-i18n";
 import type { CommentsInfo, VideoComment } from "@/types";
 import type { DataTableColumns, DataTableRowKey } from "naive-ui";
@@ -20,7 +21,12 @@ const videoStore = useVideoStore();
 const goBack = () => goToolList(router);
 
 const url = ref("");
-const loading = ref(false);
+const {
+  state: taskState,
+  result: taskResult,
+  running: loading,
+  start,
+} = useToolTask<CommentsInfo>("comments");
 const saving = ref(false);
 const comments = ref<VideoComment[]>([]);
 const videoTitle = ref("");
@@ -36,14 +42,6 @@ const debouncedFilter = refDebounced(filterText, 300);
 const useRegex = ref(false);
 const checkedKeys = ref<DataTableRowKey[]>([]);
 const exportFormat = ref<"json" | "csv">("json");
-
-interface CommentsSnapshot {
-  comments: VideoComment[];
-  videoTitle: string;
-  totalCount: number | null;
-  maxComments: number;
-  sortBy: "top" | "new";
-}
 
 const urlValid = computed(() => isValidUrl(url.value.trim()));
 
@@ -177,35 +175,17 @@ const rowKey = (row: VideoComment) => row.id;
 
 const handleFetch = async () => {
   const trimmedUrl = url.value.trim();
-  loading.value = true;
-  comments.value = [];
   checkedKeys.value = [];
   filterText.value = "";
-  totalCount.value = null;
   try {
     const { cookieFile, cookieBrowser } = await videoStore.getCookieArgs();
-    const info = await invoke<CommentsInfo>("tool_fetch_comments", {
-      url: trimmedUrl,
+    await start(trimmedUrl, {
       maxComments: maxComments.value,
       sort: sortBy.value,
       cookieFile,
       cookieBrowser,
       proxy: settingStore.proxy || null,
     });
-    videoTitle.value = info.title || "";
-    totalCount.value = info.comment_count ?? null;
-    comments.value = info.comments || [];
-    if (comments.value.length === 0) {
-      window.$message.warning(t("toolbox.noCommentsFound"));
-    } else {
-      void saveToolSnapshot("comments", trimmedUrl, videoTitle.value, {
-        comments: comments.value,
-        videoTitle: videoTitle.value,
-        totalCount: totalCount.value,
-        maxComments: maxComments.value,
-        sortBy: sortBy.value,
-      } satisfies CommentsSnapshot);
-    }
   } catch (e: unknown) {
     const msg = String(e);
     if (/err_ytdlp_not_installed/.test(msg)) {
@@ -216,20 +196,19 @@ const handleFetch = async () => {
     } else {
       showErrorDialog(msg);
     }
-  } finally {
-    loading.value = false;
   }
 };
 
-onMounted(async () => {
-  const snapshot = await loadToolSnapshot<CommentsSnapshot>("comments");
-  if (!snapshot) return;
-  url.value = snapshot.url;
-  comments.value = snapshot.payload.comments;
-  videoTitle.value = snapshot.payload.videoTitle || snapshot.title;
-  totalCount.value = snapshot.payload.totalCount;
-  maxComments.value = snapshot.payload.maxComments;
-  sortBy.value = snapshot.payload.sortBy;
+watch(taskState, (state) => {
+  if (state?.url) url.value = state.url;
+});
+
+watch(taskResult, (info) => {
+  if (!info) return;
+  videoTitle.value = info.title || "";
+  totalCount.value = info.comment_count ?? null;
+  comments.value = info.comments || [];
+  if (comments.value.length === 0) window.$message.warning(t("toolbox.noCommentsFound"));
 });
 
 const buildExportData = () => {

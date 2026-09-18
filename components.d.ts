@@ -21,7 +21,6 @@ declare module 'vue' {
     DownloadDirCard: typeof import('./src/components/DownloadDirCard.vue')['default']
     DownloadOptionsCard: typeof import('./src/components/home/DownloadOptionsCard.vue')['default']
     ExtraOptionsCard: typeof import('./src/components/home/ExtraOptionsCard.vue')['default']
-    HistoryDrawer: typeof import('./src/components/HistoryDrawer.vue')['default']
     IconMdiAccount: typeof import('~icons/mdi/account')['default']
     IconMdiAlertCircleOutline: typeof import('~icons/mdi/alert-circle-outline')['default']
     IconMdiArrowLeft: typeof import('~icons/mdi/arrow-left')['default']

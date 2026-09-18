@@ -75,6 +75,7 @@ pub fn run() {
             }
             let db_state = db::init_database(app.handle())?;
             app.manage(db_state);
+            tauri::async_runtime::spawn(commands::cleanup_tool_cache(app.handle().clone()));
             app::browser_bridge::start(app.handle().clone());
             app::setup_tray(app)
         })
@@ -113,16 +114,16 @@ pub fn run() {
             commands::delete_file,
             commands::clean_task_residual_files,
             commands::tool_download_thumbnail,
-            commands::tool_fetch_thumbnails,
             commands::tool_save_thumbnail,
             commands::tool_download_subtitles,
-            commands::tool_fetch_subtitles,
             commands::tool_save_subtitle,
             commands::tool_download_text,
             commands::tool_save_text_to_file,
-            commands::tool_fetch_live_chat,
-            commands::tool_fetch_chapters,
-            commands::tool_fetch_comments,
+            commands::tool_start_task,
+            commands::tool_get_task_state,
+            commands::tool_get_result,
+            commands::tool_read_live_chat_page,
+            commands::tool_export_live_chat,
             commands::test_proxy,
             db::db_health_check,
             db::tasks::db_get_tasks,
@@ -136,9 +137,6 @@ pub fn run() {
             db::history::db_add_history_batch,
             db::history::db_remove_history,
             db::history::db_clear_history,
-            db::tool_snapshots::db_save_tool_snapshot,
-            db::tool_snapshots::db_get_tool_snapshot,
-            db::tool_snapshots::db_clear_tool_snapshot,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
