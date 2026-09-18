@@ -107,23 +107,13 @@ onMounted(refresh);
         <n-text strong style="font-size: 15px">{{ $t("plugins.title") }}</n-text>
       </n-flex>
       <n-flex align="center" :size="8">
-        <n-button
-          type="primary"
-          size="small"
-          :loading="importing"
-          @click="handleImport"
-        >
+        <n-button type="primary" size="small" :loading="importing" @click="handleImport">
           <template #icon>
             <n-icon><icon-mdi-folder-open-outline /></n-icon>
           </template>
           {{ $t("plugins.importFromFile") }}
         </n-button>
-        <n-button
-          strong
-          secondary
-          size="small"
-          @click="handleOpenDir"
-        >
+        <n-button strong secondary size="small" @click="handleOpenDir">
           <template #icon>
             <n-icon><icon-mdi-folder-outline /></n-icon>
           </template>
@@ -142,11 +132,7 @@ onMounted(refresh);
       :description="$t('plugins.empty')"
     />
 
-    <n-card
-      v-for="plugin in plugins"
-      :key="plugin.fileName"
-      size="small"
-    >
+    <n-card v-for="plugin in plugins" :key="plugin.fileName" size="small">
       <n-flex align="center" :size="12" :wrap="false">
         <n-flex vertical :size="2" style="flex: 1; min-width: 0">
           <n-flex align="center" :size="8">
@@ -188,4 +174,3 @@ onMounted(refresh);
     </n-card>
   </n-flex>
 </template>
-

@@ -6,8 +6,8 @@ use crate::{
 };
 use serde_json::Value;
 use std::path::{Path, PathBuf};
-use tauri::{AppHandle, Manager};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+use tauri::AppHandle;
+use tokio::io::{AsyncBufReadExt, BufReader};
 
 #[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct LiveChatMessage {
@@ -132,6 +132,7 @@ async fn download_live_chat(
     args.extend(utils::build_js_runtime_args(app));
     args.extend(utils::build_ffmpeg_location_args(app));
     args.extend(utils::build_plugin_args(app));
+    args.extend(utils::build_youtube_extractor_args());
     append_cookie_proxy_args(&mut args, cookie_file, cookie_browser, proxy);
     args.push(url.to_owned());
 
@@ -168,66 +169,38 @@ async fn find_chat_file(directory: &Path) -> Result<PathBuf, String> {
     Err("err_livechat_not_found".into())
 }
 
-pub(crate) async fn fetch_live_chat_to_jsonl(
+pub(crate) async fn fetch_live_chat(
     app: &AppHandle,
+    run_id: &str,
     url: &str,
     cookie_file: Option<&str>,
     cookie_browser: Option<&str>,
     proxy: Option<&str>,
-    run_id: &str,
-) -> Result<(String, i64), String> {
+) -> Result<Vec<LiveChatMessage>, String> {
     let temp_dir = download_live_chat(app, run_id, url, cookie_file, cookie_browser, proxy).await?;
     let result = async {
         let source = find_chat_file(&temp_dir).await?;
-        let relative = format!("tool-results/livechat/{run_id}.jsonl");
-        let final_path = app
-            .path()
-            .app_data_dir()
-            .map_err(|error| error.to_string())?
-            .join(&relative);
-        let part_path = final_path.with_extension("jsonl.part");
-        if let Some(parent) = final_path.parent() {
-            tokio::fs::create_dir_all(parent)
-                .await
-                .map_err(|error| error.to_string())?;
-        }
         let input = tokio::fs::File::open(source)
             .await
             .map_err(|error| format!("err_read_livechat:{error}"))?;
         let mut lines = BufReader::new(input).lines();
-        let mut output = tokio::fs::File::create(&part_path)
-            .await
-            .map_err(|error| error.to_string())?;
-        let mut total = 0usize;
+        let mut messages = Vec::new();
         while let Some(line) = lines
             .next_line()
             .await
             .map_err(|error| format!("err_read_livechat:{error}"))?
         {
-            let Some(mut message) = parse_live_chat_line(&line) else {
-                continue;
-            };
-            message.idx = total;
-            let mut encoded = serde_json::to_vec(&message).map_err(|error| error.to_string())?;
-            encoded.push(b'\n');
-            output
-                .write_all(&encoded)
-                .await
-                .map_err(|error| error.to_string())?;
-            total += 1;
+            if let Some(mut message) = parse_live_chat_line(&line) {
+                message.idx = messages.len();
+                messages.push(message);
+            }
         }
-        output.flush().await.map_err(|error| error.to_string())?;
-        drop(output);
-        if total == 0 {
-            let _ = tokio::fs::remove_file(&part_path).await;
+        if messages.is_empty() {
             return Err("err_livechat_empty".into());
         }
-        tokio::fs::rename(part_path, final_path)
-            .await
-            .map_err(|error| error.to_string())?;
-        Ok((relative, total as i64))
+        Ok(messages)
     }
     .await;
-    let _ = tokio::fs::remove_dir_all(temp_dir).await;
+    let _ = tokio::fs::remove_dir_all(&temp_dir).await;
     result
 }

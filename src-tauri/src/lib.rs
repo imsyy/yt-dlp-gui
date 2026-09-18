@@ -126,8 +126,6 @@ pub fn run() {
             commands::tool_get_running_tasks,
             commands::tool_cancel_task,
             commands::tool_get_result,
-            commands::tool_read_live_chat_page,
-            commands::tool_export_live_chat,
             commands::test_proxy,
             db::db_health_check,
             db::tasks::db_get_tasks,

@@ -23,29 +23,17 @@ const goBack = () => goToolList(router);
 const url = ref("");
 const {
   state: taskState,
-  resultMeta,
+  result: taskResult,
   running: loading,
   start,
   cancel,
-} = useToolTask<never>("livechat");
+} = useToolTask<LiveChatMessage[]>("livechat");
 const saving = ref(false);
 const messages = ref<LiveChatMessage[]>([]);
 const checkedKeys = ref<DataTableRowKey[]>([]);
 const filterText = ref("");
 const debouncedFilter = refDebounced(filterText, 300);
 const useRegex = ref(false);
-
-interface LiveChatPage {
-  items: LiveChatMessage[];
-  nextCursor: number | null;
-  hasMore: boolean;
-  total: number;
-}
-
-const pageLoading = ref(false);
-const nextCursor = ref<number | null>(null);
-const hasMore = ref(false);
-const totalCount = ref(0);
 
 const urlValid = computed(() => isValidUrl(url.value.trim()));
 
@@ -126,13 +114,8 @@ const filteredMessages = computed(() => {
   return messages.value.filter((m) => re.test(m.message) || re.test(m.author));
 });
 
-watch(debouncedFilter, async () => {
+watch([debouncedFilter, useRegex], () => {
   checkedKeys.value = [];
-  await loadPage(true);
-});
-
-watch(useRegex, async () => {
-  if (!regexError.value) await loadPage(true);
 });
 
 const columns = computed<DataTableColumns<LiveChatMessage>>(() => [
@@ -180,27 +163,6 @@ const handleFetch = async () => {
   }
 };
 
-const loadPage = async (reset = false) => {
-  const meta = resultMeta.value;
-  if (!meta || meta.resultType !== "paged" || pageLoading.value) return;
-  pageLoading.value = true;
-  try {
-    const page = await invoke<LiveChatPage>("tool_read_live_chat_page", {
-      runId: meta.runId,
-      cursor: reset ? null : nextCursor.value,
-      limit: 200,
-      query: debouncedFilter.value.trim() || null,
-      useRegex: useRegex.value,
-    });
-    messages.value = reset ? page.items : [...messages.value, ...page.items];
-    nextCursor.value = page.nextCursor;
-    hasMore.value = page.hasMore;
-    totalCount.value = page.total;
-  } finally {
-    pageLoading.value = false;
-  }
-};
-
 const handleStop = async () => {
   try {
     await cancel();
@@ -213,8 +175,9 @@ watch(taskState, (state) => {
   if (state?.url) url.value = state.url;
 });
 
-watch(resultMeta, async (meta) => {
-  if (meta?.resultType === "paged") await loadPage(true);
+watch(taskResult, (items) => {
+  if (!items) return;
+  messages.value = items;
 });
 
 /** 构建导出数据：有选中导出选中行，否则导出筛选后的全部行 */
@@ -256,7 +219,7 @@ const exportCsv = (data: Record<string, unknown>[]) => {
 /** 导出条数提示 */
 const exportCount = computed(() => {
   if (checkedKeys.value.length > 0) return checkedKeys.value.length;
-  return filterText.value ? filteredMessages.value.length : totalCount.value;
+  return filteredMessages.value.length;
 });
 
 /** 另存为文件 */
@@ -276,20 +239,9 @@ const handleSave = async () => {
 
   saving.value = true;
   try {
-    if (checkedKeys.value.length === 0 && resultMeta.value) {
-      await invoke("tool_export_live_chat", {
-        runId: resultMeta.value.runId,
-        filePath,
-        format: ext,
-        selectedFields: selectedFields.value,
-        query: filterText.value.trim() || null,
-        useRegex: useRegex.value,
-      });
-    } else {
-      const data = buildExportData();
-      const content = ext === "json" ? exportJson(data) : exportCsv(data);
-      await invoke("tool_save_text_to_file", { content, filePath });
-    }
+    const data = buildExportData();
+    const content = ext === "json" ? exportJson(data) : exportCsv(data);
+    await invoke("tool_save_text_to_file", { content, filePath });
     window.$message.success(t("toolbox.chatDataSaved"));
   } catch (e: unknown) {
     window.$message.error(t("common.saveFailed", { e }));
@@ -331,7 +283,11 @@ const handleSave = async () => {
       </n-flex>
     </n-card>
 
-    <n-card v-if="messages.length" size="small" :title="$t('toolbox.chatCount', { n: totalCount })">
+    <n-card
+      v-if="messages.length"
+      size="small"
+      :title="$t('toolbox.chatCount', { n: messages.length })"
+    >
       <template #header-extra>
         <n-flex align="center" :size="8">
           <n-popover trigger="click" placement="bottom-end">
@@ -432,9 +388,6 @@ const handleSave = async () => {
           bordered
           @update:checked-row-keys="(keys: DataTableRowKey[]) => (checkedKeys = keys)"
         />
-        <n-button v-if="hasMore" block secondary :loading="pageLoading" @click="loadPage(false)">
-          {{ $t("common.loadMore") }}
-        </n-button>
       </n-flex>
     </n-card>
   </n-flex>

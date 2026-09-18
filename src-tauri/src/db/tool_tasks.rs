@@ -134,6 +134,7 @@ pub fn save_json_result(
     Ok(())
 }
 
+#[allow(dead_code)]
 pub fn save_file_result(
     db: &DatabaseState,
     tool_id: &str,
