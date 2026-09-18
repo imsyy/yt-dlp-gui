@@ -1,18 +1,19 @@
 //! 工具箱命令共用的 yt-dlp 执行器。
 
 use crate::{
-    commands::{support::append_cookie_proxy_args, support::extract_ytdlp_error},
-    platform::process::ProcessRegistry,
+    commands::support::{append_cookie_proxy_args, extract_ytdlp_error, run_ytdlp_capture},
     utils,
 };
-#[cfg(target_os = "windows")]
-use crate::commands::CREATE_NO_WINDOW;
-use std::process::Stdio;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 /// 通用工具命令执行器（--skip-download 模式，不下载视频本身）
 ///
-/// `run_id` 非空时把子进程 pid 登记进 `ProcessRegistry`，使任务可以被取消。
+/// `run_id` 非空时把子进程 pid 登记进 `ProcessRegistry`，使任务可以被取消；
+/// 进程创建、环境变量与 pid 登记/注销的样板统一由 `run_ytdlp_capture` 负责。
+///
+/// 参数较多是 yt-dlp 调用面的客观需要（目标、输出目录、附加参数、三类网络凭据），
+/// 与 `tool_fetch_*` 系列命令保持同一形状，便于对照阅读。
+#[allow(clippy::too_many_arguments)]
 pub(super) async fn run_ytdlp_tool(
     app: &AppHandle,
     run_id: Option<&str>,
@@ -23,11 +24,6 @@ pub(super) async fn run_ytdlp_tool(
     cookie_browser: Option<&str>,
     proxy: Option<&str>,
 ) -> Result<String, String> {
-    let ytdlp_path = utils::get_ytdlp_path(app)?;
-    if !ytdlp_path.exists() {
-        return Err("err_ytdlp_not_installed".to_string());
-    }
-
     let mut args = vec![
         "--skip-download".to_string(),
         "--ignore-config".to_string(),
@@ -56,41 +52,13 @@ pub(super) async fn run_ytdlp_tool(
     append_cookie_proxy_args(&mut args, cookie_file, cookie_browser, proxy);
     args.push(url.to_string());
 
-    let mut cmd = tokio::process::Command::new(&ytdlp_path);
-    cmd.args(&args)
-        .env("PYTHONUTF8", "1")
-        .env("PYTHONIOENCODING", "utf-8")
-        // tokio 的 spawn 默认继承 stdin（std 的 output() 会置空），置空避免 yt-dlp 等待输入挂住
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        // 任务被取消或超时丢弃 future 时兜底回收子进程
-        .kill_on_drop(true);
-    #[cfg(target_os = "windows")]
-    cmd.creation_flags(CREATE_NO_WINDOW);
-
-    let child = cmd
-        .spawn()
-        .map_err(|e| format!("err_run_ytdlp:{}", e))?;
-    if let Some(run_id) = run_id {
-        if let Some(pid) = child.id() {
-            app.state::<ProcessRegistry>().register(run_id, pid);
-        }
-    }
-    let output = child
-        .wait_with_output()
-        .await
-        .map_err(|e| format!("err_run_ytdlp:{}", e))?;
-    if let Some(run_id) = run_id {
-        app.state::<ProcessRegistry>().take(run_id);
-    }
-
+    let output = run_ytdlp_capture(app, run_id, args).await?;
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let stderr = String::from_utf8_lossy(&output.stderr);
 
     if output.status.success() {
         Ok(stdout.to_string())
     } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
         Err(extract_ytdlp_error(&stderr))
     }
 }

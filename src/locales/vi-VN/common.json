@@ -110,6 +110,12 @@
     "dialogTitle": "Lỗi",
     "dialogOk": "OK",
     "showDetail": "Hiện chi tiết",
-    "err_tool_already_running": "Công cụ này đã có tác vụ đang chạy"
+    "err_tool_already_running": "Công cụ này đã có tác vụ đang chạy",
+    "err_plugin_layout": "Chỉ hỗ trợ gói plugin định dạng zip",
+    "err_invalid_plugin_name": "Tên tệp gói plugin không hợp lệ",
+    "err_read_plugin": "Đọc gói plugin thất bại",
+    "err_save_plugin": "Lưu gói plugin thất bại",
+    "err_read_plugin_dir": "Đọc thư mục plugin thất bại",
+    "err_open_dir": "Mở thư mục thất bại"
   }
 }

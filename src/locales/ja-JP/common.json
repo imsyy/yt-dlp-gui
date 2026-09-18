@@ -110,6 +110,12 @@
     "dialogTitle": "エラー",
     "dialogOk": "OK",
     "showDetail": "詳細を表示",
-    "err_tool_already_running": "このツールには実行中のタスクがあります"
+    "err_tool_already_running": "このツールには実行中のタスクがあります",
+    "err_plugin_layout": "zip 形式のプラグインパッケージのみサポートされています",
+    "err_invalid_plugin_name": "プラグインパッケージファイル名が無効です",
+    "err_read_plugin": "プラグインパッケージの読み取りに失敗しました",
+    "err_save_plugin": "プラグインパッケージの保存に失敗しました",
+    "err_read_plugin_dir": "プラグインディレクトリの読み取りに失敗しました",
+    "err_open_dir": "ディレクトリを開けませんでした"
   }
 }

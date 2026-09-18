@@ -110,6 +110,12 @@
     "dialogTitle": "오류",
     "dialogOk": "확인",
     "showDetail": "자세히 보기",
-    "err_tool_already_running": "이 도구에 이미 실행 중인 작업이 있습니다"
+    "err_tool_already_running": "이 도구에 이미 실행 중인 작업이 있습니다",
+    "err_plugin_layout": "zip 형식의 플러그인 패키지만 지원됩니다",
+    "err_invalid_plugin_name": "유효하지 않은 플러그인 파일 이름입니다",
+    "err_read_plugin": "플러그인 패키지 읽기 실패",
+    "err_save_plugin": "플러그인 패키지 저장 실패",
+    "err_read_plugin_dir": "플러그인 디렉터리 읽기 실패",
+    "err_open_dir": "디렉터리 열기 실패"
   }
 }

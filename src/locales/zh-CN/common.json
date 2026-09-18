@@ -111,6 +111,12 @@
     "dialogTitle": "出错了",
     "dialogOk": "确定",
     "showDetail": "查看详情",
-    "err_tool_already_running": "该工具已有任务在执行中"
+    "err_tool_already_running": "该工具已有任务在执行中",
+    "err_plugin_layout": "仅支持 zip 格式的插件包",
+    "err_invalid_plugin_name": "插件包文件名无效",
+    "err_read_plugin": "读取插件包失败",
+    "err_save_plugin": "保存插件包失败",
+    "err_read_plugin_dir": "读取插件目录失败",
+    "err_open_dir": "打开目录失败"
   }
 }

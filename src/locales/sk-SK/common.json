@@ -110,6 +110,12 @@
     "dialogTitle": "Chyba",
     "dialogOk": "OK",
     "showDetail": "Zobraziť podrobnosti",
-    "err_tool_already_running": "Pre tento nástroj už beží úloha"
+    "err_tool_already_running": "Pre tento nástroj už beží úloha",
+    "err_plugin_layout": "Podporované sú len balíky pluginov vo formáte zip",
+    "err_invalid_plugin_name": "Neplatný názov súboru balíka pluginu",
+    "err_read_plugin": "Čítanie balíka pluginu zlyhalo",
+    "err_save_plugin": "Uloženie balíka pluginu zlyhalo",
+    "err_read_plugin_dir": "Čítanie priečinka pluginov zlyhalo",
+    "err_open_dir": "Otvorenie priečinka zlyhalo"
   }
 }

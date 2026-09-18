@@ -110,6 +110,12 @@
     "dialogTitle": "خطأ",
     "dialogOk": "موافق",
     "showDetail": "إظهار التفاصيل",
-    "err_tool_already_running": "هذه الأداة لديها مهمة قيد التنفيذ بالفعل"
+    "err_tool_already_running": "هذه الأداة لديها مهمة قيد التنفيذ بالفعل",
+    "err_plugin_layout": "يتم دعم حزم الإضافات بصيغة zip فقط",
+    "err_invalid_plugin_name": "اسم ملف حزمة الإضافة غير صالح",
+    "err_read_plugin": "فشلت قراءة حزمة الإضافة",
+    "err_save_plugin": "فشل حفظ حزمة الإضافة",
+    "err_read_plugin_dir": "فشلت قراءة مجلد الإضافات",
+    "err_open_dir": "فشل فتح المجلد"
   }
 }

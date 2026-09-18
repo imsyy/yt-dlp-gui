@@ -97,14 +97,21 @@
     "taskInterrupted": "La ejecución anterior se interrumpió al cerrar la aplicación; puedes volver a ejecutarla"
   },
   "plugins": {
-    "title": "Gestión de plugins",
-    "desc": "Gestionar plugins de yt-dlp para ampliar funcionalidades",
-    "pageDesc": "Instala plugins de yt-dlp para ampliar funcionalidades. Los plugins se activan automáticamente tras la instalación.",
-    "install": "Instalar",
-    "uninstall": "Desinstalar",
-    "installSuccess": "Plugin instalado correctamente",
-    "uninstallSuccess": "Plugin desinstalado",
-    "cookieUnlockDesc": "Desbloquea la base de datos de cookies de navegadores Chromium, permitiendo leer cookies sin cerrar el navegador"
+    "title": "Gestor de complementos",
+    "desc": "Importe paquetes de complementos de yt-dlp para ampliar las funciones",
+    "trustWarning": "El código del complemento se ejecuta directamente sin comprobación de seguridad. Asegúrese de que el paquete proceda de una fuente de confianza",
+    "importFromFile": "Importar desde archivo",
+    "openFolder": "Abrir carpeta de complementos",
+    "pickFile": "Seleccionar paquete de complementos",
+    "zipFiles": "Paquete de complementos (zip)",
+    "allFiles": "Todos los archivos",
+    "importSuccess": "Paquete de complementos \"{name}\" importado",
+    "empty": "Aún no se ha importado ningún paquete de complementos",
+    "remove": "Eliminar",
+    "removeConfirm": "¿Seguro que desea eliminar el paquete de complementos \"{name}\"? Sus funciones dejarán de estar disponibles inmediatamente.",
+    "removeSuccess": "Paquete de complementos \"{name}\" eliminado",
+    "typeExtractor": "Extractor",
+    "typePostprocessor": "Postprocesador"
   },
   "browserExt": {
     "title": "Extensión del navegador",

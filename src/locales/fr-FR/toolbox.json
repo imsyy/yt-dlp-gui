@@ -98,13 +98,20 @@
   },
   "plugins": {
     "title": "Gestionnaire de plugins",
-    "desc": "Gérez les plugins yt-dlp pour étendre les fonctionnalités",
-    "pageDesc": "Installez des plugins yt-dlp pour étendre les fonctionnalités. Les plugins prennent effet automatiquement après installation.",
-    "install": "Installer",
-    "uninstall": "Désinstaller",
-    "installSuccess": "Plugin installé avec succès",
-    "uninstallSuccess": "Plugin désinstallé",
-    "cookieUnlockDesc": "Déverrouille la base de données de cookies du navigateur Chromium, permettant l'accès sans fermer le navigateur"
+    "desc": "Importer des packages de plugins yt-dlp pour étendre les fonctionnalités",
+    "trustWarning": "Le code du plugin est exécuté directement sans vérification de sécurité. Assurez-vous que le package provient d'une source fiable",
+    "importFromFile": "Importer depuis un fichier",
+    "openFolder": "Ouvrir le dossier des plugins",
+    "pickFile": "Sélectionner un package de plugin",
+    "zipFiles": "Package de plugin (zip)",
+    "allFiles": "Tous les fichiers",
+    "importSuccess": "Package de plugin « {name} » importé",
+    "empty": "Aucun package de plugin importé pour le moment",
+    "remove": "Supprimer",
+    "removeConfirm": "Voulez-vous vraiment supprimer le package de plugin « {name} » ? Ses fonctionnalités cesseront immédiatement de fonctionner.",
+    "removeSuccess": "Package de plugin « {name} » supprimé",
+    "typeExtractor": "Extracteur",
+    "typePostprocessor": "Post-processeur"
   },
   "browserExt": {
     "title": "Extension de navigateur",

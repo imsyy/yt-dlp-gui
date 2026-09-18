@@ -98,13 +98,20 @@
   },
   "plugins": {
     "title": "Quản lý plugin",
-    "desc": "Quản lý plugin yt-dlp để mở rộng tính năng",
-    "pageDesc": "Cài plugin yt-dlp để mở rộng tính năng. Plugin có hiệu lực ngay sau khi cài.",
-    "install": "Cài đặt",
-    "uninstall": "Gỡ cài đặt",
-    "installSuccess": "Đã cài plugin thành công",
-    "uninstallSuccess": "Đã gỡ plugin",
-    "cookieUnlockDesc": "Mở khóa cơ sở dữ liệu cookie của trình duyệt Chromium, cho phép truy cập mà không cần đóng trình duyệt"
+    "desc": "Nhập gói plugin yt-dlp để mở rộng chức năng",
+    "trustWarning": "Mã plugin được thực thi trực tiếp mà không có kiểm tra bảo mật, vui lòng đảm bảo gói cài đặt đến từ nguồn đáng tin cậy",
+    "importFromFile": "Nhập từ tệp",
+    "openFolder": "Mở thư mục plugin",
+    "pickFile": "Chọn gói plugin",
+    "zipFiles": "Gói plugin (zip)",
+    "allFiles": "Tất cả các tệp",
+    "importSuccess": "Đã nhập gói plugin \"{name}\"",
+    "empty": "Chưa nhập gói plugin nào",
+    "remove": "Xóa",
+    "removeConfirm": "Bạn có chắc chắn muốn xóa gói plugin \"{name}\" không? Các tính năng của nó sẽ ngừng hoạt động ngay lập tức.",
+    "removeSuccess": "Đã xóa gói plugin \"{name}\"",
+    "typeExtractor": "Trình trích xuất",
+    "typePostprocessor": "Trình hậu xử lý"
   },
   "browserExt": {
     "title": "Tiện ích trình duyệt",

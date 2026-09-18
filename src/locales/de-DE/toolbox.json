@@ -97,14 +97,21 @@
     "taskInterrupted": "Der letzte Lauf wurde durch das Beenden der App unterbrochen; Sie können ihn erneut starten"
   },
   "plugins": {
-    "title": "Plugin-Verwaltung",
-    "desc": "yt-dlp-Plugins verwalten, um Funktionen zu erweitern",
-    "pageDesc": "Installiere yt-dlp-Plugins, um Funktionen zu erweitern. Plugins werden nach der Installation automatisch wirksam.",
-    "install": "Installieren",
-    "uninstall": "Deinstallieren",
-    "installSuccess": "Plugin erfolgreich installiert",
-    "uninstallSuccess": "Plugin deinstalliert",
-    "cookieUnlockDesc": "Entsperrt die Cookie-Datenbank von Chromium-Browsern, sodass Cookies ohne Schließen des Browsers gelesen werden können"
+    "title": "Plugin-Manager",
+    "desc": "yt-dlp-Plugin-Pakete importieren, um Funktionen zu erweitern",
+    "trustWarning": "Plugin-Code wird direkt ohne Sicherheitsprüfung ausgeführt. Stellen Sie sicher, dass das Paket aus einer vertrauenswürdigen Quelle stammt",
+    "importFromFile": "Aus Datei importieren",
+    "openFolder": "Plugin-Ordner öffnen",
+    "pickFile": "Plugin-Paket auswählen",
+    "zipFiles": "Plugin-Paket (zip)",
+    "allFiles": "Alle Dateien",
+    "importSuccess": "Plugin-Paket „{name}“ importiert",
+    "empty": "Noch keine Plugin-Pakete importiert",
+    "remove": "Entfernen",
+    "removeConfirm": "Möchten Sie das Plugin-Paket „{name}“ wirklich entfernen? Die Funktionen sind sofort nicht mehr verfügbar.",
+    "removeSuccess": "Plugin-Paket „{name}“ entfernt",
+    "typeExtractor": "Extractor",
+    "typePostprocessor": "Postprozessor"
   },
   "browserExt": {
     "title": "Browser-Erweiterung",

@@ -55,6 +55,50 @@ pub fn build_http_client(proxy: Option<&str>) -> Result<reqwest::Client, String>
         .map_err(|e| format!("err_create_http_client:{}", e))
 }
 
+/// 启动 yt-dlp 子进程并等待结束，返回完整输出。
+///
+/// 统一处理各调用点都需要的那套样板：UTF-8 环境变量、置空 stdin（tokio 的 spawn
+/// 默认继承 stdin，会让 yt-dlp 等待输入挂住）、隐藏 Windows 控制台窗口、
+/// `kill_on_drop` 兜底回收，以及 `run_id` 非空时的 pid 登记/注销。
+///
+/// pid 的注销放在等待结果之外无条件执行：若写在 `?` 之后，等待报错时 pid 会永久
+/// 残留在注册表里，同一个 `run_id` 再也无法被取消。把这段逻辑收进单一函数，
+/// 调用方就无法再写漏。
+pub async fn run_ytdlp_capture(
+    app: &AppHandle,
+    run_id: Option<&str>,
+    args: Vec<String>,
+) -> Result<std::process::Output, String> {
+    let ytdlp_path = utils::get_ytdlp_path(app)?;
+    if !ytdlp_path.exists() {
+        return Err("err_ytdlp_not_installed".to_string());
+    }
+
+    let mut cmd = tokio::process::Command::new(&ytdlp_path);
+    cmd.args(&args)
+        .env("PYTHONUTF8", "1")
+        .env("PYTHONIOENCODING", "utf-8")
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .kill_on_drop(true);
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+
+    let child = cmd.spawn().map_err(|e| format!("err_run_ytdlp:{}", e))?;
+    if let Some(run_id) = run_id {
+        if let Some(pid) = child.id() {
+            app.state::<ProcessRegistry>().register(run_id, pid);
+        }
+    }
+
+    let output = child.wait_with_output().await;
+    if let Some(run_id) = run_id {
+        app.state::<ProcessRegistry>().take(run_id);
+    }
+    output.map_err(|e| format!("err_run_ytdlp:{}", e))
+}
+
 /// 运行 yt-dlp -J 并解析 JSON 输出（用于获取视频信息、封面列表、字幕列表等）
 pub async fn run_ytdlp_json(
     app: &AppHandle,
@@ -77,11 +121,6 @@ pub async fn run_ytdlp_json_tracked(
     cookie_browser: Option<&str>,
     proxy: Option<&str>,
 ) -> Result<Value, String> {
-    let ytdlp_path = utils::get_ytdlp_path(app)?;
-    if !ytdlp_path.exists() {
-        return Err("err_ytdlp_not_installed".to_string());
-    }
-
     let mut args = vec![
         "-J".to_string(),
         "--ignore-config".to_string(),
@@ -106,34 +145,7 @@ pub async fn run_ytdlp_json_tracked(
     append_cookie_proxy_args(&mut args, cookie_file, cookie_browser, proxy);
     args.push(url.to_string());
 
-    let mut cmd = tokio::process::Command::new(&ytdlp_path);
-    cmd.args(&args)
-        .env("PYTHONUTF8", "1")
-        .env("PYTHONIOENCODING", "utf-8")
-        // tokio 的 spawn 默认继承 stdin（std 的 output() 会置空），置空避免 yt-dlp 等待输入挂住
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        // 任务被取消或超时丢弃 future 时兜底回收子进程
-        .kill_on_drop(true);
-    #[cfg(target_os = "windows")]
-    cmd.creation_flags(CREATE_NO_WINDOW);
-
-    let child = cmd
-        .spawn()
-        .map_err(|e| format!("err_run_ytdlp:{}", e))?;
-    if let Some(run_id) = run_id {
-        if let Some(pid) = child.id() {
-            app.state::<ProcessRegistry>().register(run_id, pid);
-        }
-    }
-    let output = child
-        .wait_with_output()
-        .await
-        .map_err(|e| format!("err_run_ytdlp:{}", e))?;
-    if let Some(run_id) = run_id {
-        app.state::<ProcessRegistry>().take(run_id);
-    }
+    let output = run_ytdlp_capture(app, run_id, args).await?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
 
@@ -185,46 +197,6 @@ pub fn extract_ytdlp_error(stderr: &str) -> String {
     } else {
         error_lines.join("\n")
     }
-}
-
-/// 验证文件路径安全性（防止路径遍历攻击）
-/// 确保解析后的路径位于 base_dir 之下
-pub fn validate_path_within(
-    base_dir: &std::path::Path,
-    relative_path: &str,
-) -> Result<std::path::PathBuf, String> {
-    let target = base_dir.join(relative_path);
-    // 标准化路径，消除 .. 等相对路径组件
-    let canonical_base = base_dir
-        .canonicalize()
-        .map_err(|e| format!("err_resolve_path:{}", e))?;
-    // 对于可能不存在的路径，检查其父目录
-    let target_for_check = if target.exists() {
-        target
-            .canonicalize()
-            .map_err(|e| format!("err_resolve_path:{}", e))?
-    } else {
-        // 如果目标不存在，检查其父目录是否在基础目录内
-        let parent = target.parent().ok_or("err_invalid_path")?;
-        if !parent.exists() {
-            // 如果父目录也不存在，至少检查路径组件中没有 ..
-            if relative_path.contains("..") {
-                return Err("err_path_traversal".to_string());
-            }
-            return Ok(base_dir.join(relative_path));
-        }
-        let canonical_parent = parent
-            .canonicalize()
-            .map_err(|e| format!("err_resolve_path:{}", e))?;
-        if !canonical_parent.starts_with(&canonical_base) {
-            return Err("err_path_traversal".to_string());
-        }
-        return Ok(base_dir.join(relative_path));
-    };
-    if !target_for_check.starts_with(&canonical_base) {
-        return Err("err_path_traversal".to_string());
-    }
-    Ok(target_for_check)
 }
 
 #[cfg(test)]

@@ -97,14 +97,21 @@
     "taskInterrupted": "Predchádzajúce spustenie bolo prerušené ukončením aplikácie; môžete ho spustiť znova"
   },
   "plugins": {
-    "title": "Správca doplnkov",
-    "desc": "Spravovať doplnky yt-dlp na rozšírenie funkcionality",
-    "pageDesc": "Nainštalovať doplnky yt-dlp na rozšírenie funkcionality. Doplnky sa aktivujú automaticky po inštalácii.",
-    "install": "Inštalovať",
-    "uninstall": "Odinštalovať",
-    "installSuccess": "Doplnok bol úspešne nainštalovaný",
-    "uninstallSuccess": "Doplnok bol odinštalovaný",
-    "cookieUnlockDesc": "Odomknúť databázu súborov cookie prehliadača Chromium, čím sa umožní prístup k súborom cookie bez zatvorenia prehliadača"
+    "title": "Správca pluginov",
+    "desc": "Importujte balíky pluginov yt-dlp pre rozšírenie funkcií",
+    "trustWarning": "Kód pluginu sa spúšťa priamo bez bezpečnostnej kontroly. Uistite sa, že balík pochádza z dôveryhodného zdroja",
+    "importFromFile": "Importovať zo súboru",
+    "openFolder": "Otvoriť priečinok pluginov",
+    "pickFile": "Vybrať balík pluginu",
+    "zipFiles": "Balík pluginu (zip)",
+    "allFiles": "Všetky súbory",
+    "importSuccess": "Balík pluginu „{name}“ bol importovaný",
+    "empty": "Zatiaľ neboli importované žiadne pluginy",
+    "remove": "Odstrániť",
+    "removeConfirm": "Naozaj chcete odstrániť balík pluginu „{name}“? Jeho funkcie prestanú okamžite fungovať.",
+    "removeSuccess": "Balík pluginu „{name}“ bol odstránený",
+    "typeExtractor": "Extraktor",
+    "typePostprocessor": "Postprocesor"
   },
   "browserExt": {
     "title": "Rozšírenie prehliadača",

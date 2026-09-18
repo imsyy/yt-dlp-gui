@@ -98,13 +98,20 @@
   },
   "plugins": {
     "title": "プラグイン管理",
-    "desc": "yt-dlp プラグインを管理して機能を拡張",
-    "pageDesc": "yt-dlp プラグインをインストールして機能を拡張します。インストール後、自動的に有効になります。",
-    "install": "インストール",
-    "uninstall": "アンインストール",
-    "installSuccess": "プラグインのインストールが完了しました",
-    "uninstallSuccess": "プラグインをアンインストールしました",
-    "cookieUnlockDesc": "Chromium系ブラウザのCookieデータベースをアンロックし、ブラウザを閉じずにCookieを読み取れます"
+    "desc": "yt-dlp プラグインをインポートして機能を拡張",
+    "trustWarning": "プラグインのコードは検証なしで直接実行されます。信頼できるソースのパッケージのみをインポートしてください",
+    "importFromFile": "ファイルからインポート",
+    "openFolder": "プラグインフォルダを開く",
+    "pickFile": "プラグインを選択",
+    "zipFiles": "プラグインパッケージ (zip)",
+    "allFiles": "すべてのファイル",
+    "importSuccess": "プラグイン「{name}」をインポートしました",
+    "empty": "インポートされたプラグインはまだありません",
+    "remove": "削除",
+    "removeConfirm": "プラグイン「{name}」を削除しますか？削除するとそのプラグインの機能は直ちに無効になります。",
+    "removeSuccess": "プラグイン「{name}」を削除しました",
+    "typeExtractor": "エクストラクター",
+    "typePostprocessor": "ポストプロセッサー"
   },
   "browserExt": {
     "title": "ブラウザ拡張機能",

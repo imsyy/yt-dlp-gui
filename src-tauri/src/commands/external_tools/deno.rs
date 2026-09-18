@@ -3,12 +3,11 @@
 use crate::utils;
 #[cfg(target_os = "windows")]
 use crate::commands::CREATE_NO_WINDOW;
-use futures_util::StreamExt;
-use tauri::{AppHandle, Emitter};
+use tauri::AppHandle;
 
 use super::support::{
-    build_tool_status, emit_tool_progress, executable_temp_path, replace_executable,
-    DOWNLOAD_TIMEOUT,
+    build_tool_status, download_to_file_with_progress, emit_tool_progress, executable_temp_path,
+    replace_executable, verify_executable,
 };
 use super::ToolStatus;
 
@@ -24,81 +23,25 @@ async fn download_deno_impl(app: AppHandle, operation: &str) -> Result<(), Strin
     emit_tool_progress(&app, "deno", operation, "downloading", Some(0.0));
     let deno_path = utils::get_managed_deno_path(&app)?;
     let temp_path = executable_temp_path(&deno_path, "download")?;
-    let url = utils::get_deno_download_url();
 
-    let client = reqwest::Client::builder()
-        .timeout(DOWNLOAD_TIMEOUT)
-        .build()
-        .map_err(|e| format!("err_create_http_client:{}", e))?;
-    let response = client
-        .get(url)
-        .send()
-        .await
-        .map_err(|e| format!("err_download_failed:{}", e))?
-        .error_for_status()
-        .map_err(|e| format!("err_download_http_status:{}", e))?;
-
-    let total_size = response.content_length().unwrap_or(0);
-    let mut downloaded: u64 = 0;
-
-    // 下载 zip 到临时文件
+    // 官方发行的是 zip 包，先整包落到同目录临时文件，再从中解压出二进制。
+    // 这里不能用 executable_temp_path：它会把 ".download.zip" 当成扩展名后缀拼错。
     let deno_file_name = deno_path
         .file_name()
         .and_then(|name| name.to_str())
         .ok_or("err_invalid_executable_path")?;
     let zip_path = deno_path.with_file_name(format!("{}.download.zip", deno_file_name));
-    let _ = tokio::fs::remove_file(&zip_path).await;
-    let _ = tokio::fs::remove_file(&temp_path).await;
-    let mut file = tokio::fs::File::create(&zip_path)
-        .await
-        .map_err(|e| format!("err_create_file:{}", e))?;
 
-    let mut stream = response.bytes_stream();
-    while let Some(chunk) = stream.next().await {
-        let chunk = match chunk {
-            Ok(chunk) => chunk,
-            Err(e) => {
-                drop(file);
-                let _ = tokio::fs::remove_file(&zip_path).await;
-                return Err(format!("err_download_error:{}", e));
-            }
-        };
-        if let Err(e) = tokio::io::AsyncWriteExt::write_all(&mut file, &chunk).await {
-            drop(file);
-            let _ = tokio::fs::remove_file(&zip_path).await;
-            return Err(format!("err_write_error:{}", e));
-        }
-
-        downloaded += chunk.len() as u64;
-        let percent = if total_size > 0 {
-            (downloaded as f64 / total_size as f64) * 100.0
-        } else {
-            0.0
-        };
-        let _ = app.emit(
-            "deno-download-progress",
-            serde_json::json!({
-                "percent": percent,
-                "downloaded": downloaded,
-                "total": total_size,
-            }),
-        );
-        emit_tool_progress(&app, "deno", operation, "downloading", Some(percent));
-    }
-
-    // 确保文件写入完成
-    tokio::io::AsyncWriteExt::shutdown(&mut file)
-        .await
-        .map_err(|e| format!("err_flush_file:{}", e))?;
-    drop(file);
-
-    if total_size > 0 && downloaded != total_size {
-        let _ = tokio::fs::remove_file(&zip_path).await;
-        return Err(format!(
-            "err_download_incomplete:expected={},actual={}",
-            total_size, downloaded
-        ));
-    }
+    download_to_file_with_progress(
+        &app,
+        "deno",
+        operation,
+        utils::get_deno_download_url(),
+        &zip_path,
+        0.0,
+        100.0,
+    )
+    .await?;
 
     emit_tool_progress(&app, "deno", operation, "installing", None);
 
@@ -111,7 +54,7 @@ async fn download_deno_impl(app: AppHandle, operation: &str) -> Result<(), Strin
         "deno"
     };
 
-    tokio::task::spawn_blocking(move || {
+    let extracted = tokio::task::spawn_blocking(move || {
         let file =
             std::fs::File::open(&zip_path_clone).map_err(|e| format!("err_open_zip:{}", e))?;
         let mut archive = zip::ZipArchive::new(file).map_err(|e| format!("err_read_zip:{}", e))?;
@@ -120,6 +63,7 @@ async fn download_deno_impl(app: AppHandle, operation: &str) -> Result<(), Strin
             let mut entry = archive
                 .by_index(i)
                 .map_err(|e| format!("err_read_zip_entry:{}", e))?;
+            // 条目名只用于匹配，解压目标固定为 temp_path，因此不存在路径逃逸
             let name = entry.name().to_lowercase();
             if name == deno_bin_name || name.ends_with(&format!("/{}", deno_bin_name)) {
                 let mut outfile = std::fs::File::create(&temp_path_clone)
@@ -132,10 +76,12 @@ async fn download_deno_impl(app: AppHandle, operation: &str) -> Result<(), Strin
         Err(format!("err_not_found_in_zip:{}", deno_bin_name))
     })
     .await
-    .map_err(|e| format!("err_task:{}", e))?
-    .inspect_err(|_| {
-        let _ = std::fs::remove_file(&zip_path);
-    })?;
+    .map_err(|e| format!("err_task:{}", e))?;
+
+    if let Err(detail) = extracted {
+        let _ = tokio::fs::remove_file(&zip_path).await;
+        return Err(detail);
+    }
 
     // Unix: 设置可执行权限
     #[cfg(unix)]
@@ -145,25 +91,10 @@ async fn download_deno_impl(app: AppHandle, operation: &str) -> Result<(), Strin
             .map_err(|e| format!("err_set_permissions:{}", e))?;
     }
 
-    let validation = tokio::process::Command::new(&temp_path)
-        .arg("--version")
-        .output()
-        .await;
-    match validation {
-        Ok(output) if output.status.success() && !output.stdout.is_empty() => {}
-        Ok(output) => {
-            let _ = tokio::fs::remove_file(&zip_path).await;
-            let _ = tokio::fs::remove_file(&temp_path).await;
-            return Err(format!(
-                "err_validate_deno:{}",
-                String::from_utf8_lossy(&output.stderr).trim()
-            ));
-        }
-        Err(e) => {
-            let _ = tokio::fs::remove_file(&zip_path).await;
-            let _ = tokio::fs::remove_file(&temp_path).await;
-            return Err(format!("err_validate_deno:{}", e));
-        }
+    if let Err(detail) = verify_executable(&temp_path, "--version").await {
+        let _ = tokio::fs::remove_file(&zip_path).await;
+        let _ = tokio::fs::remove_file(&temp_path).await;
+        return Err(format!("err_validate_deno:{}", detail));
     }
 
     replace_executable(&temp_path, &deno_path)?;

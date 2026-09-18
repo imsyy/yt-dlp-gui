@@ -1,15 +1,11 @@
 //! 直播聊天下载、流式解析与 JSONL 缓存。
 
-#[cfg(target_os = "windows")]
-use crate::commands::CREATE_NO_WINDOW;
 use crate::{
-    commands::{support::append_cookie_proxy_args, support::extract_ytdlp_error},
-    platform::process::ProcessRegistry,
+    commands::support::{append_cookie_proxy_args, extract_ytdlp_error, run_ytdlp_capture},
     utils,
 };
 use serde_json::Value;
 use std::path::{Path, PathBuf};
-use std::process::Stdio;
 use tauri::{AppHandle, Manager};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
@@ -103,10 +99,6 @@ async fn download_live_chat(
     cookie_browser: Option<&str>,
     proxy: Option<&str>,
 ) -> Result<PathBuf, String> {
-    let ytdlp_path = utils::get_ytdlp_path(app)?;
-    if !ytdlp_path.exists() {
-        return Err("err_ytdlp_not_installed".into());
-    }
     let temp_dir = std::env::temp_dir().join(format!(
         "ytdlp-livechat-{}",
         std::time::SystemTime::now()
@@ -117,21 +109,25 @@ async fn download_live_chat(
     tokio::fs::create_dir_all(&temp_dir)
         .await
         .map_err(|error| format!("err_create_dir:{error}"))?;
+
     let mut args = vec![
-        "--skip-download".into(),
-        "--ignore-config".into(),
-        "--color".into(),
-        "never".into(),
-        "--no-warnings".into(),
-        "--socket-timeout".into(),
-        "15".into(),
-        "--retries".into(),
-        "3".into(),
-        "--write-subs".into(),
-        "--sub-langs".into(),
-        "live_chat".into(),
-        "-o".into(),
-        format!("{}/%(title).200s.%(ext)s", temp_dir.to_string_lossy()),
+        "--skip-download".to_string(),
+        "--ignore-config".to_string(),
+        "--color".to_string(),
+        "never".to_string(),
+        "--no-warnings".to_string(),
+        "--socket-timeout".to_string(),
+        "15".to_string(),
+        "--retries".to_string(),
+        "3".to_string(),
+        "--write-subs".to_string(),
+        "--sub-langs".to_string(),
+        "live_chat".to_string(),
+        "-o".to_string(),
+        temp_dir
+            .join("%(title).200s.%(ext)s")
+            .to_string_lossy()
+            .to_string(),
     ];
     args.extend(utils::build_js_runtime_args(app));
     args.extend(utils::build_ffmpeg_location_args(app));
@@ -139,30 +135,14 @@ async fn download_live_chat(
     append_cookie_proxy_args(&mut args, cookie_file, cookie_browser, proxy);
     args.push(url.to_owned());
 
-    let mut command = tokio::process::Command::new(ytdlp_path);
-    command
-        .args(&args)
-        .env("PYTHONUTF8", "1")
-        .env("PYTHONIOENCODING", "utf-8")
-        // tokio 的 spawn 默认继承 stdin（std 的 output() 会置空），置空避免 yt-dlp 等待输入挂住
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        // 任务被取消或超时丢弃 future 时兜底回收子进程
-        .kill_on_drop(true);
-    #[cfg(target_os = "windows")]
-    command.creation_flags(CREATE_NO_WINDOW);
-    let child = command
-        .spawn()
-        .map_err(|error| format!("err_run_ytdlp:{error}"))?;
-    if let Some(pid) = child.id() {
-        app.state::<ProcessRegistry>().register(run_id, pid);
-    }
-    let output = child
-        .wait_with_output()
-        .await
-        .map_err(|error| format!("err_run_ytdlp:{error}"))?;
-    app.state::<ProcessRegistry>().take(run_id);
+    let output = match run_ytdlp_capture(app, Some(run_id), args).await {
+        Ok(output) => output,
+        Err(error) => {
+            // 子进程未能启动或等待失败时也要清掉刚建的临时目录，避免残留
+            let _ = tokio::fs::remove_dir_all(&temp_dir).await;
+            return Err(error);
+        }
+    };
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         let _ = tokio::fs::remove_dir_all(&temp_dir).await;

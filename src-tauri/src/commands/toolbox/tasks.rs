@@ -46,7 +46,7 @@ pub async fn cleanup_tool_cache(app: AppHandle) {
     while let Ok(Some(entry)) = entries.next_entry().await {
         let path = entry.path();
         if path.extension().and_then(|extension| extension.to_str()) == Some("part")
-            || referenced.as_ref().map_or(true, |current| current != &path)
+            || referenced.as_ref() != Some(&path)
         {
             let _ = tokio::fs::remove_file(path).await;
         }
@@ -358,6 +358,7 @@ pub async fn tool_read_live_chat_page(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn tool_export_live_chat(
     app: AppHandle,
     state: State<'_, db::DatabaseState>,

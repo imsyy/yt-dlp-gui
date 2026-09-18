@@ -98,13 +98,20 @@
   },
   "plugins": {
     "title": "Plugin Manager",
-    "desc": "Manage yt-dlp plugins to extend functionality",
-    "pageDesc": "Install yt-dlp plugins to extend functionality. Plugins take effect automatically after installation.",
-    "install": "Install",
-    "uninstall": "Uninstall",
-    "installSuccess": "Plugin installed successfully",
-    "uninstallSuccess": "Plugin uninstalled",
-    "cookieUnlockDesc": "Unlock Chromium browser cookie database, allowing cookie access without closing the browser"
+    "desc": "Import yt-dlp plugin packages to extend functionality",
+    "trustWarning": "Plugin code is executed directly without security verification. Ensure the package is from a trusted source",
+    "importFromFile": "Import from file",
+    "openFolder": "Open plugin folder",
+    "pickFile": "Select a plugin package",
+    "zipFiles": "Plugin package (zip)",
+    "allFiles": "All files",
+    "importSuccess": "Imported plugin package \"{name}\"",
+    "empty": "No plugin packages imported yet",
+    "remove": "Remove",
+    "removeConfirm": "Remove plugin package \"{name}\"? Its functionality stops working immediately.",
+    "removeSuccess": "Removed plugin package \"{name}\"",
+    "typeExtractor": "Extractor",
+    "typePostprocessor": "Postprocessor"
   },
   "browserExt": {
     "title": "Browser Extension",

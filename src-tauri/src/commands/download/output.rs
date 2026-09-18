@@ -204,7 +204,12 @@ pub(super) fn spawn_completion_handler(
         // 因为 yt-dlp 在开始写字节前就会先打印目标路径，下载半路超时也会留下这一行。
         let success = matches!(&status, Ok(s) if s.success());
 
-        if success {
+        // 取消优先于一切结果。用户取消后进程可能恰好以退出码 0 正常结束，若此处不先
+        // 判断 was_cancelled，就会把已取消的任务覆盖成 completed，并弹出「下载完成」通知。
+        // cancel_download 已把状态落为 cancelled，这里只需清理临时文件、不再写任何状态。
+        if was_cancelled {
+            let _ = resolve_output_file(&processes, &task_id);
+        } else if success {
             let (output_file, _) = resolve_output_file(&processes, &task_id);
             let file_size_bytes = if !output_file.is_empty() {
                 std::fs::metadata(&output_file).ok().map(|metadata| metadata.len())
@@ -230,7 +235,7 @@ pub(super) fn spawn_completion_handler(
                     "fileSizeBytes": file_size_bytes,
                 }),
             );
-        } else if !was_cancelled {
+        } else {
             // 失败时仍清理 --print-to-file 临时文件，避免遗留
             let _ = resolve_output_file(&processes, &task_id);
             let error_msg = processes

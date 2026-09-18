@@ -110,6 +110,12 @@
     "dialogTitle": "Erreur",
     "dialogOk": "OK",
     "showDetail": "Afficher les détails",
-    "err_tool_already_running": "Une tâche est déjà en cours pour cet outil"
+    "err_tool_already_running": "Une tâche est déjà en cours pour cet outil",
+    "err_plugin_layout": "Seuls les paquets de plugins au format zip sont pris en charge",
+    "err_invalid_plugin_name": "Nom de fichier du paquet de plugin invalide",
+    "err_read_plugin": "Échec de la lecture du paquet de plugin",
+    "err_save_plugin": "Échec de l'enregistrement du paquet de plugin",
+    "err_read_plugin_dir": "Échec de la lecture du répertoire de plugins",
+    "err_open_dir": "Impossible d'ouvrir le répertoire"
   }
 }

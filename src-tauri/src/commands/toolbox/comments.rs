@@ -20,6 +20,12 @@ pub struct VideoComment {
     pub author_is_uploader: bool,
 }
 
+/// 评论条数上限，与前端滑块的最大值保持一致。
+///
+/// yt-dlp 会按该值逐页拉取，后端不设上限时一个超大值（u32 上限约 42 亿）
+/// 会让任务长时间不返回并持续占用内存。
+const MAX_COMMENTS: u32 = 5000;
+
 /// 评论排序方式
 fn comment_sort_value(sort: &str) -> &'static str {
     match sort {
@@ -30,6 +36,7 @@ fn comment_sort_value(sort: &str) -> &'static str {
 
 /// 获取视频评论（仅支持 YouTube；其他站点可能没有 comments 字段）
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn tool_fetch_comments(
     app: AppHandle,
     run_id: String,
@@ -40,7 +47,7 @@ pub async fn tool_fetch_comments(
     cookie_browser: Option<String>,
     proxy: Option<String>,
 ) -> Result<Value, String> {
-    let max_str = max_comments.to_string();
+    let max_str = max_comments.clamp(1, MAX_COMMENTS).to_string();
     let extractor_arg = format!(
         "youtube:max_comments={};comment_sort={}",
         max_str,

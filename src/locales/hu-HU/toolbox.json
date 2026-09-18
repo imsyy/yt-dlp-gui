@@ -98,13 +98,20 @@
   },
   "plugins": {
     "title": "Bővítménykezelő",
-    "desc": "A yt-dlp funkcióinak kiterjesztése",
-    "pageDesc": "Bővítményekkel kiterjesztheti a yt-dlp funkcióit. A bővítmények telepítés után azonnal elérhetők.",
-    "install": "Telepítés",
-    "uninstall": "Eltávolítás",
-    "installSuccess": "A bővítmény telepítése sikeresen befejeződött",
-    "uninstallSuccess": "Bővítmény eltávolítva",
-    "cookieUnlockDesc": "A Chromium-böngészők sütitárának feloldása, hogy a böngésző bezárása nélkül is hozzáférhetőek legyenek."
+    "desc": "yt-dlp bővítménycsomagok importálása a funkciók bővítéséhez",
+    "trustWarning": "A bővítmény kódja biztonsági ellenőrzés nélkül fut le. Győződjön meg arról, hogy a csomag megbízható forrásból származik",
+    "importFromFile": "Importálás fájlból",
+    "openFolder": "Bővítmények mappájának megnyitása",
+    "pickFile": "Bővítménycsomag kiválasztása",
+    "zipFiles": "Bővítménycsomag (zip)",
+    "allFiles": "Minden fájl",
+    "importSuccess": "A(z) „{name}” bővítménycsomag importálva",
+    "empty": "Még nincs importált bővítménycsomag",
+    "remove": "Eltávolítás",
+    "removeConfirm": "Biztosan el szeretné távolítani a(z) „{name}” bővítménycsomagot? A funkciói azonnal megszűnnek.",
+    "removeSuccess": "A(z) „{name}” bővítménycsomag eltávolítva",
+    "typeExtractor": "Extraktor",
+    "typePostprocessor": "Utófeldolgozó"
   },
   "browserExt": {
     "title": "Böngészőbővítmény",

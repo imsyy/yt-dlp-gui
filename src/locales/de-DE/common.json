@@ -110,6 +110,12 @@
     "dialogTitle": "Fehler",
     "dialogOk": "OK",
     "showDetail": "Details anzeigen",
-    "err_tool_already_running": "Für dieses Werkzeug läuft bereits eine Aufgabe"
+    "err_tool_already_running": "Für dieses Werkzeug läuft bereits eine Aufgabe",
+    "err_plugin_layout": "Es werden nur Plugin-Pakete im zip-Format unterstützt",
+    "err_invalid_plugin_name": "Ungültiger Dateiname des Plugin-Pakets",
+    "err_read_plugin": "Lesen des Plugin-Pakets fehlgeschlagen",
+    "err_save_plugin": "Speichern des Plugin-Pakets fehlgeschlagen",
+    "err_read_plugin_dir": "Lesen des Plugin-Verzeichnisses fehlgeschlagen",
+    "err_open_dir": "Verzeichnis konnte nicht geöffnet werden"
   }
 }

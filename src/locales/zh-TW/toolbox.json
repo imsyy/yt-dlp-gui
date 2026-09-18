@@ -97,14 +97,21 @@
     "taskInterrupted": "上次執行被應用程式結束中斷，可重新執行"
   },
   "plugins": {
-    "title": "外掛管理",
-    "desc": "管理 yt-dlp 外掛，擴充功能",
-    "pageDesc": "安裝 yt-dlp 外掛以擴充功能。外掛安裝後將自動生效。",
-    "install": "安裝",
-    "uninstall": "解除安裝",
-    "installSuccess": "外掛安裝成功",
-    "uninstallSuccess": "外掛已解除安裝",
-    "cookieUnlockDesc": "解鎖 Chromium 系瀏覽器的 Cookie 資料庫，無需關閉瀏覽器即可讀取 Cookie"
+    "title": "外掛程式管理",
+    "desc": "匯入 yt-dlp 外掛套件以擴展功能",
+    "trustWarning": "匯入的外掛代碼將被直接執行且無安全校驗，請確保安裝套件來源安全可信",
+    "importFromFile": "從檔案匯入",
+    "openFolder": "開啟外掛目錄",
+    "pickFile": "選擇外掛套件",
+    "zipFiles": "外掛套件 (zip)",
+    "allFiles": "所有檔案",
+    "importSuccess": "已匯入外掛套件「{name}」",
+    "empty": "尚未匯入任何外掛套件",
+    "remove": "移除",
+    "removeConfirm": "確定要移除外掛套件「{name}」嗎？移除後該外掛的功能將立即失效。",
+    "removeSuccess": "已移除外掛套件「{name}」",
+    "typeExtractor": "擷取器",
+    "typePostprocessor": "後處理器"
   },
   "browserExt": {
     "title": "瀏覽器擴充功能",

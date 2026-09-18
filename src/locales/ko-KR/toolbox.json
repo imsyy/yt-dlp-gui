@@ -98,13 +98,20 @@
   },
   "plugins": {
     "title": "플러그인 관리",
-    "desc": "yt-dlp 플러그인을 관리하여 기능 확장",
-    "pageDesc": "yt-dlp 플러그인을 설치하여 기능을 확장합니다. 설치 후 자동으로 적용됩니다.",
-    "install": "설치",
-    "uninstall": "제거",
-    "installSuccess": "플러그인이 설치되었습니다",
-    "uninstallSuccess": "플러그인이 제거되었습니다",
-    "cookieUnlockDesc": "Chromium 계열 브라우저의 쿠키 데이터베이스를 잠금 해제하여 브라우저를 닫지 않고도 쿠키를 읽을 수 있습니다"
+    "desc": "yt-dlp 플러그인 패키지를 가져와 기능 확장",
+    "trustWarning": "가져온 플러그인 코드는 보안 검증 없이 직접 실행됩니다. 패키지가 신뢰할 수 있는 출처인지 확인하세요",
+    "importFromFile": "파일에서 가져오기",
+    "openFolder": "플러그인 폴더 열기",
+    "pickFile": "플러그인 패키지 선택",
+    "zipFiles": "플러그인 패키지 (zip)",
+    "allFiles": "모든 파일",
+    "importSuccess": "플러그인 패키지 \"{name}\" 가져옴",
+    "empty": "가져온 플러그인 패키지가 없습니다",
+    "remove": "제거",
+    "removeConfirm": "플러그인 패키지 \"{name}\"을(를) 제거하시겠습니까? 제거 즉시 해당 기능이 비활성화됩니다.",
+    "removeSuccess": "플러그인 패키지 \"{name}\" 제거됨",
+    "typeExtractor": "추출기",
+    "typePostprocessor": "후처리기"
   },
   "browserExt": {
     "title": "브라우저 확장 프로그램",

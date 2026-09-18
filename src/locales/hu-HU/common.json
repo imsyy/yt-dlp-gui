@@ -110,6 +110,12 @@
     "dialogTitle": "Hiba",
     "dialogOk": "OK",
     "showDetail": "Részletek",
-    "err_tool_already_running": "Ehhez az eszközhöz már fut egy feladat"
+    "err_tool_already_running": "Ehhez az eszközhöz már fut egy feladat",
+    "err_plugin_layout": "Csak zip formátumú bővítménycsomagok támogatottak",
+    "err_invalid_plugin_name": "Érvénytelen bővítménycsomag fájlnév",
+    "err_read_plugin": "A bővítménycsomag beolvasása sikertelen",
+    "err_save_plugin": "A bővítménycsomag mentése sikertelen",
+    "err_read_plugin_dir": "A bővítménykönyvtár beolvasása sikertelen",
+    "err_open_dir": "A könyvtár megnyitása sikertelen"
   }
 }

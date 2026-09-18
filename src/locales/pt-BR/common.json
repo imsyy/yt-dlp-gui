@@ -110,6 +110,12 @@
     "dialogTitle": "Erro",
     "dialogOk": "OK",
     "showDetail": "Mostrar detalhes",
-    "err_tool_already_running": "Esta ferramenta já tem uma tarefa em execução"
+    "err_tool_already_running": "Esta ferramenta já tem uma tarefa em execução",
+    "err_plugin_layout": "Apenas pacotes de plugins no formato zip são suportados",
+    "err_invalid_plugin_name": "Nome de arquivo de pacote de plugin inválido",
+    "err_read_plugin": "Falha ao ler o pacote de plugin",
+    "err_save_plugin": "Falha ao salvar o pacote de plugin",
+    "err_read_plugin_dir": "Falha ao ler o diretório de plugins",
+    "err_open_dir": "Falha ao abrir o diretório"
   }
 }

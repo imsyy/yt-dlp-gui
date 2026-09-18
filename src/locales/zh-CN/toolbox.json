@@ -98,13 +98,20 @@
   },
   "plugins": {
     "title": "插件管理",
-    "desc": "管理 yt-dlp 插件，扩展功能",
-    "pageDesc": "安装 yt-dlp 插件以扩展功能。插件安装后将自动生效。",
-    "install": "安装",
-    "uninstall": "卸载",
-    "installSuccess": "插件安装成功",
-    "uninstallSuccess": "插件已卸载",
-    "cookieUnlockDesc": "解锁 Chromium 系浏览器的 Cookie 数据库，无需关闭浏览器即可读取 Cookie"
+    "desc": "导入 yt-dlp 插件包以扩展功能",
+    "trustWarning": "导入的插件代码会被直接执行且无安全校验，请确保安装包来源安全可信",
+    "importFromFile": "从文件导入",
+    "openFolder": "打开插件目录",
+    "pickFile": "选择插件包",
+    "zipFiles": "插件包 (zip)",
+    "allFiles": "所有文件",
+    "importSuccess": "已导入插件包「{name}」",
+    "empty": "还没有导入任何插件包",
+    "remove": "移除",
+    "removeConfirm": "确定要移除插件包「{name}」吗？移除后该插件的功能将立即失效。",
+    "removeSuccess": "已移除插件包「{name}」",
+    "typeExtractor": "提取器",
+    "typePostprocessor": "后处理器"
   },
   "browserExt": {
     "title": "浏览器扩展",

@@ -110,6 +110,12 @@
     "dialogTitle": "發生錯誤",
     "dialogOk": "確定",
     "showDetail": "查看詳情",
-    "err_tool_already_running": "該工具已有任務正在執行"
+    "err_tool_already_running": "該工具已有任務正在執行",
+    "err_plugin_layout": "僅支援 zip 格式的外掛套件",
+    "err_invalid_plugin_name": "外掛套件檔名無效",
+    "err_read_plugin": "讀取外掛套件失敗",
+    "err_save_plugin": "儲存外掛套件失敗",
+    "err_read_plugin_dir": "讀取外掛目錄失敗",
+    "err_open_dir": "開啟目錄失敗"
   }
 }
