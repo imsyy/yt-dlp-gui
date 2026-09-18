@@ -11,13 +11,15 @@ use super::runner::run_ytdlp_tool;
 #[tauri::command]
 pub async fn tool_fetch_subtitles(
     app: AppHandle,
+    run_id: String,
     url: String,
     cookie_file: Option<String>,
     cookie_browser: Option<String>,
     proxy: Option<String>,
 ) -> Result<Value, String> {
-    let info = support::run_ytdlp_json(
+    let info = support::run_ytdlp_json_tracked(
         &app,
+        Some(&run_id),
         &url,
         &["--no-check-formats"],
         cookie_file.as_deref(),
@@ -125,6 +127,7 @@ pub async fn tool_download_subtitles(
     }
     run_ytdlp_tool(
         &app,
+        None,
         &url,
         &download_dir,
         extra,

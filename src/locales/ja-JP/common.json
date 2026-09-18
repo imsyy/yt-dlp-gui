@@ -39,7 +39,9 @@
     "notInstalled": "{tool} は未インストールです",
     "status": "状態",
     "source": "取得元",
-    "activeDownloads": "ダウンロード中 {count}"
+    "activeDownloads": "ダウンロード中 {count}",
+    "runningToolTasks": "ツールタスク {count}",
+    "noRunningToolTasks": "実行中のタスクはありません"
   },
   "clipboard": {
     "empty": "クリップボードは空です",
@@ -107,6 +109,7 @@
     "err_kill_process": "プロセスの終了に失敗しました",
     "dialogTitle": "エラー",
     "dialogOk": "OK",
-    "showDetail": "詳細を表示"
+    "showDetail": "詳細を表示",
+    "err_tool_already_running": "このツールには実行中のタスクがあります"
   }
 }

@@ -39,7 +39,9 @@
     "notInstalled": "{tool} غير مثبت",
     "status": "الحالة",
     "source": "المصدر",
-    "activeDownloads": "قيد التنزيل {count}"
+    "activeDownloads": "قيد التنزيل {count}",
+    "runningToolTasks": "مهام الأداة {count}",
+    "noRunningToolTasks": "لا توجد مهام أداة قيد التشغيل"
   },
   "clipboard": {
     "empty": "الحافظة فارغة",
@@ -107,6 +109,7 @@
     "err_kill_process": "فشل إنهاء العملية",
     "dialogTitle": "خطأ",
     "dialogOk": "موافق",
-    "showDetail": "إظهار التفاصيل"
+    "showDetail": "إظهار التفاصيل",
+    "err_tool_already_running": "هذه الأداة لديها مهمة قيد التنفيذ بالفعل"
   }
 }

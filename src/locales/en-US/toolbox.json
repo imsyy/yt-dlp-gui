@@ -91,7 +91,10 @@
     "commentOnlyUploader": "Uploader only",
     "commentSearchPlaceholder": "Search comment text or author...",
     "saveComments": "Save Comments",
-    "commentsSaved": "Comments saved"
+    "commentsSaved": "Comments saved",
+    "stopTask": "Stop task",
+    "taskCancelled": "Task stopped",
+    "taskInterrupted": "The previous run was interrupted by app exit; you can run it again"
   },
   "plugins": {
     "title": "Plugin Manager",

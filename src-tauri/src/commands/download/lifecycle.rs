@@ -54,7 +54,10 @@ pub async fn start_download(
         .env("PYTHONIOENCODING", "utf-8");
     // 应用异常退出时托底杀掉子进程，避免 yt-dlp/ffmpeg 变成孤儿
     cmd.kill_on_drop(true);
-    cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
+    // tokio 的 spawn 默认继承 stdin，置空避免 yt-dlp 在交互场景下等待输入挂住
+    cmd.stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
     #[cfg(target_os = "windows")]
     cmd.creation_flags(CREATE_NO_WINDOW);
 

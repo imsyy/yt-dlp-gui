@@ -39,7 +39,9 @@
     "notInstalled": "A(z) {tool} nincs telepítve",
     "status": "Állapot",
     "source": "Forrás",
-    "activeDownloads": "Letöltés alatt: {count}"
+    "activeDownloads": "Letöltés alatt: {count}",
+    "runningToolTasks": "Eszközfeladatok {count}",
+    "noRunningToolTasks": "Nincs futó eszközfeladat"
   },
   "clipboard": {
     "empty": "A vágólap üres",
@@ -107,6 +109,7 @@
     "err_kill_process": "A folyamat kilövése meghiúsult",
     "dialogTitle": "Hiba",
     "dialogOk": "OK",
-    "showDetail": "Részletek"
+    "showDetail": "Részletek",
+    "err_tool_already_running": "Ehhez az eszközhöz már fut egy feladat"
   }
 }

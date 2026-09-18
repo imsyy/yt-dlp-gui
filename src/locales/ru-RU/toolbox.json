@@ -91,7 +91,10 @@
     "commentOnlyUploader": "Только автор канала",
     "commentSearchPlaceholder": "Поиск по тексту или автору...",
     "saveComments": "Сохранить комментарии",
-    "commentsSaved": "Комментарии сохранены"
+    "commentsSaved": "Комментарии сохранены",
+    "stopTask": "Остановить задачу",
+    "taskCancelled": "Задача остановлена",
+    "taskInterrupted": "Предыдущий запуск был прерван закрытием приложения; можно запустить снова"
   },
   "plugins": {
     "title": "Управление плагинами",

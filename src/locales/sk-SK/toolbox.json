@@ -91,7 +91,10 @@
     "commentOnlyUploader": "Iba pre nahrávajúceho",
     "commentSearchPlaceholder": "Vyhľadávať komentár alebo autora...",
     "saveComments": "Uložiť komentáre",
-    "commentsSaved": "Komentáre boli uložené"
+    "commentsSaved": "Komentáre boli uložené",
+    "stopTask": "Zastaviť úlohu",
+    "taskCancelled": "Úloha zastavená",
+    "taskInterrupted": "Predchádzajúce spustenie bolo prerušené ukončením aplikácie; môžete ho spustiť znova"
   },
   "plugins": {
     "title": "Správca doplnkov",

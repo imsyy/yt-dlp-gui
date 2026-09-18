@@ -133,7 +133,6 @@ const handleToolClick = (tool: ToolItem) => {
 
 .tool-card {
   cursor: pointer;
-  transition: transform 0.15s;
 }
 
 .tool-icon {
@@ -172,10 +171,5 @@ const handleToolClick = (tool: ToolItem) => {
   transition:
     opacity 0.15s,
     transform 0.15s;
-}
-
-.tool-card:hover .tool-arrow {
-  opacity: 0.8;
-  transform: translateX(2px);
 }
 </style>

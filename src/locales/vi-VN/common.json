@@ -39,7 +39,9 @@
     "notInstalled": "Chưa cài {tool}",
     "status": "Trạng thái",
     "source": "Nguồn",
-    "activeDownloads": "Đang tải {count}"
+    "activeDownloads": "Đang tải {count}",
+    "runningToolTasks": "Tác vụ công cụ {count}",
+    "noRunningToolTasks": "Không có tác vụ công cụ nào đang chạy"
   },
   "clipboard": {
     "empty": "Bộ nhớ tạm trống",
@@ -107,6 +109,7 @@
     "err_kill_process": "Kết thúc tiến trình thất bại",
     "dialogTitle": "Lỗi",
     "dialogOk": "OK",
-    "showDetail": "Hiện chi tiết"
+    "showDetail": "Hiện chi tiết",
+    "err_tool_already_running": "Công cụ này đã có tác vụ đang chạy"
   }
 }

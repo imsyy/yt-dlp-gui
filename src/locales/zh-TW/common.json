@@ -39,7 +39,9 @@
     "notInstalled": "未安裝 {tool}",
     "status": "狀態",
     "source": "來源",
-    "activeDownloads": "下載中 {count}"
+    "activeDownloads": "下載中 {count}",
+    "runningToolTasks": "工具任務 {count}",
+    "noRunningToolTasks": "目前沒有正在執行的任務"
   },
   "clipboard": {
     "empty": "剪貼簿為空",
@@ -107,6 +109,7 @@
     "err_kill_process": "終止處理程序失敗",
     "dialogTitle": "發生錯誤",
     "dialogOk": "確定",
-    "showDetail": "查看詳情"
+    "showDetail": "查看詳情",
+    "err_tool_already_running": "該工具已有任務正在執行"
   }
 }

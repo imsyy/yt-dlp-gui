@@ -2,15 +2,20 @@
 
 use crate::{
     commands::{support::append_cookie_proxy_args, support::extract_ytdlp_error},
+    platform::process::ProcessRegistry,
     utils,
 };
 #[cfg(target_os = "windows")]
 use crate::commands::CREATE_NO_WINDOW;
-use tauri::AppHandle;
+use std::process::Stdio;
+use tauri::{AppHandle, Manager};
 
 /// 通用工具命令执行器（--skip-download 模式，不下载视频本身）
+///
+/// `run_id` 非空时把子进程 pid 登记进 `ProcessRegistry`，使任务可以被取消。
 pub(super) async fn run_ytdlp_tool(
     app: &AppHandle,
+    run_id: Option<&str>,
     url: &str,
     download_dir: &str,
     extra_args: Vec<String>,
@@ -54,14 +59,31 @@ pub(super) async fn run_ytdlp_tool(
     let mut cmd = tokio::process::Command::new(&ytdlp_path);
     cmd.args(&args)
         .env("PYTHONUTF8", "1")
-        .env("PYTHONIOENCODING", "utf-8");
+        .env("PYTHONIOENCODING", "utf-8")
+        // tokio 的 spawn 默认继承 stdin（std 的 output() 会置空），置空避免 yt-dlp 等待输入挂住
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        // 任务被取消或超时丢弃 future 时兜底回收子进程
+        .kill_on_drop(true);
     #[cfg(target_os = "windows")]
     cmd.creation_flags(CREATE_NO_WINDOW);
 
-    let output = cmd
-        .output()
+    let child = cmd
+        .spawn()
+        .map_err(|e| format!("err_run_ytdlp:{}", e))?;
+    if let Some(run_id) = run_id {
+        if let Some(pid) = child.id() {
+            app.state::<ProcessRegistry>().register(run_id, pid);
+        }
+    }
+    let output = child
+        .wait_with_output()
         .await
         .map_err(|e| format!("err_run_ytdlp:{}", e))?;
+    if let Some(run_id) = run_id {
+        app.state::<ProcessRegistry>().take(run_id);
+    }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);

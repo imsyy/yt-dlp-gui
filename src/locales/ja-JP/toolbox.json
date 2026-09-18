@@ -91,7 +91,10 @@
     "commentOnlyUploader": "投稿者のみ",
     "commentSearchPlaceholder": "コメント本文または投稿者を検索...",
     "saveComments": "コメントを保存",
-    "commentsSaved": "コメントを保存しました"
+    "commentsSaved": "コメントを保存しました",
+    "stopTask": "タスクを停止",
+    "taskCancelled": "タスクを停止しました",
+    "taskInterrupted": "前回の実行はアプリ終了により中断されました。再実行できます"
   },
   "plugins": {
     "title": "プラグイン管理",

@@ -8,13 +8,15 @@ use tauri::AppHandle;
 #[tauri::command]
 pub async fn tool_fetch_chapters(
     app: AppHandle,
+    run_id: String,
     url: String,
     cookie_file: Option<String>,
     cookie_browser: Option<String>,
     proxy: Option<String>,
 ) -> Result<Value, String> {
-    let info = support::run_ytdlp_json(
+    let info = support::run_ytdlp_json_tracked(
         &app,
+        Some(&run_id),
         &url,
         &["--no-check-formats", "--no-playlist"],
         cookie_file.as_deref(),

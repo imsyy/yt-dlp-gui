@@ -91,7 +91,10 @@
     "commentOnlyUploader": "Chaîne uniquement",
     "commentSearchPlaceholder": "Rechercher dans le texte ou l’auteur...",
     "saveComments": "Enregistrer les commentaires",
-    "commentsSaved": "Commentaires enregistrés"
+    "commentsSaved": "Commentaires enregistrés",
+    "stopTask": "Arrêter la tâche",
+    "taskCancelled": "Tâche arrêtée",
+    "taskInterrupted": "L'exécution précédente a été interrompue par la fermeture de l'application ; vous pouvez la relancer"
   },
   "plugins": {
     "title": "Gestionnaire de plugins",

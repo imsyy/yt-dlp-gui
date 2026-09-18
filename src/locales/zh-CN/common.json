@@ -40,7 +40,9 @@
     "notInstalled": "未安装 {tool}",
     "status": "状态",
     "source": "来源",
-    "activeDownloads": "下载中 {count}"
+    "activeDownloads": "下载中 {count}",
+    "runningToolTasks": "工具任务 {count}",
+    "noRunningToolTasks": "当前没有正在运行的任务"
   },
   "clipboard": {
     "empty": "剪贴板为空",
@@ -108,6 +110,7 @@
     "err_kill_process": "终止进程失败",
     "dialogTitle": "出错了",
     "dialogOk": "确定",
-    "showDetail": "查看详情"
+    "showDetail": "查看详情",
+    "err_tool_already_running": "该工具已有任务在执行中"
   }
 }

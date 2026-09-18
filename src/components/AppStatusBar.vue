@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { formatError } from "@/utils/format";
 import IconMdiDownload from "~icons/mdi/download";
 import IconMdiCookieCog from "~icons/mdi/cookie-cog";
 import IconMdiLanguageJavascript from "~icons/mdi/language-javascript";
@@ -9,6 +10,7 @@ import { useI18n } from "vue-i18n";
 import { useDownloadStore } from "@/stores/download";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
+import type { ToolTaskState } from "@/composables/useToolTask";
 import type { ToolOperationProgress, ToolStatus } from "@/types";
 import type { Component } from "vue";
 
@@ -118,7 +120,36 @@ const toolTagText = (tool: ToolKey) => {
   return statuses[tool]?.installed ? t("settings.installed") : t("settings.notInstalled");
 };
 
+/** 正在运行的工具任务，用于底栏全局指示 */
+const runningTools = ref<string[]>([]);
+const showRunningTools = ref(false);
+
+/** 运行中任务的展示名与跳转路由 */
+const toolTaskMeta: Record<string, { labelKey: string; route: string }> = {
+  thumbnail: { labelKey: "toolbox.thumbnailTitle", route: "toolbox-thumbnail" },
+  subtitles: { labelKey: "toolbox.subtitlesTitle", route: "toolbox-subtitles" },
+  livechat: { labelKey: "toolbox.livechatTitle", route: "toolbox-livechat" },
+  chapters: { labelKey: "toolbox.chaptersTitle", route: "toolbox-chapters" },
+  comments: { labelKey: "toolbox.commentsTitle", route: "toolbox-comments" },
+};
+
+const toolTaskLabel = (toolId: string) => t(toolTaskMeta[toolId]?.labelKey ?? "common.unknown");
+
+const refreshRunningTools = async () => {
+  try {
+    runningTools.value = await invoke<string[]>("tool_get_running_tasks");
+  } catch {
+    runningTools.value = [];
+  }
+};
+
+const goToTool = (toolId: string) => {
+  showRunningTools.value = false;
+  router.push({ name: toolTaskMeta[toolId]?.route ?? "toolbox" });
+};
+
 let unlistenProgress: (() => void) | null = null;
+let unlistenToolTask: (() => void) | null = null;
 
 watch(
   () => [
@@ -135,9 +166,22 @@ onMounted(async () => {
   unlistenProgress = await listen<ToolOperationProgress>("tool-operation-progress", (event) => {
     if (event.payload.stage === "complete") void refreshStatuses();
   });
+  // 工具任务状态变化：刷新底栏指示，并统一在这里发出通知
+  // （底栏常驻，用户不在该工具页时也能收到取消/失败提示）
+  unlistenToolTask = await listen<ToolTaskState>("tool-task-state-changed", ({ payload }) => {
+    void refreshRunningTools();
+    if (payload.status === "cancelled") window.$message.info(t("toolbox.taskCancelled"));
+    else if (payload.status === "failed" && payload.error) {
+      window.$message.error(formatError(payload.error));
+    }
+  });
+  void refreshRunningTools();
 });
 
-onUnmounted(() => unlistenProgress?.());
+onUnmounted(() => {
+  unlistenProgress?.();
+  unlistenToolTask?.();
+});
 </script>
 
 <template>
@@ -148,20 +192,63 @@ onUnmounted(() => unlistenProgress?.());
     :aria-label="$t('statusBar.title')"
   >
     <n-flex align="center" justify="space-between" :wrap="false" class="status-list">
-      <n-button
-        :focusable="false"
-        text
-        size="tiny"
-        class="download-summary"
-        @click="router.push({ name: 'downloads' })"
-      >
-        <template #icon>
-          <n-icon><icon-mdi-download /></n-icon>
-        </template>
-        {{ $t("statusBar.activeDownloads", { count: downloadStore.activeCount }) }}
-        <n-divider vertical />
-        {{ totalSpeed }}
-      </n-button>
+      <n-flex align="center" :size="12" :wrap="false">
+        <n-button
+          :focusable="false"
+          text
+          size="tiny"
+          class="status-summary"
+          @click="router.push({ name: 'downloads' })"
+        >
+          <template #icon>
+            <n-icon><icon-mdi-download /></n-icon>
+          </template>
+          {{ $t("statusBar.activeDownloads", { count: downloadStore.activeCount }) }}
+          <n-divider vertical />
+          {{ totalSpeed }}
+        </n-button>
+        <n-divider vertical class="status-divider" />
+        <n-popover
+          v-model:show="showRunningTools"
+          :show-arrow="false"
+          trigger="click"
+          placement="top-start"
+          :width="240"
+        >
+          <template #trigger>
+            <n-button
+              :focusable="false"
+              text
+              size="tiny"
+              class="status-summary"
+              :aria-label="$t('statusBar.runningToolTasks', { count: runningTools.length })"
+            >
+              <template #icon>
+                <n-icon><icon-mdi-toolbox /></n-icon>
+              </template>
+              {{ $t("statusBar.runningToolTasks", { count: runningTools.length }) }}
+            </n-button>
+          </template>
+          <n-text v-if="runningTools.length === 0" style="font-size: 13px">
+            {{ $t("statusBar.noRunningToolTasks") }}
+          </n-text>
+          <n-flex v-else vertical :size="10">
+            <n-flex
+              v-for="tool in runningTools"
+              :key="tool"
+              align="center"
+              justify="space-between"
+              :size="10"
+              :wrap="false"
+            >
+              <n-text style="font-size: 13px">{{ toolTaskLabel(tool) }}</n-text>
+              <n-button secondary strong size="small" :focusable="false" @click="goToTool(tool)">
+                {{ $t("common.open") }}
+              </n-button>
+            </n-flex>
+          </n-flex>
+        </n-popover>
+      </n-flex>
       <n-flex align="center" :size="12" :wrap="false">
         <n-tooltip trigger="hover">
           <template #trigger>
@@ -260,7 +347,7 @@ onUnmounted(() => unlistenProgress?.());
   height: 100%;
 }
 
-.download-summary {
+.status-summary {
   font-variant-numeric: tabular-nums;
 }
 

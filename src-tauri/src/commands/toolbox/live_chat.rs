@@ -4,10 +4,12 @@
 use crate::commands::CREATE_NO_WINDOW;
 use crate::{
     commands::{support::append_cookie_proxy_args, support::extract_ytdlp_error},
+    platform::process::ProcessRegistry,
     utils,
 };
 use serde_json::Value;
 use std::path::{Path, PathBuf};
+use std::process::Stdio;
 use tauri::{AppHandle, Manager};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
@@ -95,6 +97,7 @@ fn parse_live_chat_line(line: &str) -> Option<LiveChatMessage> {
 
 async fn download_live_chat(
     app: &AppHandle,
+    run_id: &str,
     url: &str,
     cookie_file: Option<&str>,
     cookie_browser: Option<&str>,
@@ -141,13 +144,25 @@ async fn download_live_chat(
         .args(&args)
         .env("PYTHONUTF8", "1")
         .env("PYTHONIOENCODING", "utf-8")
-        .kill_on_drop(false);
+        // tokio 的 spawn 默认继承 stdin（std 的 output() 会置空），置空避免 yt-dlp 等待输入挂住
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        // 任务被取消或超时丢弃 future 时兜底回收子进程
+        .kill_on_drop(true);
     #[cfg(target_os = "windows")]
     command.creation_flags(CREATE_NO_WINDOW);
-    let output = command
-        .output()
+    let child = command
+        .spawn()
+        .map_err(|error| format!("err_run_ytdlp:{error}"))?;
+    if let Some(pid) = child.id() {
+        app.state::<ProcessRegistry>().register(run_id, pid);
+    }
+    let output = child
+        .wait_with_output()
         .await
         .map_err(|error| format!("err_run_ytdlp:{error}"))?;
+    app.state::<ProcessRegistry>().take(run_id);
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         let _ = tokio::fs::remove_dir_all(&temp_dir).await;
@@ -181,7 +196,7 @@ pub(crate) async fn fetch_live_chat_to_jsonl(
     proxy: Option<&str>,
     run_id: &str,
 ) -> Result<(String, i64), String> {
-    let temp_dir = download_live_chat(app, url, cookie_file, cookie_browser, proxy).await?;
+    let temp_dir = download_live_chat(app, run_id, url, cookie_file, cookie_browser, proxy).await?;
     let result = async {
         let source = find_chat_file(&temp_dir).await?;
         let relative = format!("tool-results/livechat/{run_id}.jsonl");

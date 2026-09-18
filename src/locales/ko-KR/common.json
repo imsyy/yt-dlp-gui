@@ -39,7 +39,9 @@
     "notInstalled": "{tool}이(가) 설치되지 않음",
     "status": "상태",
     "source": "소스",
-    "activeDownloads": "다운로드 중 {count}"
+    "activeDownloads": "다운로드 중 {count}",
+    "runningToolTasks": "도구 작업 {count}",
+    "noRunningToolTasks": "실행 중인 작업이 없습니다"
   },
   "clipboard": {
     "empty": "클립보드가 비어 있습니다",
@@ -107,6 +109,7 @@
     "err_kill_process": "프로세스 종료에 실패했습니다",
     "dialogTitle": "오류",
     "dialogOk": "확인",
-    "showDetail": "자세히 보기"
+    "showDetail": "자세히 보기",
+    "err_tool_already_running": "이 도구에 이미 실행 중인 작업이 있습니다"
   }
 }

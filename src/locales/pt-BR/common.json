@@ -39,7 +39,9 @@
     "notInstalled": "{tool} não está instalado",
     "status": "Status",
     "source": "Origem",
-    "activeDownloads": "Baixando {count}"
+    "activeDownloads": "Baixando {count}",
+    "runningToolTasks": "Tarefas de ferramenta {count}",
+    "noRunningToolTasks": "Nenhuma tarefa de ferramenta em execução"
   },
   "clipboard": {
     "empty": "A área de transferência está vazia",
@@ -107,6 +109,7 @@
     "err_kill_process": "Falha ao encerrar o processo",
     "dialogTitle": "Erro",
     "dialogOk": "OK",
-    "showDetail": "Mostrar detalhes"
+    "showDetail": "Mostrar detalhes",
+    "err_tool_already_running": "Esta ferramenta já tem uma tarefa em execução"
   }
 }

@@ -39,7 +39,9 @@
     "notInstalled": "{tool} ist nicht installiert",
     "status": "Status",
     "source": "Quelle",
-    "activeDownloads": "Downloads {count}"
+    "activeDownloads": "Downloads {count}",
+    "runningToolTasks": "Werkzeug-Aufgaben {count}",
+    "noRunningToolTasks": "Keine laufenden Werkzeug-Aufgaben"
   },
   "clipboard": {
     "empty": "Zwischenablage ist leer",
@@ -107,6 +109,7 @@
     "err_kill_process": "Prozess konnte nicht beendet werden",
     "dialogTitle": "Fehler",
     "dialogOk": "OK",
-    "showDetail": "Details anzeigen"
+    "showDetail": "Details anzeigen",
+    "err_tool_already_running": "Für dieses Werkzeug läuft bereits eine Aufgabe"
   }
 }

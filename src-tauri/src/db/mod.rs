@@ -154,6 +154,159 @@ mod tests {
     }
 
     #[test]
+    fn test_cancelled_state_is_not_overwritten_by_late_finish() {
+        let conn = Connection::open_in_memory().unwrap();
+        schema::run_migrations(&conn).unwrap();
+        let state = DatabaseState {
+            conn: Mutex::new(conn),
+            db_path: PathBuf::from(":memory:"),
+        };
+
+        tool_tasks::start_state(
+            &state,
+            "livechat",
+            "livechat_run_1",
+            "https://example.com/live",
+        )
+        .unwrap();
+
+        // 用户取消：状态先落为 cancelled
+        let cancelled =
+            tool_tasks::finish_state(&state, "livechat", "livechat_run_1", "cancelled", None)
+                .unwrap()
+                .unwrap();
+        assert_eq!(cancelled.status, "cancelled");
+
+        // 被杀的进程随后让收尾流程带着错误再调一次 finish_state：必须是无操作，不得覆盖 cancelled
+        assert!(tool_tasks::finish_state(
+            &state,
+            "livechat",
+            "livechat_run_1",
+            "failed",
+            Some("err_exit_code:1"),
+        )
+        .unwrap()
+        .is_none());
+        let current = tool_tasks::get_state(&state, "livechat").unwrap().unwrap();
+        assert_eq!(current.status, "cancelled");
+        assert!(current.error.is_none());
+    }
+
+    #[test]
+    fn test_late_finish_of_previous_run_does_not_touch_new_run() {
+        let conn = Connection::open_in_memory().unwrap();
+        schema::run_migrations(&conn).unwrap();
+        let state = DatabaseState {
+            conn: Mutex::new(conn),
+            db_path: PathBuf::from(":memory:"),
+        };
+
+        tool_tasks::start_state(&state, "chapters", "chapters_run_1", "https://example.com/a")
+            .unwrap();
+        assert!(tool_tasks::finish_state(&state, "chapters", "chapters_run_1", "cancelled", None)
+            .unwrap()
+            .is_some());
+
+        // 取消后必须能立刻开始下一个任务
+        let next =
+            tool_tasks::start_state(&state, "chapters", "chapters_run_2", "https://example.com/b")
+                .unwrap();
+        assert_eq!(next.run_id, "chapters_run_2");
+
+        // 旧 run 的迟到收尾不能影响新任务
+        assert!(tool_tasks::finish_state(
+            &state,
+            "chapters",
+            "chapters_run_1",
+            "failed",
+            Some("err_run_ytdlp"),
+        )
+        .unwrap()
+        .is_none());
+        let current = tool_tasks::get_state(&state, "chapters").unwrap().unwrap();
+        assert_eq!(current.run_id, "chapters_run_2");
+        assert_eq!(current.status, "running");
+    }
+
+    #[test]
+    fn test_start_state_rejects_second_run_while_running() {
+        let conn = Connection::open_in_memory().unwrap();
+        schema::run_migrations(&conn).unwrap();
+        let state = DatabaseState {
+            conn: Mutex::new(conn),
+            db_path: PathBuf::from(":memory:"),
+        };
+
+        tool_tasks::start_state(&state, "comments", "comments_run_1", "https://example.com/a")
+            .unwrap();
+        let err =
+            tool_tasks::start_state(&state, "comments", "comments_run_2", "https://example.com/b")
+                .unwrap_err();
+        assert_eq!(err, "err_tool_already_running");
+
+        // 不同工具互不阻塞
+        tool_tasks::start_state(&state, "chapters", "chapters_run_1", "https://example.com/c")
+            .unwrap();
+    }
+
+    #[test]
+    fn test_update_running_stage_is_noop_after_cancel() {
+        let conn = Connection::open_in_memory().unwrap();
+        schema::run_migrations(&conn).unwrap();
+        let state = DatabaseState {
+            conn: Mutex::new(conn),
+            db_path: PathBuf::from(":memory:"),
+        };
+
+        tool_tasks::start_state(&state, "chapters", "chapters_run_1", "https://example.com/a")
+            .unwrap();
+        assert!(
+            tool_tasks::update_running_stage(&state, "chapters", "chapters_run_1", "fetching")
+                .unwrap()
+                .is_some()
+        );
+
+        tool_tasks::finish_state(&state, "chapters", "chapters_run_1", "cancelled", None).unwrap();
+
+        // 取消后不得再改 stage，否则会把已取消的状态当成仍在运行又推给前端一次
+        assert!(
+            tool_tasks::update_running_stage(&state, "chapters", "chapters_run_1", "fetching")
+                .unwrap()
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn test_running_tool_ids_only_lists_running() {
+        let conn = Connection::open_in_memory().unwrap();
+        schema::run_migrations(&conn).unwrap();
+        let state = DatabaseState {
+            conn: Mutex::new(conn),
+            db_path: PathBuf::from(":memory:"),
+        };
+
+        assert!(tool_tasks::get_running_tool_ids(&state).unwrap().is_empty());
+
+        tool_tasks::start_state(&state, "chapters", "chapters_run_1", "https://example.com/a")
+            .unwrap();
+        tool_tasks::start_state(&state, "livechat", "livechat_run_1", "https://example.com/b")
+            .unwrap();
+        assert_eq!(
+            tool_tasks::get_running_tool_ids(&state).unwrap(),
+            vec!["chapters", "livechat"]
+        );
+
+        // 完成与取消都不算运行中，否则底栏会一直显示有任务在跑
+        tool_tasks::finish_state(&state, "chapters", "chapters_run_1", "completed", None).unwrap();
+        assert_eq!(
+            tool_tasks::get_running_tool_ids(&state).unwrap(),
+            vec!["livechat"]
+        );
+        tool_tasks::finish_state(&state, "livechat", "livechat_run_1", "cancelled", None).unwrap();
+        assert!(tool_tasks::get_running_tool_ids(&state).unwrap().is_empty());
+    }
+
+    #[test]
     fn test_batch_operations() {
         let mut conn = Connection::open_in_memory().unwrap();
         schema::run_migrations(&conn).unwrap();

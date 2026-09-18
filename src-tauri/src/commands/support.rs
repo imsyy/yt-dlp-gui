@@ -1,9 +1,11 @@
 //! 命令处理器共享的 yt-dlp、HTTP 与路径辅助函数
 
+use crate::platform::process::ProcessRegistry;
 use crate::utils;
 use serde_json::Value;
+use std::process::Stdio;
 use std::time::Duration;
-use tauri::AppHandle;
+use tauri::{AppHandle, Manager};
 
 #[cfg(target_os = "windows")]
 use super::CREATE_NO_WINDOW;
@@ -62,6 +64,19 @@ pub async fn run_ytdlp_json(
     cookie_browser: Option<&str>,
     proxy: Option<&str>,
 ) -> Result<Value, String> {
+    run_ytdlp_json_tracked(app, None, url, extra_args, cookie_file, cookie_browser, proxy).await
+}
+
+/// 同 `run_ytdlp_json`，额外把子进程 pid 登记到 `run_id` 名下，供工具任务取消时终止。
+pub async fn run_ytdlp_json_tracked(
+    app: &AppHandle,
+    run_id: Option<&str>,
+    url: &str,
+    extra_args: &[&str],
+    cookie_file: Option<&str>,
+    cookie_browser: Option<&str>,
+    proxy: Option<&str>,
+) -> Result<Value, String> {
     let ytdlp_path = utils::get_ytdlp_path(app)?;
     if !ytdlp_path.exists() {
         return Err("err_ytdlp_not_installed".to_string());
@@ -94,14 +109,31 @@ pub async fn run_ytdlp_json(
     let mut cmd = tokio::process::Command::new(&ytdlp_path);
     cmd.args(&args)
         .env("PYTHONUTF8", "1")
-        .env("PYTHONIOENCODING", "utf-8");
+        .env("PYTHONIOENCODING", "utf-8")
+        // tokio 的 spawn 默认继承 stdin（std 的 output() 会置空），置空避免 yt-dlp 等待输入挂住
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        // 任务被取消或超时丢弃 future 时兜底回收子进程
+        .kill_on_drop(true);
     #[cfg(target_os = "windows")]
     cmd.creation_flags(CREATE_NO_WINDOW);
 
-    let output = cmd
-        .output()
+    let child = cmd
+        .spawn()
+        .map_err(|e| format!("err_run_ytdlp:{}", e))?;
+    if let Some(run_id) = run_id {
+        if let Some(pid) = child.id() {
+            app.state::<ProcessRegistry>().register(run_id, pid);
+        }
+    }
+    let output = child
+        .wait_with_output()
         .await
         .map_err(|e| format!("err_run_ytdlp:{}", e))?;
+    if let Some(run_id) = run_id {
+        app.state::<ProcessRegistry>().take(run_id);
+    }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
 

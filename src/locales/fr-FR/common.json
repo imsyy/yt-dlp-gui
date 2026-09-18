@@ -39,7 +39,9 @@
     "notInstalled": "{tool} n’est pas installé",
     "status": "État",
     "source": "Source",
-    "activeDownloads": "Téléchargements {count}"
+    "activeDownloads": "Téléchargements {count}",
+    "runningToolTasks": "Tâches d'outil {count}",
+    "noRunningToolTasks": "Aucune tâche d'outil en cours"
   },
   "clipboard": {
     "empty": "Le presse-papiers est vide",
@@ -107,6 +109,7 @@
     "err_kill_process": "Échec de l'arrêt du processus",
     "dialogTitle": "Erreur",
     "dialogOk": "OK",
-    "showDetail": "Afficher les détails"
+    "showDetail": "Afficher les détails",
+    "err_tool_already_running": "Une tâche est déjà en cours pour cet outil"
   }
 }

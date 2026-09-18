@@ -91,7 +91,10 @@
     "commentOnlyUploader": "僅頻道主",
     "commentSearchPlaceholder": "搜尋留言內容或作者...",
     "saveComments": "儲存留言",
-    "commentsSaved": "留言已儲存"
+    "commentsSaved": "留言已儲存",
+    "stopTask": "停止任務",
+    "taskCancelled": "任務已停止",
+    "taskInterrupted": "上次執行被應用程式結束中斷，可重新執行"
   },
   "plugins": {
     "title": "外掛管理",

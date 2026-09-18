@@ -21,7 +21,13 @@ const videoStore = useVideoStore();
 const goBack = () => goToolList(router);
 
 const url = ref("");
-const { state: taskState, resultMeta, running: loading, start } = useToolTask<never>("livechat");
+const {
+  state: taskState,
+  resultMeta,
+  running: loading,
+  start,
+  cancel,
+} = useToolTask<never>("livechat");
 const saving = ref(false);
 const messages = ref<LiveChatMessage[]>([]);
 const checkedKeys = ref<DataTableRowKey[]>([]);
@@ -195,6 +201,14 @@ const loadPage = async (reset = false) => {
   }
 };
 
+const handleStop = async () => {
+  try {
+    await cancel();
+  } catch (e: unknown) {
+    showErrorDialog(String(e));
+  }
+};
+
 watch(taskState, (state) => {
   if (state?.url) url.value = state.url;
 });
@@ -303,17 +317,17 @@ const handleSave = async () => {
           {{ $t("toolbox.livechatPageDesc") }}
         </n-text>
         <ToolUrlInput v-model="url" />
-        <n-button
-          type="primary"
+        <ToolTaskActions
           :loading="loading"
-          :disabled="!urlValid || loading"
-          @click="handleFetch"
+          :disabled="!urlValid"
+          @fetch="handleFetch"
+          @stop="handleStop"
         >
           <template #icon>
             <n-icon><icon-mdi-message-text-outline /></n-icon>
           </template>
           {{ $t("toolbox.fetchChat") }}
-        </n-button>
+        </ToolTaskActions>
       </n-flex>
     </n-card>
 

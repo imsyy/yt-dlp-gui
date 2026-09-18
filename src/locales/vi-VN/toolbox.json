@@ -91,7 +91,10 @@
     "commentOnlyUploader": "Chỉ của kênh",
     "commentSearchPlaceholder": "Tìm trong nội dung hoặc tác giả...",
     "saveComments": "Lưu bình luận",
-    "commentsSaved": "Đã lưu bình luận"
+    "commentsSaved": "Đã lưu bình luận",
+    "stopTask": "Dừng tác vụ",
+    "taskCancelled": "Đã dừng tác vụ",
+    "taskInterrupted": "Lần chạy trước bị gián đoạn do thoát ứng dụng; bạn có thể chạy lại"
   },
   "plugins": {
     "title": "Quản lý plugin",

@@ -40,7 +40,9 @@
     "notInstalled": "{tool} is not installed",
     "status": "Status",
     "source": "Source",
-    "activeDownloads": "Downloading {count}"
+    "activeDownloads": "Downloading {count}",
+    "runningToolTasks": "Tool tasks {count}",
+    "noRunningToolTasks": "No running tool tasks"
   },
   "clipboard": {
     "empty": "Clipboard is empty",
@@ -108,6 +110,7 @@
     "err_kill_process": "Failed to kill process",
     "dialogTitle": "Error",
     "dialogOk": "OK",
-    "showDetail": "Show details"
+    "showDetail": "Show details",
+    "err_tool_already_running": "This tool already has a running task"
   }
 }

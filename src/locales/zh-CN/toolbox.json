@@ -91,7 +91,10 @@
     "commentOnlyUploader": "仅 UP 主",
     "commentSearchPlaceholder": "搜索评论内容或作者...",
     "saveComments": "保存评论",
-    "commentsSaved": "评论已保存"
+    "commentsSaved": "评论已保存",
+    "stopTask": "停止任务",
+    "taskCancelled": "任务已停止",
+    "taskInterrupted": "上次执行被应用退出中断，可重新执行"
   },
   "plugins": {
     "title": "插件管理",

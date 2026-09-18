@@ -32,6 +32,7 @@ fn comment_sort_value(sort: &str) -> &'static str {
 #[tauri::command]
 pub async fn tool_fetch_comments(
     app: AppHandle,
+    run_id: String,
     url: String,
     max_comments: u32,
     sort: String,
@@ -46,8 +47,9 @@ pub async fn tool_fetch_comments(
         comment_sort_value(&sort)
     );
 
-    let info = support::run_ytdlp_json(
+    let info = support::run_ytdlp_json_tracked(
         &app,
+        Some(&run_id),
         &url,
         &[
             "--no-check-formats",

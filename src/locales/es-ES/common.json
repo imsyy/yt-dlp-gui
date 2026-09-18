@@ -39,7 +39,9 @@
     "notInstalled": "{tool} no está instalado",
     "status": "Estado",
     "source": "Origen",
-    "activeDownloads": "Descargando {count}"
+    "activeDownloads": "Descargando {count}",
+    "runningToolTasks": "Tareas de herramienta {count}",
+    "noRunningToolTasks": "No hay tareas de herramienta en ejecución"
   },
   "clipboard": {
     "empty": "El portapapeles está vacío",
@@ -107,6 +109,7 @@
     "err_kill_process": "No se pudo terminar el proceso",
     "dialogTitle": "Error",
     "dialogOk": "Aceptar",
-    "showDetail": "Ver detalles"
+    "showDetail": "Ver detalles",
+    "err_tool_already_running": "Esta herramienta ya tiene una tarea en ejecución"
   }
 }

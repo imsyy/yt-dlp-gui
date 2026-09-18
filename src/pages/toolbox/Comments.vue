@@ -26,6 +26,7 @@ const {
   result: taskResult,
   running: loading,
   start,
+  cancel,
 } = useToolTask<CommentsInfo>("comments");
 const saving = ref(false);
 const comments = ref<VideoComment[]>([]);
@@ -199,6 +200,14 @@ const handleFetch = async () => {
   }
 };
 
+const handleStop = async () => {
+  try {
+    await cancel();
+  } catch (e: unknown) {
+    showErrorDialog(String(e));
+  }
+};
+
 watch(taskState, (state) => {
   if (state?.url) url.value = state.url;
 });
@@ -322,17 +331,17 @@ const handleSave = async () => {
             </n-radio-group>
           </n-flex>
         </n-flex>
-        <n-button
-          type="primary"
+        <ToolTaskActions
           :loading="loading"
-          :disabled="!urlValid || loading"
-          @click="handleFetch"
+          :disabled="!urlValid"
+          @fetch="handleFetch"
+          @stop="handleStop"
         >
           <template #icon>
             <n-icon><icon-mdi-comment-text-multiple-outline /></n-icon>
           </template>
           {{ $t("toolbox.fetchComments") }}
-        </n-button>
+        </ToolTaskActions>
       </n-flex>
     </n-card>
 

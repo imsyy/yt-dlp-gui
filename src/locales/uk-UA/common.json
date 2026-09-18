@@ -39,7 +39,9 @@
     "notInstalled": "{tool} не встановлено",
     "status": "Стан",
     "source": "Джерело",
-    "activeDownloads": "Завантажується {count}"
+    "activeDownloads": "Завантажується {count}",
+    "runningToolTasks": "Завдання інструментів {count}",
+    "noRunningToolTasks": "Немає завдань інструментів, що виконуються"
   },
   "clipboard": {
     "empty": "Буфер обміну порожній",
@@ -107,6 +109,7 @@
     "err_kill_process": "Не вдалося завершити процес",
     "dialogTitle": "Помилка",
     "dialogOk": "OK",
-    "showDetail": "Показати деталі"
+    "showDetail": "Показати деталі",
+    "err_tool_already_running": "Для цього інструменту вже виконується завдання"
   }
 }

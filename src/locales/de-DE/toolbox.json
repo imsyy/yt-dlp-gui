@@ -91,7 +91,10 @@
     "commentOnlyUploader": "Nur vom Uploader",
     "commentSearchPlaceholder": "Kommentartext oder Autor suchen...",
     "saveComments": "Kommentare speichern",
-    "commentsSaved": "Kommentare gespeichert"
+    "commentsSaved": "Kommentare gespeichert",
+    "stopTask": "Aufgabe stoppen",
+    "taskCancelled": "Aufgabe gestoppt",
+    "taskInterrupted": "Der letzte Lauf wurde durch das Beenden der App unterbrochen; Sie können ihn erneut starten"
   },
   "plugins": {
     "title": "Plugin-Verwaltung",

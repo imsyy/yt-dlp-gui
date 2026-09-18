@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import i18n from "@/locales";
 
 export type ToolTaskStatus = "running" | "completed" | "failed" | "cancelled" | "interrupted";
 
@@ -24,9 +25,11 @@ export interface ToolResultRecord {
   completedAt: number;
 }
 
+const t = i18n.global.t;
+
 /**
  * 工具页只观察 Rust 后台任务：状态通过事件同步，结果始终独立读取。
- * 页面卸载只解除监听，不会取消后台任务。
+ * 页面卸载只解除监听，不会取消后台任务；终止必须显式调用 cancel()。
  */
 export const useToolTask = <T>(toolId: string) => {
   const state = ref<ToolTaskState | null>(null);
@@ -47,6 +50,10 @@ export const useToolTask = <T>(toolId: string) => {
 
   const refresh = async () => {
     state.value = await invoke<ToolTaskState | null>("tool_get_task_state", { toolId });
+    // 上次运行被应用退出中断，提示用户为何可以重新执行
+    if (state.value?.status === "interrupted") {
+      window.$message.warning(t("toolbox.taskInterrupted"));
+    }
     await loadResult();
   };
 
@@ -58,11 +65,17 @@ export const useToolTask = <T>(toolId: string) => {
     });
   };
 
+  /** 终止后台任务：Rust 侧会杀掉进程树并把状态置为 cancelled */
+  const cancel = async () => {
+    await invoke("tool_cancel_task", { toolId });
+  };
+
   onMounted(async () => {
     unlisten = await listen<ToolTaskState>("tool-task-state-changed", async ({ payload }) => {
       if (payload.toolId !== toolId) return;
       state.value = payload;
       if (payload.status === "completed") await loadResult();
+      // cancelled / failed 的提示由常驻的底栏统一发出，避免用户不在本页时收不到
     });
     await refresh();
   });
@@ -72,5 +85,5 @@ export const useToolTask = <T>(toolId: string) => {
     unlisten = null;
   });
 
-  return { state, result, resultMeta, running, start, refresh, loadResult };
+  return { state, result, resultMeta, running, start, cancel, refresh, loadResult };
 };

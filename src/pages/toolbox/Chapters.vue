@@ -26,6 +26,7 @@ const {
   result: taskResult,
   running: loading,
   start,
+  cancel,
 } = useToolTask<ChaptersInfo>("chapters");
 const videoTitle = ref("");
 const videoDuration = ref<number | null>(null);
@@ -69,6 +70,14 @@ const handleFetch = async () => {
     } else {
       showErrorDialog(msg);
     }
+  }
+};
+
+const handleStop = async () => {
+  try {
+    await cancel();
+  } catch (e: unknown) {
+    showErrorDialog(String(e));
   }
 };
 
@@ -161,17 +170,17 @@ const handleSave = async () => {
           {{ $t("toolbox.chaptersPageDesc") }}
         </n-text>
         <ToolUrlInput v-model="url" />
-        <n-button
-          type="primary"
+        <ToolTaskActions
           :loading="loading"
-          :disabled="!urlValid || loading"
-          @click="handleFetch"
+          :disabled="!urlValid"
+          @fetch="handleFetch"
+          @stop="handleStop"
         >
           <template #icon>
             <n-icon><icon-mdi-format-list-numbered /></n-icon>
           </template>
           {{ $t("toolbox.fetchChapters") }}
-        </n-button>
+        </ToolTaskActions>
       </n-flex>
     </n-card>
 

@@ -91,7 +91,10 @@
     "commentOnlyUploader": "صاحب القناة فقط",
     "commentSearchPlaceholder": "ابحث في نص التعليق أو الكاتب...",
     "saveComments": "حفظ التعليقات",
-    "commentsSaved": "تم حفظ التعليقات"
+    "commentsSaved": "تم حفظ التعليقات",
+    "stopTask": "إيقاف المهمة",
+    "taskCancelled": "تم إيقاف المهمة",
+    "taskInterrupted": "تم مقاطعة التشغيل السابق عند إغلاق التطبيق؛ يمكنك إعادة التشغيل"
   },
   "plugins": {
     "title": "مدير الإضافات (Plugins)",

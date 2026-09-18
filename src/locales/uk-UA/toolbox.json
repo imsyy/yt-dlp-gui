@@ -91,7 +91,10 @@
     "commentOnlyUploader": "Лише від автора",
     "commentSearchPlaceholder": "Пошук тексту коментаря або автора...",
     "saveComments": "Зберегти коментарі",
-    "commentsSaved": "Коментарі збережено"
+    "commentsSaved": "Коментарі збережено",
+    "stopTask": "Зупинити завдання",
+    "taskCancelled": "Завдання зупинено",
+    "taskInterrupted": "Попередній запуск перервано закриттям програми; можна запустити знову"
   },
   "plugins": {
     "title": "Менеджер плагінів",

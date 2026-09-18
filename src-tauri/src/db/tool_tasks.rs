@@ -44,6 +44,20 @@ pub fn get_state(db: &DatabaseState, tool_id: &str) -> Result<Option<ToolTaskSta
     ).optional().map_err(|error| error.to_string())
 }
 
+/// 正在运行的工具 id 列表，供状态栏全局指示使用。
+pub fn get_running_tool_ids(db: &DatabaseState) -> Result<Vec<String>, String> {
+    let conn = db.conn.lock().map_err(|error| error.to_string())?;
+    let mut stmt = conn
+        .prepare("SELECT tool_id FROM tool_task_states WHERE status = 'running' ORDER BY tool_id")
+        .map_err(|error| error.to_string())?;
+    let ids = stmt
+        .query_map([], |row| row.get::<_, String>(0))
+        .map_err(|error| error.to_string())?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(ids)
+}
+
 pub fn start_state(
     db: &DatabaseState,
     tool_id: &str,
@@ -63,6 +77,7 @@ pub fn start_state(
     get_state(db, tool_id)?.ok_or_else(|| "err_tool_state_missing".into())
 }
 
+/// 写入终态。仅在状态仍为 running 时生效；已被取消时视为无操作并返回 None。
 pub fn finish_state(
     db: &DatabaseState,
     tool_id: &str,
@@ -72,14 +87,18 @@ pub fn finish_state(
 ) -> Result<Option<ToolTaskStateRecord>, String> {
     let now = now_millis();
     let conn = db.conn.lock().map_err(|error| error.to_string())?;
-    conn.execute(
-        "UPDATE tool_task_states SET status = ?3, stage = NULL, progress = CASE WHEN ?3 = 'completed' THEN 100 ELSE progress END, error = ?4, updated_at = ?5 WHERE tool_id = ?1 AND run_id = ?2",
+    let affected = conn.execute(
+        "UPDATE tool_task_states SET status = ?3, stage = NULL, progress = CASE WHEN ?3 = 'completed' THEN 100 ELSE progress END, error = ?4, updated_at = ?5 WHERE tool_id = ?1 AND run_id = ?2 AND status = 'running'",
         params![tool_id, run_id, status, error, now],
     ).map_err(|error| error.to_string())?;
     drop(conn);
+    if affected == 0 {
+        return Ok(None);
+    }
     get_state(db, tool_id)
 }
 
+/// 更新阶段。仅在状态仍为 running 时生效，否则返回 None（与 `finish_state` 同语义）。
 pub fn update_running_stage(
     db: &DatabaseState,
     tool_id: &str,
@@ -87,12 +106,16 @@ pub fn update_running_stage(
     stage: &str,
 ) -> Result<Option<ToolTaskStateRecord>, String> {
     let conn = db.conn.lock().map_err(|error| error.to_string())?;
-    conn.execute(
-        "UPDATE tool_task_states SET stage = ?3, updated_at = ?4 WHERE tool_id = ?1 AND run_id = ?2 AND status = 'running'",
-        params![tool_id, run_id, stage, now_millis()],
-    )
-    .map_err(|error| error.to_string())?;
+    let affected = conn
+        .execute(
+            "UPDATE tool_task_states SET stage = ?3, updated_at = ?4 WHERE tool_id = ?1 AND run_id = ?2 AND status = 'running'",
+            params![tool_id, run_id, stage, now_millis()],
+        )
+        .map_err(|error| error.to_string())?;
     drop(conn);
+    if affected == 0 {
+        return Ok(None);
+    }
     get_state(db, tool_id)
 }
 

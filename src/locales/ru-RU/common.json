@@ -39,7 +39,9 @@
     "notInstalled": "{tool} не установлен",
     "status": "Состояние",
     "source": "Источник",
-    "activeDownloads": "Загрузок {count}"
+    "activeDownloads": "Загрузок {count}",
+    "runningToolTasks": "Задачи инструментов {count}",
+    "noRunningToolTasks": "Нет выполняющихся задач инструментов"
   },
   "clipboard": {
     "empty": "Буфер обмена пуст",
@@ -107,6 +109,7 @@
     "err_kill_process": "Не удалось завершить процесс",
     "dialogTitle": "Ошибка",
     "dialogOk": "ОК",
-    "showDetail": "Подробнее"
+    "showDetail": "Подробнее",
+    "err_tool_already_running": "Для этого инструмента уже выполняется задача"
   }
 }

@@ -91,7 +91,10 @@
     "commentOnlyUploader": "Csak feltöltői",
     "commentSearchPlaceholder": "Keresés az üzenetek és szerzők között…",
     "saveComments": "Megjegyzések mentése",
-    "commentsSaved": "Megjegyzések elmentve"
+    "commentsSaved": "Megjegyzések elmentve",
+    "stopTask": "Feladat leállítása",
+    "taskCancelled": "A feladat leállítva",
+    "taskInterrupted": "Az előző futást az alkalmazás bezárása szakította meg; újra futtathatja"
   },
   "plugins": {
     "title": "Bővítménykezelő",

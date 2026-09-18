@@ -39,7 +39,9 @@
     "notInstalled": "{tool} nie je nainštalovaný",
     "status": "Stav",
     "source": "Zdroj",
-    "activeDownloads": "Sťahovanie {count}"
+    "activeDownloads": "Sťahovanie {count}",
+    "runningToolTasks": "Úlohy nástroja {count}",
+    "noRunningToolTasks": "Žiadne spustené úlohy nástroja"
   },
   "clipboard": {
     "empty": "Schránka je prázdna",
@@ -107,6 +109,7 @@
     "err_kill_process": "Nepodarilo sa ukončiť proces",
     "dialogTitle": "Chyba",
     "dialogOk": "OK",
-    "showDetail": "Zobraziť podrobnosti"
+    "showDetail": "Zobraziť podrobnosti",
+    "err_tool_already_running": "Pre tento nástroj už beží úloha"
   }
 }

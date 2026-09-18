@@ -82,6 +82,7 @@ pub fn run() {
         .manage(app::commands::CliRequestState::new(initial_request))
         .manage(app::browser_bridge::BrowserBridgeState::default())
         .manage(commands::DownloadState::default())
+        .manage(platform::process::ProcessRegistry::default())
         .invoke_handler(tauri::generate_handler![
             app::commands::update_tray_menu,
             app::commands::set_tray_visible,
@@ -121,6 +122,8 @@ pub fn run() {
             commands::tool_save_text_to_file,
             commands::tool_start_task,
             commands::tool_get_task_state,
+            commands::tool_get_running_tasks,
+            commands::tool_cancel_task,
             commands::tool_get_result,
             commands::tool_read_live_chat_page,
             commands::tool_export_live_chat,
@@ -138,6 +141,15 @@ pub fn run() {
             db::history::db_remove_history,
             db::history::db_clear_history,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            // 退出前回收仍在运行的工具子进程。Windows 上父进程退出不会连带杀掉子进程，
+            // 放着不管会让 yt-dlp 变成孤儿进程继续跑（抓直播弹幕时尤其明显）。
+            if let tauri::RunEvent::Exit = event {
+                for pid in app.state::<platform::process::ProcessRegistry>().drain() {
+                    let _ = platform::process::kill_process(pid);
+                }
+            }
+        });
 }

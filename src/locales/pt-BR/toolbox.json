@@ -91,7 +91,10 @@
     "commentOnlyUploader": "Somente o canal",
     "commentSearchPlaceholder": "Pesquisar no texto ou no autor...",
     "saveComments": "Salvar comentários",
-    "commentsSaved": "Comentários salvos"
+    "commentsSaved": "Comentários salvos",
+    "stopTask": "Parar tarefa",
+    "taskCancelled": "Tarefa interrompida",
+    "taskInterrupted": "A execução anterior foi interrompida ao fechar o aplicativo; você pode executá-la novamente"
   },
   "plugins": {
     "title": "Gerenciador de plugins",

@@ -25,6 +25,7 @@ const {
   result: taskResult,
   running: loading,
   start,
+  cancel,
 } = useToolTask<VideoInfo>("thumbnail");
 const thumbnails = ref<ThumbnailInfo[]>([]);
 const videoTitle = ref("");
@@ -71,6 +72,14 @@ const handleFetch = async () => {
     } else {
       showErrorDialog(msg);
     }
+  }
+};
+
+const handleStop = async () => {
+  try {
+    await cancel();
+  } catch (e: unknown) {
+    showErrorDialog(String(e));
   }
 };
 
@@ -146,17 +155,17 @@ const handleSave = async (thumb: ThumbnailInfo) => {
           {{ $t("toolbox.thumbnailPageDesc") }}
         </n-text>
         <ToolUrlInput v-model="url" />
-        <n-button
-          type="primary"
+        <ToolTaskActions
           :loading="loading"
-          :disabled="!urlValid || loading"
-          @click="handleFetch"
+          :disabled="!urlValid"
+          @fetch="handleFetch"
+          @stop="handleStop"
         >
           <template #icon>
             <n-icon><icon-mdi-image-search /></n-icon>
           </template>
           {{ $t("toolbox.fetchThumbnails") }}
-        </n-button>
+        </ToolTaskActions>
       </n-flex>
     </n-card>
 

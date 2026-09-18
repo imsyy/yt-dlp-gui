@@ -26,6 +26,7 @@ const {
   result: taskResult,
   running: loading,
   start,
+  cancel,
 } = useToolTask<SubtitleInfo>("subtitles");
 const savingKey = ref<string | null>(null);
 const savingBilingual = ref(false);
@@ -102,6 +103,14 @@ const handleFetch = async () => {
     } else {
       showErrorDialog(msg);
     }
+  }
+};
+
+const handleStop = async () => {
+  try {
+    await cancel();
+  } catch (e: unknown) {
+    showErrorDialog(String(e));
   }
 };
 
@@ -249,17 +258,17 @@ const handleSaveBilingual = async () => {
           {{ $t("toolbox.subtitlesPageDesc") }}
         </n-text>
         <ToolUrlInput v-model="url" />
-        <n-button
-          type="primary"
+        <ToolTaskActions
           :loading="loading"
-          :disabled="!urlValid || loading"
-          @click="handleFetch"
+          :disabled="!urlValid"
+          @fetch="handleFetch"
+          @stop="handleStop"
         >
           <template #icon>
             <n-icon><icon-mdi-subtitles-outline /></n-icon>
           </template>
           {{ $t("toolbox.fetchSubtitles") }}
-        </n-button>
+        </ToolTaskActions>
       </n-flex>
     </n-card>
 

@@ -91,7 +91,10 @@
     "commentOnlyUploader": "Solo el canal",
     "commentSearchPlaceholder": "Buscar en el texto o el autor...",
     "saveComments": "Guardar comentarios",
-    "commentsSaved": "Comentarios guardados"
+    "commentsSaved": "Comentarios guardados",
+    "stopTask": "Detener tarea",
+    "taskCancelled": "Tarea detenida",
+    "taskInterrupted": "La ejecución anterior se interrumpió al cerrar la aplicación; puedes volver a ejecutarla"
   },
   "plugins": {
     "title": "Gestión de plugins",
