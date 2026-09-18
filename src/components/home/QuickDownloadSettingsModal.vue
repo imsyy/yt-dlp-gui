@@ -59,7 +59,7 @@ const limitRateOptions = computed(() => [
       <DownloadDirCard plain />
 
       <n-flex align="center" :size="8">
-        <span class="option-label">{{ $t("detail.downloadMethod") }}</span>
+        <n-text depth="3" class="option-label">{{ $t("detail.downloadMethod") }}</n-text>
         <n-radio-group v-model:value="settingStore.quickDownloadMode" size="small">
           <n-radio-button value="default">{{ $t("common.default") }}</n-radio-button>
           <n-radio-button value="video">{{ $t("detail.videoOnly") }}</n-radio-button>
@@ -68,7 +68,7 @@ const limitRateOptions = computed(() => [
       </n-flex>
 
       <n-flex v-if="settingStore.quickDownloadMode !== 'audio'" align="center" :size="8">
-        <span class="option-label">{{ $t("home.maxQuality") }}</span>
+        <n-text depth="3" class="option-label">{{ $t("home.maxQuality") }}</n-text>
         <n-select
           v-model:value="settingStore.quickMaxHeight"
           :options="qualityOptions"
@@ -79,7 +79,7 @@ const limitRateOptions = computed(() => [
 
       <n-flex :size="16" wrap>
         <n-flex align="center" :size="8">
-          <span class="option-label">{{ $t("detail.remuxFormat") }}</span>
+          <n-text depth="3" class="option-label">{{ $t("detail.remuxFormat") }}</n-text>
           <n-select
             v-model:value="settingStore.quickRemuxFormat"
             :options="remuxOptions"
@@ -88,7 +88,7 @@ const limitRateOptions = computed(() => [
           />
         </n-flex>
         <n-flex align="center" :size="8">
-          <span class="option-label">{{ $t("detail.recodeFormat") }}</span>
+          <n-text depth="3" class="option-label">{{ $t("detail.recodeFormat") }}</n-text>
           <n-select
             v-model:value="settingStore.quickRecodeFormat"
             :options="recodeOptions"
@@ -97,7 +97,7 @@ const limitRateOptions = computed(() => [
           />
         </n-flex>
         <n-flex align="center" :size="8">
-          <span class="option-label">{{ $t("detail.speedLimit") }}</span>
+          <n-text depth="3" class="option-label">{{ $t("detail.speedLimit") }}</n-text>
           <n-select
             v-model:value="settingStore.quickLimitRate"
             :options="limitRateOptions"
@@ -108,7 +108,7 @@ const limitRateOptions = computed(() => [
       </n-flex>
 
       <n-flex align="center" :size="8" :wrap="false">
-        <span class="option-label">{{ $t("detail.ffmpegArgs") }}</span>
+        <n-text depth="3" class="option-label">{{ $t("detail.ffmpegArgs") }}</n-text>
         <n-input
           v-model:value="settingStore.quickFfmpegArgs"
           :placeholder="$t('detail.ffmpegArgsPlaceholder')"
@@ -119,7 +119,7 @@ const limitRateOptions = computed(() => [
       </n-flex>
 
       <n-flex align="center" :size="8" :wrap="false">
-        <span class="option-label">{{ $t("detail.customArgs") }}</span>
+        <n-text depth="3" class="option-label">{{ $t("detail.customArgs") }}</n-text>
         <n-input
           v-model:value="settingStore.quickCustomArgs"
           :placeholder="$t('detail.customArgsPlaceholder')"
@@ -170,7 +170,6 @@ const limitRateOptions = computed(() => [
 .option-label {
   min-width: 56px;
   flex-shrink: 0;
-  color: var(--n-text-color-3, #999);
   font-size: 13px;
   white-space: nowrap;
 }

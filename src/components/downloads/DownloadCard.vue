@@ -341,7 +341,7 @@ const handleRemove = () => {
                   <n-text strong type="error">{{ $t("downloads.errorMessage") }}</n-text>
                 </div>
                 <div class="error-popover-body">
-                  {{ formatError(task.error) }}
+                  <n-text depth="2">{{ formatError(task.error) }}</n-text>
                 </div>
               </div>
             </n-popover>
@@ -547,7 +547,6 @@ const handleRemove = () => {
 .error-popover-body {
   font-size: 12px;
   line-height: 1.5;
-  color: var(--n-text-color-2);
   word-break: break-all;
   max-height: 240px;
   overflow-y: auto;

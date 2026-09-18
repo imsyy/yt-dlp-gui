@@ -196,7 +196,7 @@ watch(endTime, (val) => {
   <n-card :title="$t('detail.extraOptions')" size="small">
     <n-flex vertical :size="14">
       <n-flex align="center" :size="8">
-        <span class="option-label">{{ $t("detail.filename") }}</span>
+        <n-text depth="3" class="option-label">{{ $t("detail.filename") }}</n-text>
         <n-flex vertical :size="6" style="flex: 1; min-width: 0">
           <n-select
             :value="selectedPreset"
@@ -259,7 +259,7 @@ watch(endTime, (val) => {
       </n-flex>
 
       <n-flex align="center" :size="8">
-        <span class="option-label">{{ $t("detail.timeTrim") }}</span>
+        <n-text depth="3" class="option-label">{{ $t("detail.timeTrim") }}</n-text>
         <n-flex align="center" :size="8">
           <n-time-picker
             v-model:value="startTime"
@@ -290,7 +290,7 @@ watch(endTime, (val) => {
 
       <n-flex :size="16" wrap>
         <n-flex align="center" :size="8">
-          <span class="option-label">{{ $t("detail.remuxFormat") }}</span>
+          <n-text depth="3" class="option-label">{{ $t("detail.remuxFormat") }}</n-text>
           <n-select
             v-model:value="remuxFormat"
             :options="remuxOptions"
@@ -299,7 +299,7 @@ watch(endTime, (val) => {
           />
         </n-flex>
         <n-flex align="center" :size="8">
-          <span class="option-label">{{ $t("detail.recodeFormat") }}</span>
+          <n-text depth="3" class="option-label">{{ $t("detail.recodeFormat") }}</n-text>
           <n-select
             v-model:value="recodeFormat"
             :options="recodeOptions"
@@ -308,7 +308,7 @@ watch(endTime, (val) => {
           />
         </n-flex>
         <n-flex align="center" :size="8">
-          <span class="option-label">{{ $t("detail.speedLimit") }}</span>
+          <n-text depth="3" class="option-label">{{ $t("detail.speedLimit") }}</n-text>
           <n-select
             v-model:value="limitRate"
             :options="limitRateOptions"
@@ -319,7 +319,7 @@ watch(endTime, (val) => {
       </n-flex>
 
       <n-flex align="center" :size="8">
-        <span class="option-label">{{ $t("detail.ffmpegArgs") }}</span>
+        <n-text depth="3" class="option-label">{{ $t("detail.ffmpegArgs") }}</n-text>
         <n-input
           v-model:value="ffmpegArgs"
           :placeholder="$t('detail.ffmpegArgsPlaceholder')"
@@ -330,7 +330,7 @@ watch(endTime, (val) => {
       </n-flex>
 
       <n-flex align="center" :size="8">
-        <span class="option-label">{{ $t("detail.customArgs") }}</span>
+        <n-text depth="3" class="option-label">{{ $t("detail.customArgs") }}</n-text>
         <n-input
           v-model:value="customArgs"
           :placeholder="$t('detail.customArgsPlaceholder')"
@@ -389,7 +389,6 @@ watch(endTime, (val) => {
 <style scoped lang="scss">
 .option-label {
   font-size: 13px;
-  color: var(--n-text-color-3, #999);
   flex-shrink: 0;
   min-width: 56px;
 }

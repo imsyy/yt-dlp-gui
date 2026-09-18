@@ -30,7 +30,7 @@ const handleSelectDir = async () => {
 <template>
   <template v-if="props.plain">
     <n-flex align="center" :size="8" :wrap="false">
-      <span class="option-label">{{ $t("downloadDir.title") }}</span>
+      <n-text depth="3" class="option-label">{{ $t("downloadDir.title") }}</n-text>
       <n-input
         :value="settingStore.downloadDir"
         :placeholder="$t('downloadDir.notSet')"
@@ -73,7 +73,6 @@ const handleSelectDir = async () => {
 .option-label {
   min-width: 56px;
   flex-shrink: 0;
-  color: var(--n-text-color-3, #999);
   font-size: 13px;
   white-space: nowrap;
 }

@@ -70,7 +70,9 @@ const handleClose = () => {
     <n-flex vertical :size="16">
       <n-flex align="center" :size="8">
         <n-tag size="small" round>v{{ currentVersion }}</n-tag>
-        <icon-mdi-arrow-right style="font-size: 14px; color: var(--n-text-color-3)" />
+        <n-icon :size="14" :depth="3">
+          <icon-mdi-arrow-right />
+        </n-icon>
         <n-tag type="primary" :bordered="false" size="small" round>
           v{{ statusStore.updateVersion }}
         </n-tag>

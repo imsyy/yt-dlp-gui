@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getVersion } from "@tauri-apps/api/app";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import IconMdiHome from "~icons/mdi/home";
 import IconMdiPlaylistPlay from "~icons/mdi/playlist-play";
@@ -55,6 +56,9 @@ const navItems: { key: string; icon: Component; labelKey: string }[] = [
 
 const currentAppWindow = getCurrentWindow();
 
+/** 当前应用版本号 */
+const appVersion = ref("");
+
 // 窗口关闭事件拦截
 currentAppWindow.onCloseRequested(async (closeEvent) => {
   if (settingStore.showTrayIcon && settingStore.closeToTray) {
@@ -67,10 +71,15 @@ currentAppWindow.onCloseRequested(async (closeEvent) => {
 });
 
 onMounted(async () => {
-  await bootstrap();
-  await setupExternalImportListeners();
-  await setupTray();
-  await currentAppWindow.show();
+  appVersion.value = await getVersion().catch(() => "");
+  try {
+    await bootstrap();
+    await setupExternalImportListeners();
+    await setupTray();
+  } finally {
+    // 引导失败也要显示窗口，否则应用只剩托盘图标、看不到界面
+    await currentAppWindow.show();
+  }
 });
 </script>
 
@@ -85,7 +94,10 @@ onMounted(async () => {
         <div class="header-side">
           <div class="logo" @click="router.push({ name: 'home' })">
             <img src="/app-icon.svg" alt="" class="logo-img" />
-            <span class="logo-text">YDL GUI</span>
+            <div class="logo-titles">
+              <span class="logo-text">YDL GUI</span>
+              <n-text v-if="appVersion" depth="3" class="logo-version">v{{ appVersion }}</n-text>
+            </div>
           </div>
         </div>
         <div class="header-nav">
@@ -213,10 +225,25 @@ onMounted(async () => {
       transition: transform 0.3s;
     }
 
+    .logo-titles {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 0;
+    }
+
     .logo-text {
       font-weight: 700;
       font-size: 16px;
+      line-height: 1.15;
       letter-spacing: 0.5px;
+    }
+
+    .logo-version {
+      font-size: 11px;
+      line-height: 1.2;
+      letter-spacing: 0.2px;
+      font-variant-numeric: tabular-nums;
     }
 
     &:hover .logo-img {

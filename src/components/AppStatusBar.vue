@@ -230,15 +230,15 @@ onUnmounted(() => unlistenProgress?.());
               </n-flex>
             </n-flex>
             <div class="tool-field">
-              <n-text depth="3" size="small">{{ $t("settings.version") }}</n-text>
+              <n-text depth="3">{{ $t("settings.version") }}</n-text>
               <n-text>{{ statuses[tool.key]?.version || "—" }}</n-text>
             </div>
             <div v-if="statusStore.toolUpdates[tool.key]?.updateAvailable" class="tool-field">
-              <n-text depth="3" size="small">{{ $t("settings.latestVersion") }}</n-text>
+              <n-text depth="3">{{ $t("settings.latestVersion") }}</n-text>
               <n-text type="warning">{{ statusStore.toolUpdates[tool.key]?.latestVersion }}</n-text>
             </div>
             <div class="tool-field">
-              <n-text depth="3" size="small">{{ $t("statusBar.source") }}</n-text>
+              <n-text depth="3">{{ $t("statusBar.source") }}</n-text>
               <n-text>{{ sourceText(tool.key) }}</n-text>
             </div>
           </n-flex>
