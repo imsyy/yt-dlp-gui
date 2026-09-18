@@ -1,11 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { DownloadTask } from "@/types";
 import type { HistoryItem } from "@/stores/history";
-import {
-  clearLegacyHistory,
-  countLegacyHistory,
-  readLegacyHistory,
-} from "./legacyHistory";
+import { clearLegacyHistory, countLegacyHistory, readLegacyHistory } from "./legacyHistory";
 import {
   clearLegacyTasks,
   countLegacyTasks,

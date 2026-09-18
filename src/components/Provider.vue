@@ -86,7 +86,11 @@ const syncNativeTheme = async (): Promise<void> => {
   }
 };
 
-watch(() => settingStore.themeMode, () => void syncNativeTheme(), { immediate: true });
+watch(
+  () => settingStore.themeMode,
+  () => void syncNativeTheme(),
+  { immediate: true },
+);
 
 // 挂载工具
 const NaiveProviderContent = defineComponent({
