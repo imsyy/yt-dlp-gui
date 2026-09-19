@@ -95,7 +95,6 @@
     "stopTask": "停止任務",
     "taskCancelled": "任務已停止",
     "taskInterrupted": "上次執行被應用程式結束中斷，可重新執行",
-    "channelArchiveTitle": "頻道/主播歸檔",
     "channelArchiveDesc": "歸檔頻道全部影片與重播，支援增量更新與本機檢索"
   },
   "plugins": {

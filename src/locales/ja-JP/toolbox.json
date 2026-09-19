@@ -95,7 +95,6 @@
     "stopTask": "タスクを停止",
     "taskCancelled": "タスクを停止しました",
     "taskInterrupted": "前回の実行はアプリ終了により中断されました。再実行できます",
-    "channelArchiveTitle": "チャンネルアーカイブ",
     "channelArchiveDesc": "チャンネルの全動画や配信アーカイブを保存し差分更新に対応"
   },
   "plugins": {
@@ -136,7 +135,7 @@
     "viewSource": "GitHub でソースを見る"
   },
   "channelArchive": {
-    "title": "チャンネルアーカイブ",
+    "title": "チャンネル動画アーカイブ",
     "desc": "YouTube や Bilibili のチャンネルから動画・Shorts・配信アーカイブをローカルに保存し差分更新に対応",
     "addChannel": "チャンネルを追加",
     "channelUrlPlaceholder": "YouTube チャンネルの URL または Bilibili 空間リンクを入力...",

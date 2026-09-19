@@ -3,8 +3,8 @@
 use super::enrich::{spawn_enrich_job, EnrichJobParams};
 use super::extract::{
     clean_channel_url, detect_platform, extract_channel_avatar, extract_channel_banner,
-    extract_channel_id, extract_channel_title, extract_published_at, extract_video_thumbnail,
-    now_millis,
+    extract_channel_id, extract_channel_title, extract_published_at, extract_space_author,
+    extract_video_thumbnail, now_millis, BILIBILI_USER_AGENT,
 };
 use crate::commands::support::{append_cookie_proxy_args, run_ytdlp_json_tracked};
 use crate::db::channels::{
@@ -92,17 +92,55 @@ pub async fn channel_add(
 
     let platform = detect_platform(&cleaned_url, &info);
     let channel_id = extract_channel_id(&info, &cleaned_url, &platform);
-    let title = extract_channel_title(&info, &cleaned_url);
-    let uploader = info
+    let mut title = extract_channel_title(&info, &cleaned_url);
+    let mut uploader = info
         .get("uploader")
         .and_then(Value::as_str)
         .unwrap_or(&title)
         .to_string();
-    let uploader_id = info
+    let mut uploader_id = info
         .get("uploader_id")
         .and_then(Value::as_str)
         .unwrap_or("")
         .to_string();
+
+    // B 站空间轻量提取无任何元数据（标题回退成 URL、作者全空）：多抓一条完整视频回填。
+    // 失败则保留 URL 兜底，不比原来差
+    if platform == "bilibili" && uploader.is_empty() {
+        let meta_args = [
+            "--no-check-formats",
+            "--no-flat-playlist",
+            "--playlist-end",
+            "1",
+            "--user-agent",
+            BILIBILI_USER_AGENT,
+        ];
+        if let Ok(full) = run_ytdlp_json_tracked(
+            &app,
+            None,
+            &cleaned_url,
+            &meta_args,
+            cookie_file.as_deref(),
+            cookie_browser.as_deref(),
+            proxy.as_deref(),
+        )
+        .await
+        {
+            let first = full
+                .get("entries")
+                .and_then(Value::as_array)
+                .and_then(|entries| entries.first());
+            if let Some(entry) = first {
+                if let Some((space_title, space_uploader, space_uid)) =
+                    extract_space_author(entry)
+                {
+                    title = space_title;
+                    uploader = space_uploader;
+                    uploader_id = space_uid;
+                }
+            }
+        }
+    }
     let avatar = extract_channel_avatar(&info);
     let banner = extract_channel_banner(&info);
     let description = info
@@ -348,6 +386,11 @@ pub async fn channel_sync_start(
             args.extend(utils::build_ffmpeg_location_args(&app_handle));
             args.extend(utils::build_plugin_args(&app_handle));
             args.extend(utils::build_youtube_extractor_args());
+            // B 站风控严，仅该平台附加浏览器 UA；其他平台保持默认避免副作用
+            if channel.platform == "bilibili" {
+                args.push("--user-agent".to_string());
+                args.push(BILIBILI_USER_AGENT.to_string());
+            }
             append_cookie_proxy_args(
                 &mut args,
                 cookie_file.as_deref(),

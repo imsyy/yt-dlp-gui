@@ -3,6 +3,10 @@
 
 use serde_json::Value;
 
+/// B 站风控严（默认 UA 易被 412 拦截），仅 B 站请求附加的浏览器 UA。
+/// 实测：同机房出口下默认 UA 扫空间列表 412，加此 UA 后正常。
+pub(crate) const BILIBILI_USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
 pub(crate) fn now_millis() -> i64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -229,5 +233,55 @@ fn parse_upload_date(date_str: &str) -> Option<i64> {
         Some(days * 86400 * 1000)
     } else {
         None
+    }
+}
+
+/// 从 B 站空间首条完整视频 JSON 中提取作者信息。
+/// 背景：空间页轻量提取（playlist-items 0）无任何元数据，标题会回退成 URL，
+/// 只能多抓一条完整视频，用其 uploader 字段回填（视频作者即空间主人）。
+/// 返回 (频道标题, 作者, 作者 ID)，频道标题沿用作者名（视频标题不能代表频道）。
+pub(crate) fn extract_space_author(entry: &Value) -> Option<(String, String, String)> {
+    let uploader = entry
+        .get("uploader")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|name| !name.is_empty())?;
+    let uploader_id = entry
+        .get("uploader_id")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    Some((
+        uploader.to_string(),
+        uploader.to_string(),
+        uploader_id,
+    ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_extract_space_author() {
+        let entry = json!({
+            "id": "BV1vCYD6QEFH",
+            "title": "某个视频标题",
+            "uploader": "某某UP主",
+            "uploader_id": "384135088",
+        });
+        assert_eq!(
+            extract_space_author(&entry),
+            Some((
+                "某某UP主".to_string(),
+                "某某UP主".to_string(),
+                "384135088".to_string(),
+            ))
+        );
+        // 无作者字段：无法回填
+        assert!(extract_space_author(&json!({"title": "x"})).is_none());
+        // 空白作者名：视为缺失
+        assert!(extract_space_author(&json!({"uploader": "  "})).is_none());
     }
 }

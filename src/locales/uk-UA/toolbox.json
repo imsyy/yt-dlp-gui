@@ -95,7 +95,6 @@
     "stopTask": "Зупинити завдання",
     "taskCancelled": "Завдання зупинено",
     "taskInterrupted": "Попередній запуск перервано закриттям програми; можна запустити знову",
-    "channelArchiveTitle": "Channel Archive",
     "channelArchiveDesc": "Archive all videos, shorts, and live streams with incremental sync"
   },
   "plugins": {
@@ -136,7 +135,7 @@
     "viewSource": "Переглянути вихідний код на GitHub"
   },
   "channelArchive": {
-    "title": "Channel Archive",
+    "title": "Архів відео каналів",
     "desc": "Enter a channel or space URL to archive all videos, live streams, and shorts",
     "addChannel": "Add Channel",
     "channelUrlPlaceholder": "Enter YouTube channel URL (e.g. https://www.youtube.com/channel/...) or Bilibili space link...",

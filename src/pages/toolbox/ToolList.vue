@@ -29,7 +29,7 @@ const tools: ToolItem[] = [
     icon: IconMdiAccountBoxMultipleOutline,
     color: "#0ea5e9",
     bg: "rgba(14,165,233,0.1)",
-    titleKey: "toolbox.channelArchiveTitle",
+    titleKey: "channelArchive.title",
     descKey: "toolbox.channelArchiveDesc",
   },
   {

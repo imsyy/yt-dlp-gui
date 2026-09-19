@@ -95,7 +95,6 @@
     "stopTask": "작업 중지",
     "taskCancelled": "작업을 중지했습니다",
     "taskInterrupted": "이전 실행이 앱 종료로 중단되었습니다. 다시 실행할 수 있습니다",
-    "channelArchiveTitle": "채널 보관함",
     "channelArchiveDesc": "채널의 모든 동영상과 라이브 스트림을 보관하고 증분 동기화 지원"
   },
   "plugins": {
@@ -136,7 +135,7 @@
     "viewSource": "GitHub에서 소스 보기"
   },
   "channelArchive": {
-    "title": "채널 비디오 보관함",
+    "title": "채널 동영상 아카이브",
     "desc": "YouTube 채널 또는 Bilibili 공간의 동영상, 쇼츠 및 라이브 스트림을 로컬에 보관하고 증분 동기화 지원",
     "addChannel": "채널 추가",
     "channelUrlPlaceholder": "YouTube 채널 URL 또는 Bilibili 공간 링크를 입력하세요...",

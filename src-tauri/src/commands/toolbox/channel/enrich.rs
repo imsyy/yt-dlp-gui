@@ -4,7 +4,7 @@
 //! 按分片并发跑 yt-dlp（首轮 + 最多补查轮）-> channel-enrich-progress 事件推进 ->
 //! 终态 completed/error/cancelled。ACTIVE_ENRICHS 表项跨轮持有，任务结束才释放。
 
-use super::extract::{extract_published_at, extract_video_thumbnail};
+use super::extract::{extract_published_at, extract_video_thumbnail, BILIBILI_USER_AGENT};
 use crate::commands::support::append_cookie_proxy_args;
 use crate::db::channels::{
     get_channel, get_enrich_targets, update_video_enriched_fields, EnrichTarget, EnrichUpdate,
@@ -169,6 +169,11 @@ async fn enrich_worker(ctx: EnrichWorkerCtx) {
             ];
             for (_, _, url) in &chunk {
                 generic.push(url.clone());
+            }
+            // B 站风控与其他平台不同，仅该平台附加浏览器 UA
+            if channel_platform == "bilibili" {
+                generic.push("--user-agent".to_string());
+                generic.push(BILIBILI_USER_AGENT.to_string());
             }
             generic
         };

@@ -95,7 +95,6 @@
     "stopTask": "停止任务",
     "taskCancelled": "任务已停止",
     "taskInterrupted": "上次执行被应用退出中断，可重新执行",
-    "channelArchiveTitle": "频道/主播归档",
     "channelArchiveDesc": "归档频道全部视频与回放，支持增量更新与本地检索"
   },
   "plugins": {
