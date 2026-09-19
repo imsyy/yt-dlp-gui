@@ -63,6 +63,11 @@ const router = createRouter({
           component: () => import("@/pages/toolbox/Plugins.vue"),
         },
         {
+          path: "channel",
+          name: "toolbox-channel",
+          component: () => import("@/pages/toolbox/ChannelArchive.vue"),
+        },
+        {
           path: "browser-extension",
           name: "toolbox-browser-extension",
           component: () => import("@/pages/toolbox/BrowserExtension.vue"),

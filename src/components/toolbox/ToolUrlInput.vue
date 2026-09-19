@@ -3,11 +3,27 @@ import { readText } from "@tauri-apps/plugin-clipboard-manager";
 import { isValidUrl } from "@/utils/validate";
 import { useI18n } from "vue-i18n";
 
+interface Props {
+  placeholder?: string;
+  size?: "small" | "medium" | "large";
+  disabled?: boolean;
+}
+
 /** 工具页共用的 URL 输入行：输入框 + 粘贴按钮 */
 const modelValue = defineModel<string>({ required: true });
+const props = withDefaults(defineProps<Props>(), {
+  placeholder: "",
+  size: "medium",
+  disabled: false,
+});
+const emit = defineEmits<{
+  (e: "submit"): void;
+}>();
+
 const { t } = useI18n();
 
 const handlePaste = async () => {
+  if (props.disabled) return;
   try {
     const text = await readText();
     const trimmed = text.trim();
@@ -31,11 +47,20 @@ const handlePaste = async () => {
   <n-flex :size="8" :wrap="false">
     <n-input
       v-model:value="modelValue"
-      :placeholder="$t('home.inputPlaceholder')"
+      :placeholder="props.placeholder || $t('home.inputPlaceholder')"
+      :size="props.size"
+      :disabled="props.disabled"
       clearable
       style="flex: 1"
+      @keyup.enter="emit('submit')"
     />
-    <n-button strong secondary @click="handlePaste">
+    <n-button
+      :size="props.size"
+      :disabled="props.disabled"
+      strong
+      secondary
+      @click="handlePaste"
+    >
       <template #icon>
         <n-icon><icon-mdi-content-paste /></n-icon>
       </template>

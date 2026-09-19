@@ -1,7 +1,8 @@
 {
+  "$schema": "https://json.schemastore.org/package.json",
   "name": "yt-dlp-gui",
   "private": true,
-  "version": "0.8.0",
+  "version": "1.0.0",
   "description": "A modern, cross-platform desktop GUI for yt-dlp — download videos from YouTube, Bilibili, Twitter and 1000+ sites. Built with Tauri 2 + Vue 3.",
   "keywords": [
     "yt-dlp",

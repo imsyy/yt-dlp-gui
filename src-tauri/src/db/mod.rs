@@ -1,5 +1,6 @@
 //! 本地 SQLite 嵌入式数据库核心管理模块。
 
+pub mod channels;
 pub mod history;
 pub mod schema;
 pub mod tasks;
@@ -102,7 +103,14 @@ mod tests {
 
         assert_eq!(
             tables,
-            vec!["parse_history", "tasks", "tool_results", "tool_task_states"]
+            vec![
+                "channel_videos",
+                "channels",
+                "parse_history",
+                "tasks",
+                "tool_results",
+                "tool_task_states"
+            ]
         );
     }
 
@@ -371,5 +379,96 @@ mod tests {
         tasks::upsert_tasks_batch(&mut conn, &batch_tasks).unwrap();
         let fetched_tasks = tasks::get_all_tasks(&conn).unwrap();
         assert_eq!(fetched_tasks.len(), 2);
+    }
+
+    #[test]
+    fn test_channel_db_operations() {
+        let conn = Connection::open_in_memory().unwrap();
+        schema::run_migrations(&conn).unwrap();
+        let state = DatabaseState {
+            conn: Mutex::new(conn),
+            db_path: PathBuf::from(":memory:"),
+        };
+
+        let channel = channels::ChannelRecord {
+            id: "youtube:@Google".to_string(),
+            url: "https://www.youtube.com/@Google".to_string(),
+            title: "Google".to_string(),
+            uploader: "Google".to_string(),
+            uploader_id: "@Google".to_string(),
+            avatar: "https://example.com/avatar.jpg".to_string(),
+            banner: "".to_string(),
+            description: "Google official channel".to_string(),
+            platform: "youtube".to_string(),
+            subscriber_count: Some(14600000),
+            video_count: 0,
+            last_synced_at: None,
+            sync_status: "idle".to_string(),
+            sync_error: None,
+            created_at: 1000,
+        };
+
+        channels::upsert_channel(&state, &channel).unwrap();
+        let fetched = channels::get_channel(&state, "youtube:@Google").unwrap().unwrap();
+        assert_eq!(fetched.title, "Google");
+
+        let videos = vec![
+            channels::ChannelVideoRecord {
+                id: "youtube:@Google_v1".to_string(),
+                channel_id: "youtube:@Google".to_string(),
+                video_id: "v1".to_string(),
+                url: "https://www.youtube.com/watch?v=v1".to_string(),
+                title: "Google Keynote".to_string(),
+                thumbnail: "https://example.com/t1.jpg".to_string(),
+                duration: Some(120.0),
+                view_count: Some(50000),
+                published_at: Some(2000),
+                content_type: "video".to_string(),
+                created_at: 1000,
+            },
+            channels::ChannelVideoRecord {
+                id: "youtube:@Google_s1".to_string(),
+                channel_id: "youtube:@Google".to_string(),
+                video_id: "s1".to_string(),
+                url: "https://www.youtube.com/shorts/s1".to_string(),
+                title: "Pixel Watch Short".to_string(),
+                thumbnail: "https://example.com/s1.jpg".to_string(),
+                duration: Some(30.0),
+                view_count: Some(100000),
+                published_at: Some(3000),
+                content_type: "short".to_string(),
+                created_at: 1000,
+            },
+        ];
+
+        let affected = channels::upsert_channel_videos_batch(&state, &videos).unwrap();
+        assert_eq!(affected, 2);
+
+        let ids = channels::get_channel_existing_video_ids(&state, "youtube:@Google").unwrap();
+        assert!(ids.contains("v1"));
+        assert!(ids.contains("s1"));
+
+        // 测试分页与分类过滤
+        let page = channels::get_channel_videos_page(
+            &state,
+            &channels::ChannelVideosQuery {
+                channel_id: "youtube:@Google".to_string(),
+                content_type: Some("short".to_string()),
+                query: None,
+                sort_by: None,
+                sort_order: None,
+                page: 1,
+                page_size: 10,
+            },
+        )
+        .unwrap();
+        assert_eq!(page.total, 1);
+        assert_eq!(page.items[0].video_id, "s1");
+
+        // 测试删除级联
+        channels::delete_channel(&state, "youtube:@Google").unwrap();
+        assert!(channels::get_channel(&state, "youtube:@Google").unwrap().is_none());
+        let empty_ids = channels::get_channel_existing_video_ids(&state, "youtube:@Google").unwrap();
+        assert!(empty_ids.is_empty());
     }
 }

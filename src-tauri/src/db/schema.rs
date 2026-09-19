@@ -1,6 +1,6 @@
 use rusqlite::{Connection, Result};
 
-const CURRENT_SCHEMA_VERSION: i32 = 4;
+const CURRENT_SCHEMA_VERSION: i32 = 5;
 
 pub fn get_schema_version(conn: &Connection) -> Result<i32> {
     conn.query_row("PRAGMA user_version", [], |row| row.get(0))
@@ -72,6 +72,48 @@ pub fn run_migrations(conn: &Connection) -> Result<()> {
                 completed_at INTEGER NOT NULL
             );
             CREATE INDEX idx_tool_results_run_id ON tool_results(run_id);
+            "#,
+        )?;
+    }
+
+    if current_version < 5 {
+        conn.execute_batch(
+            r#"
+            CREATE TABLE IF NOT EXISTS channels (
+                id TEXT PRIMARY KEY NOT NULL,
+                url TEXT UNIQUE NOT NULL,
+                title TEXT NOT NULL,
+                uploader TEXT NOT NULL DEFAULT '',
+                uploader_id TEXT NOT NULL DEFAULT '',
+                avatar TEXT NOT NULL DEFAULT '',
+                banner TEXT NOT NULL DEFAULT '',
+                description TEXT NOT NULL DEFAULT '',
+                platform TEXT NOT NULL DEFAULT 'youtube',
+                subscriber_count INTEGER,
+                video_count INTEGER NOT NULL DEFAULT 0,
+                last_synced_at INTEGER,
+                sync_status TEXT NOT NULL DEFAULT 'idle',
+                sync_error TEXT,
+                created_at INTEGER NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_channels_updated ON channels(last_synced_at DESC);
+
+            CREATE TABLE IF NOT EXISTS channel_videos (
+                id TEXT PRIMARY KEY NOT NULL,
+                channel_id TEXT NOT NULL,
+                video_id TEXT NOT NULL,
+                url TEXT NOT NULL,
+                title TEXT NOT NULL,
+                thumbnail TEXT NOT NULL DEFAULT '',
+                duration REAL,
+                view_count INTEGER,
+                published_at INTEGER,
+                content_type TEXT NOT NULL DEFAULT 'video',
+                created_at INTEGER NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_channel_videos_channel ON channel_videos(channel_id);
+            CREATE INDEX IF NOT EXISTS idx_channel_videos_pub ON channel_videos(channel_id, published_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_channel_videos_type ON channel_videos(channel_id, content_type);
             "#,
         )?;
     }

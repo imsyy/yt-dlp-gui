@@ -13,7 +13,11 @@
       "Bash(pnpm:*)",
       "Bash(ls:*)",
       "Bash(cargo clippy:*)",
-      "WebFetch(domain:www.naiveui.com)"
+      "WebFetch(domain:www.naiveui.com)",
+      "Bash(cd *)",
+      "Bash(PYTHONIOENCODING=utf-8 python /tmp/deadkeys.py)",
+      "Bash(PYTHONIOENCODING=utf-8 python -c ' *)",
+      "Bash(PYTHONIOENCODING=utf-8 python *)"
     ]
   }
 }

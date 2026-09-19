@@ -341,3 +341,62 @@ export interface SubtitleInfo {
   subtitles: Record<string, SubtitleTrack[]>;
   automatic_captions: Record<string, SubtitleTrack[]>;
 }
+
+export interface ChannelRecord {
+  id: string;
+  url: string;
+  title: string;
+  uploader: string;
+  uploaderId: string;
+  avatar: string;
+  banner: string;
+  description: string;
+  platform: string;
+  subscriberCount: number | null;
+  videoCount: number;
+  lastSyncedAt: number | null;
+  syncStatus: "idle" | "syncing" | "error";
+  syncError: string | null;
+  createdAt: number;
+}
+
+export interface ChannelVideoRecord {
+  id: string;
+  channelId: string;
+  videoId: string;
+  url: string;
+  title: string;
+  thumbnail: string;
+  duration: number | null;
+  viewCount: number | null;
+  publishedAt: number | null;
+  contentType: "video" | "short" | "stream";
+  createdAt: number;
+}
+
+export interface ChannelVideosQuery {
+  channelId: string;
+  contentType?: string;
+  query?: string;
+  sortBy?: "published_at" | "view_count" | "duration";
+  sortOrder?: "asc" | "desc";
+  page: number;
+  pageSize: number;
+}
+
+export interface ChannelVideosPage {
+  items: ChannelVideoRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface ChannelSyncProgressPayload {
+  channelId: string;
+  status: "syncing" | "completed" | "error" | "cancelled";
+  totalSynced: number;
+  newSynced: number;
+  currentTab?: string | null;
+  message?: string | null;
+}
+

@@ -12,6 +12,7 @@
 <style scoped lang="scss">
 .toolbox-page {
   height: 100%;
+  box-sizing: border-box;
   overflow-y: auto;
   padding: 16px;
 }

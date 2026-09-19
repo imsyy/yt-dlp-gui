@@ -5,6 +5,7 @@ import IconMdiSubtitlesOutline from "~icons/mdi/subtitles-outline";
 import IconMdiMessageTextOutline from "~icons/mdi/message-text-outline";
 import IconMdiFormatListNumbered from "~icons/mdi/format-list-numbered";
 import IconMdiCommentTextMultipleOutline from "~icons/mdi/comment-text-multiple-outline";
+import IconMdiAccountBoxMultipleOutline from "~icons/mdi/account-box-multiple-outline";
 import IconMdiPuzzleOutline from "~icons/mdi/puzzle-outline";
 import IconMdiOpenInApp from "~icons/mdi/open-in-app";
 import { useI18n } from "vue-i18n";
@@ -23,6 +24,14 @@ interface ToolItem {
 }
 
 const tools: ToolItem[] = [
+  {
+    key: "channel",
+    icon: IconMdiAccountBoxMultipleOutline,
+    color: "#0ea5e9",
+    bg: "rgba(14,165,233,0.1)",
+    titleKey: "toolbox.channelArchiveTitle",
+    descKey: "toolbox.channelArchiveDesc",
+  },
   {
     key: "thumbnail",
     icon: IconMdiImageOutline,

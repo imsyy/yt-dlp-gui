@@ -481,7 +481,7 @@ const handleRemove = () => {
 
 <style scoped lang="scss">
 .task-card {
-  :deep(.n-card__content) {
+  :deep(.n-card-content) {
     padding: 14px;
   }
 }
