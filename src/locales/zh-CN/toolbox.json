@@ -147,6 +147,7 @@
     "syncing": "同步中",
     "incrementalSync": "增量更新",
     "fullSync": "全量同步",
+    "fullSyncConfirm": "全量同步将重新扫描该频道的全部视频与历史记录，耗时可能较长，确定要继续吗？",
     "cancelSync": "取消同步",
     "syncSuccess": "同步完成，新增 {newCount} 个视频",
     "syncProgress": "已获取 {total} 条，新收录 {added} 条",

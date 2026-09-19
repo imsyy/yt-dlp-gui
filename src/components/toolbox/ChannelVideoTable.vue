@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import { NButton, NEllipsis, NIcon, NTooltip } from "naive-ui";
+import { NButton, NEllipsis, NFlex, NIcon, NText, NTooltip } from "naive-ui";
 import IconMdiContentCopy from "~icons/mdi/content-copy";
 import IconMdiDownload from "~icons/mdi/download";
 import IconMdiOpenInNew from "~icons/mdi/open-in-new";
@@ -66,6 +66,9 @@ const toggleSortOrder = () => {
 
 const pad = (value: number) => String(value).padStart(2, "0");
 
+/** 统一渲染浅色横杠占位符 */
+const renderPlaceholder = () => h(NText, { depth: 3 }, { default: () => "-" });
+
 /** 秒数转为 mm:ss / h:mm:ss */
 const formatDuration = (seconds: number | null): string => {
   if (!seconds || seconds <= 0) return "";
@@ -73,9 +76,7 @@ const formatDuration = (seconds: number | null): string => {
   const hours = Math.floor(total / 3600);
   const minutes = Math.floor((total % 3600) / 60);
   const remainder = total % 60;
-  return hours > 0
-    ? `${hours}:${pad(minutes)}:${pad(remainder)}`
-    : `${minutes}:${pad(remainder)}`;
+  return hours > 0 ? `${hours}:${pad(minutes)}:${pad(remainder)}` : `${minutes}:${pad(remainder)}`;
 };
 
 const formatDate = (timestamp: number | null): string => {
@@ -107,30 +108,42 @@ const columns = computed<DataTableColumns<ChannelVideoRecord>>(() => [
     key: "title",
     minWidth: 280,
     render: (row) =>
-      h("div", { class: "video-cell" }, [
-        row.thumbnail
-          ? h("img", { class: "video-thumb", src: row.thumbnail, alt: "", loading: "lazy" })
-          : h("div", { class: "video-thumb" }),
-        h(NEllipsis, { tooltip: true, class: "video-title" }, { default: () => row.title }),
-      ]),
+      h(
+        NFlex,
+        { align: "center", size: 10, wrap: false },
+        {
+          default: () => [
+            row.thumbnail
+              ? h("img", {
+                  class: "video-thumb",
+                  src: row.thumbnail,
+                  alt: "",
+                  decoding: "async",
+                  referrerPolicy: "no-referrer",
+                })
+              : h("div", { class: "video-thumb empty-thumb" }),
+            h(NEllipsis, { lineClamp: 2, tooltip: true }, { default: () => row.title || "-" }),
+          ],
+        },
+      ),
   },
   {
     title: t("channelArchive.sortDuration"),
     key: "duration",
     width: 100,
-    render: (row) => formatDuration(row.duration),
+    render: (row) => formatDuration(row.duration) || renderPlaceholder(),
   },
   {
     title: t("channelArchive.sortViews"),
     key: "viewCount",
     width: 110,
-    render: (row) => (row.viewCount ? formatViewCount(row.viewCount) : ""),
+    render: (row) => (row.viewCount ? formatViewCount(row.viewCount) : renderPlaceholder()),
   },
   {
     title: t("channelArchive.sortPublished"),
     key: "publishedAt",
     width: 120,
-    render: (row) => formatDate(row.publishedAt),
+    render: (row) => formatDate(row.publishedAt) || renderPlaceholder(),
   },
   {
     title: t("channelArchive.actions"),
@@ -138,11 +151,21 @@ const columns = computed<DataTableColumns<ChannelVideoRecord>>(() => [
     align: "center",
     width: 130,
     render: (row) =>
-      h("div", { class: "video-actions" }, [
-        renderAction(IconMdiDownload, t("channelArchive.sendToDownload"), () => emit("send", row)),
-        renderAction(IconMdiContentCopy, t("channelArchive.copyLink"), () => emit("copy", row)),
-        renderAction(IconMdiOpenInNew, t("channelArchive.openInBrowser"), () => emit("open", row)),
-      ]),
+      h(
+        NFlex,
+        { align: "center", size: 12, wrap: false },
+        {
+          default: () => [
+            renderAction(IconMdiDownload, t("channelArchive.sendToDownload"), () =>
+              emit("send", row),
+            ),
+            renderAction(IconMdiContentCopy, t("channelArchive.copyLink"), () => emit("copy", row)),
+            renderAction(IconMdiOpenInNew, t("channelArchive.openInBrowser"), () =>
+              emit("open", row),
+            ),
+          ],
+        },
+      ),
   },
 ]);
 </script>
@@ -187,9 +210,7 @@ const columns = computed<DataTableColumns<ChannelVideoRecord>>(() => [
               </template>
             </n-button>
           </template>
-          {{
-            sortOrder === "desc" ? $t("channelArchive.sortDesc") : $t("channelArchive.sortAsc")
-          }}
+          {{ sortOrder === "desc" ? $t("channelArchive.sortDesc") : $t("channelArchive.sortAsc") }}
         </n-tooltip>
       </n-flex>
     </n-flex>
@@ -225,7 +246,6 @@ const columns = computed<DataTableColumns<ChannelVideoRecord>>(() => [
 </template>
 
 <style scoped lang="scss">
-/* 卡片撑满右栏剩余高度，表体靠 flex 拿到确定高度后内部滚动 */
 .video-table-card {
   flex: 1;
   min-height: 0;
@@ -243,13 +263,6 @@ const columns = computed<DataTableColumns<ChannelVideoRecord>>(() => [
   }
 }
 
-/* 单元格内容由 render 函数生成，沿用表格作用域下的样式 */
-.video-table-card :deep(.video-cell) {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .video-table-card :deep(.video-thumb) {
   flex-shrink: 0;
   width: 84px;
@@ -257,16 +270,5 @@ const columns = computed<DataTableColumns<ChannelVideoRecord>>(() => [
   border-radius: 4px;
   object-fit: cover;
   background-color: var(--n-merged-td-color-hover);
-}
-
-.video-table-card :deep(.video-title) {
-  flex: 1;
-  min-width: 0;
-}
-
-.video-table-card :deep(.video-actions) {
-  display: flex;
-  justify-content: center;
-  gap: 2px;
 }
 </style>

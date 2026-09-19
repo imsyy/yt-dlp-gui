@@ -147,6 +147,7 @@
     "syncing": "同步中",
     "incrementalSync": "增量更新",
     "fullSync": "全量同步",
+    "fullSyncConfirm": "全量同步將重新掃描該頻道的全部影片與歷史紀錄，耗時可能較長，確定要繼續嗎？",
     "cancelSync": "取消同步",
     "syncSuccess": "同步完成，新增 {newCount} 部影片",
     "syncProgress": "已取得 {total} 筆，新收錄 {added} 筆",

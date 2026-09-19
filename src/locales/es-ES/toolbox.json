@@ -147,6 +147,7 @@
     "syncing": "Syncing",
     "incrementalSync": "Incremental Sync",
     "fullSync": "Full Sync",
+    "fullSyncConfirm": "Full sync will re-scan all videos and history from this channel. This may take a while. Continue?",
     "cancelSync": "Cancel Sync",
     "syncSuccess": "Sync completed. {newCount} new videos added.",
     "syncProgress": "{total} elementos obtenidos, {added} nuevos",

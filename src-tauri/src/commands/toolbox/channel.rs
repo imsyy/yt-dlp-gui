@@ -521,6 +521,8 @@ pub async fn channel_sync_start(
                 "3".to_string(),
                 "--extractor-retries".to_string(),
                 "2".to_string(),
+                "--extractor-args".to_string(),
+                "youtubetab:approximate_date".to_string(),
             ];
 
             if let Some(sleep) = sleep_interval {
@@ -571,6 +573,7 @@ pub async fn channel_sync_start(
                 let mut reader = tokio::io::BufReader::new(stdout).lines();
                 let mut batch: Vec<ChannelVideoRecord> = Vec::new();
                 let mut consecutive_existing_count = 0usize;
+                let mut last_emit_ms = now_millis();
 
                 while let Ok(Some(line)) = reader.next_line().await {
                     if cancel_flag.load(Ordering::Relaxed) {
@@ -621,11 +624,23 @@ pub async fn channel_sync_start(
 
                     let published_at = entry
                         .get("timestamp")
-                        .and_then(Value::as_i64)
+                        .and_then(|v| v.as_i64().or_else(|| v.as_f64().map(|f| f as i64)))
                         .map(|s| s * 1000)
                         .or_else(|| {
                             entry
                                 .get("upload_date")
+                                .and_then(Value::as_str)
+                                .and_then(parse_upload_date)
+                        })
+                        .or_else(|| {
+                            entry
+                                .get("release_timestamp")
+                                .and_then(|v| v.as_i64().or_else(|| v.as_f64().map(|f| f as i64)))
+                                .map(|s| s * 1000)
+                        })
+                        .or_else(|| {
+                            entry
+                                .get("release_date")
                                 .and_then(Value::as_str)
                                 .and_then(parse_upload_date)
                         });
@@ -680,9 +695,11 @@ pub async fn channel_sync_start(
                         created_at: now_ms,
                     });
 
-                    if batch.len() >= 100 {
+                    let should_emit = batch.len() >= 15 || (now_ms - last_emit_ms >= 300 && !batch.is_empty());
+                    if should_emit {
                         let _ = upsert_channel_videos_batch(&db_state, &batch);
                         batch.clear();
+                        last_emit_ms = now_ms;
                         let _ = app_handle.emit(
                             "channel-sync-progress",
                             ChannelSyncProgressPayload {
@@ -700,6 +717,17 @@ pub async fn channel_sync_start(
                 if !batch.is_empty() {
                     let _ = upsert_channel_videos_batch(&db_state, &batch);
                     batch.clear();
+                    let _ = app_handle.emit(
+                        "channel-sync-progress",
+                        ChannelSyncProgressPayload {
+                            channel_id: channel_id.clone(),
+                            status: "syncing".to_string(),
+                            total_synced: total_synced_count,
+                            new_synced: new_synced_count,
+                            current_tab: Some(tab_name.clone()),
+                            message: None,
+                        },
+                    );
                 }
             }
 
@@ -722,7 +750,7 @@ pub async fn channel_sync_start(
                     total_synced: total_synced_count,
                     new_synced: new_synced_count,
                     current_tab: None,
-                    message: Some("Sync cancelled".to_string()),
+                    message: None,
                 },
             );
         } else if let Some(err) = encountered_error {
@@ -748,10 +776,7 @@ pub async fn channel_sync_start(
                     total_synced: total_synced_count,
                     new_synced: new_synced_count,
                     current_tab: None,
-                    message: Some(format!(
-                        "Sync completed. Total: {}, New: {}",
-                        total_synced_count, new_synced_count
-                    )),
+                    message: None,
                 },
             );
         }

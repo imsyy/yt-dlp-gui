@@ -233,12 +233,19 @@ export const useChannelArchive = () => {
 
     if (payload.status === "completed") {
       window.$message.success(
-        payload.message || t("channelArchive.syncSuccess", { newCount: payload.newSynced }),
+        t("channelArchive.syncSuccess", {
+          newCount: payload.newSynced,
+          totalCount: payload.totalSynced,
+        }),
       );
       void loadChannels();
       if (activeChannelId.value === payload.channelId) void loadVideos();
     } else if (payload.status === "error") {
-      window.$message.error(payload.message || t("channelArchive.syncError", { error: "" }));
+      window.$message.error(
+        payload.message
+          ? t("channelArchive.syncError", { error: payload.message })
+          : t("channelArchive.syncError", { error: t("common.unknown") }),
+      );
       void loadChannels();
     } else if (payload.status === "cancelled") {
       window.$message.info(t("channelArchive.syncCancelled"));
