@@ -112,6 +112,8 @@
     "dialogOk": "확인",
     "showDetail": "자세히 보기",
     "err_tool_already_running": "이 도구에 이미 실행 중인 작업이 있습니다",
+    "err_channel_already_syncing": "이 채널에서 이미 동기화 또는 보정 작업이 실행 중입니다",
+    "err_enrich_all_chunks_failed": "모든 보정 요청이 실패했습니다. 네트워크 또는 프록시 설정을 확인 후 재시도하세요",
     "err_plugin_layout": "zip 형식의 플러그인 패키지만 지원됩니다",
     "err_invalid_plugin_name": "유효하지 않은 플러그인 파일 이름입니다",
     "err_read_plugin": "플러그인 패키지 읽기 실패",

@@ -1,19 +1,27 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
+import { NIcon } from "naive-ui";
+import IconMdiDeleteOutline from "~icons/mdi/delete-outline";
+import IconMdiOpenInNew from "~icons/mdi/open-in-new";
 import type { ChannelRecord } from "@/types";
 import type { DropdownOption } from "naive-ui";
+import type { Component } from "vue";
 
 const { t } = useI18n();
 
-defineProps<{
+const props = defineProps<{
   channels: ChannelRecord[];
   loading: boolean;
   activeId: string | null;
+  /** 正在日期校准的频道 ID（校准不写 syncStatus，单独透传） */
+  enrichingIds?: string[];
 }>();
+
+/** 指定频道是否正在日期校准：校准期间同样禁用同步菜单，与主按钮行为对齐 */
+const isEnriching = (channelId: string) => (props.enrichingIds ?? []).includes(channelId);
 
 const emit = defineEmits<{
   (e: "select", channelId: string): void;
-  (e: "sync", channel: ChannelRecord): void;
   (e: "open", channel: ChannelRecord): void;
   (e: "remove", channel: ChannelRecord): void;
 }>();
@@ -27,21 +35,26 @@ const platformMeta: Record<string, { label: string; type: "error" | "info" | "de
 const platformOf = (platform: string) =>
   platformMeta[platform] ?? { label: platform, type: "default" as const };
 
-/** 频道操作菜单 */
-const menuOptions = (channel: ChannelRecord): DropdownOption[] => [
+/** 下拉菜单图标渲染 */
+const menuIcon = (icon: Component) => () => h(NIcon, null, { default: () => h(icon) });
+
+/** 频道操作菜单：同步统一走右侧详情区，这里只保留打开与删除 */
+const menuOptions = computed<DropdownOption[]>(() => [
   {
-    label: t("channelArchive.fullSync"),
-    key: "sync",
-    disabled: channel.syncStatus === "syncing",
+    label: t("channelArchive.openInBrowser"),
+    key: "open",
+    icon: menuIcon(IconMdiOpenInNew),
   },
-  { label: t("channelArchive.openInBrowser"), key: "open" },
   { type: "divider", key: "divider" },
-  { label: t("channelArchive.deleteChannel"), key: "remove" },
-];
+  {
+    label: t("channelArchive.deleteChannel"),
+    key: "remove",
+    icon: menuIcon(IconMdiDeleteOutline),
+  },
+]);
 
 const handleMenuSelect = (key: string, channel: ChannelRecord) => {
-  if (key === "sync") emit("sync", channel);
-  else if (key === "open") emit("open", channel);
+  if (key === "open") emit("open", channel);
   else if (key === "remove") emit("remove", channel);
 };
 </script>
@@ -94,18 +107,18 @@ const handleMenuSelect = (key: string, channel: ChannelRecord) => {
             </n-flex>
 
             <n-tag
-              v-if="channel.syncStatus === 'syncing'"
+              v-if="channel.syncStatus === 'syncing' || isEnriching(channel.id)"
               size="tiny"
               round
               :bordered="false"
               type="warning"
             >
-              {{ $t("channelArchive.syncing") }}
+              {{ $t("channelArchive.loading") }}
             </n-tag>
 
             <n-dropdown
               trigger="click"
-              :options="menuOptions(channel)"
+              :options="menuOptions"
               @select="(key: string) => handleMenuSelect(key, channel)"
             >
               <n-button quaternary circle size="tiny" @click.stop>

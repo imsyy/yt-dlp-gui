@@ -1,6 +1,6 @@
 use rusqlite::{Connection, Result};
 
-const CURRENT_SCHEMA_VERSION: i32 = 5;
+const CURRENT_SCHEMA_VERSION: i32 = 6;
 
 pub fn get_schema_version(conn: &Connection) -> Result<i32> {
     conn.query_row("PRAGMA user_version", [], |row| row.get(0))
@@ -108,6 +108,7 @@ pub fn run_migrations(conn: &Connection) -> Result<()> {
                 duration REAL,
                 view_count INTEGER,
                 published_at INTEGER,
+                published_accuracy TEXT NOT NULL DEFAULT 'approx',
                 content_type TEXT NOT NULL DEFAULT 'video',
                 created_at INTEGER NOT NULL
             );
@@ -116,6 +117,10 @@ pub fn run_migrations(conn: &Connection) -> Result<()> {
             CREATE INDEX IF NOT EXISTS idx_channel_videos_type ON channel_videos(channel_id, content_type);
             "#,
         )?;
+    }
+
+    if current_version < 6 {
+        ensure_channel_video_accuracy_column(conn)?;
     }
 
     conn.execute(
@@ -131,6 +136,26 @@ fn now_millis() -> i64 {
         .duration_since(std::time::UNIX_EPOCH)
         .map(|duration| duration.as_millis() as i64)
         .unwrap_or_default()
+}
+
+fn ensure_channel_video_accuracy_column(conn: &Connection) -> Result<()> {
+    let mut stmt = conn.prepare("PRAGMA table_info(channel_videos)")?;
+    let existing_columns: Vec<String> = stmt
+        .query_map([], |row| row.get::<_, String>(1))?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    if !existing_columns
+        .iter()
+        .any(|column| column == "published_accuracy")
+    {
+        // 存量行的日期全部来自 flat-playlist 近似值，默认 'approx' 语义正确；
+        // 精确值由日期校准任务回填为 'exact'。
+        conn.execute(
+            "ALTER TABLE channel_videos ADD COLUMN published_accuracy TEXT NOT NULL DEFAULT 'approx'",
+            [],
+        )?;
+    }
+    Ok(())
 }
 
 fn ensure_task_columns(conn: &Connection) -> Result<()> {

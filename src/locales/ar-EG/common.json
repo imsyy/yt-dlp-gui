@@ -112,6 +112,8 @@
     "dialogOk": "موافق",
     "showDetail": "إظهار التفاصيل",
     "err_tool_already_running": "هذه الأداة لديها مهمة قيد التنفيذ بالفعل",
+    "err_channel_already_syncing": "هذه القناة لديها بالفعل مهمة مزامنة أو معايرة قيد التنفيذ",
+    "err_enrich_all_chunks_failed": "فشلت جميع طلبات المعايرة. تحقق من إعدادات الشبكة/الوكيل وأعد المحاولة",
     "err_plugin_layout": "يتم دعم حزم الإضافات بصيغة zip فقط",
     "err_invalid_plugin_name": "اسم ملف حزمة الإضافة غير صالح",
     "err_read_plugin": "فشلت قراءة حزمة الإضافة",

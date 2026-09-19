@@ -6,7 +6,7 @@ import IconMdiDownload from "~icons/mdi/download";
 import IconMdiOpenInNew from "~icons/mdi/open-in-new";
 import IconMdiSortAscending from "~icons/mdi/sort-ascending";
 import IconMdiSortDescending from "~icons/mdi/sort-descending";
-import { formatViewCount } from "@/utils/format";
+import { formatDateYMD, formatDuration, formatViewCount } from "@/utils/format";
 import type {
   ChannelSortBy,
   ChannelSortOrder,
@@ -64,26 +64,8 @@ const toggleSortOrder = () => {
   sortOrder.value = sortOrder.value === "desc" ? "asc" : "desc";
 };
 
-const pad = (value: number) => String(value).padStart(2, "0");
-
 /** 统一渲染浅色横杠占位符 */
 const renderPlaceholder = () => h(NText, { depth: 3 }, { default: () => "-" });
-
-/** 秒数转为 mm:ss / h:mm:ss */
-const formatDuration = (seconds: number | null): string => {
-  if (!seconds || seconds <= 0) return "";
-  const total = Math.round(seconds);
-  const hours = Math.floor(total / 3600);
-  const minutes = Math.floor((total % 3600) / 60);
-  const remainder = total % 60;
-  return hours > 0 ? `${hours}:${pad(minutes)}:${pad(remainder)}` : `${minutes}:${pad(remainder)}`;
-};
-
-const formatDate = (timestamp: number | null): string => {
-  if (!timestamp) return "";
-  const date = new Date(timestamp);
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-};
 
 /** 行内操作按钮：图标按钮 + 悬浮提示 */
 const renderAction = (icon: Component, label: string, onClick: () => void) =>
@@ -131,7 +113,10 @@ const columns = computed<DataTableColumns<ChannelVideoRecord>>(() => [
     title: t("channelArchive.sortDuration"),
     key: "duration",
     width: 100,
-    render: (row) => formatDuration(row.duration) || renderPlaceholder(),
+    // yt-dlp 时长是浮点秒，沿用历史行为先四舍五入再展示
+    render: (row) =>
+      formatDuration(row.duration == null ? row.duration : Math.round(row.duration)) ||
+      renderPlaceholder(),
   },
   {
     title: t("channelArchive.sortViews"),
@@ -143,7 +128,12 @@ const columns = computed<DataTableColumns<ChannelVideoRecord>>(() => [
     title: t("channelArchive.sortPublished"),
     key: "publishedAt",
     width: 120,
-    render: (row) => formatDate(row.publishedAt) || renderPlaceholder(),
+    render: (row) => {
+      const text = formatDateYMD(row.publishedAt);
+      if (!text) return renderPlaceholder();
+      // 近似日期加 ~ 前缀，校准后恢复精确显示
+      return row.publishedAccuracy === "exact" ? text : `~${text}`;
+    },
   },
   {
     title: t("channelArchive.actions"),

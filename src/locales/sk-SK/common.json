@@ -112,6 +112,8 @@
     "dialogOk": "OK",
     "showDetail": "Zobraziť podrobnosti",
     "err_tool_already_running": "Pre tento nástroj už beží úloha",
+    "err_channel_already_syncing": "Pre tento kanál už beží úloha synchronizácie alebo kalibrácie",
+    "err_enrich_all_chunks_failed": "Všetky požiadavky na kalibráciu zlyhali. Skontrolujte nastavenia siete/proxy a skúste to znova",
     "err_plugin_layout": "Podporované sú len balíky pluginov vo formáte zip",
     "err_invalid_plugin_name": "Neplatný názov súboru balíka pluginu",
     "err_read_plugin": "Čítanie balíka pluginu zlyhalo",

@@ -423,6 +423,7 @@ mod tests {
                 duration: Some(120.0),
                 view_count: Some(50000),
                 published_at: Some(2000),
+                published_accuracy: "approx".to_string(),
                 content_type: "video".to_string(),
                 created_at: 1000,
             },
@@ -436,6 +437,7 @@ mod tests {
                 duration: Some(30.0),
                 view_count: Some(100000),
                 published_at: Some(3000),
+                published_accuracy: "approx".to_string(),
                 content_type: "short".to_string(),
                 created_at: 1000,
             },
@@ -470,5 +472,118 @@ mod tests {
         assert!(channels::get_channel(&state, "youtube:@Google").unwrap().is_none());
         let empty_ids = channels::get_channel_existing_video_ids(&state, "youtube:@Google").unwrap();
         assert!(empty_ids.is_empty());
+    }
+
+    #[test]
+    fn test_channel_video_accuracy_column_exists_after_migration() {
+        let conn = Connection::open_in_memory().unwrap();
+        schema::run_migrations(&conn).unwrap();
+        let mut stmt = conn.prepare("PRAGMA table_info(channel_videos)").unwrap();
+        let columns: Vec<String> = stmt
+            .query_map([], |row| row.get::<_, String>(1))
+            .unwrap()
+            .map(|r| r.unwrap())
+            .collect();
+        assert!(columns.contains(&"published_accuracy".to_string()));
+    }
+
+    #[test]
+    fn test_publish_accuracy_upgrade_path() {
+        let conn = Connection::open_in_memory().unwrap();
+        schema::run_migrations(&conn).unwrap();
+        let state = DatabaseState {
+            conn: Mutex::new(conn),
+            db_path: PathBuf::from(":memory:"),
+        };
+
+        let video = channels::ChannelVideoRecord {
+            id: "ch_v1".to_string(),
+            channel_id: "ch".to_string(),
+            video_id: "v1".to_string(),
+            url: "https://www.youtube.com/watch?v=v1".to_string(),
+            title: "V1".to_string(),
+            thumbnail: "".to_string(),
+            duration: None,
+            view_count: None,
+            published_at: Some(1000),
+            published_accuracy: "approx".to_string(),
+            content_type: "video".to_string(),
+            created_at: 1000,
+        };
+        channels::upsert_channel_videos_batch(&state, &[video]).unwrap();
+
+        // 待校准：approx 行应出现在目标列表中
+        let targets = channels::get_enrich_targets(&state, "ch", None).unwrap();
+        assert_eq!(targets.len(), 1);
+
+        // 校准写入强制覆盖并标记 exact
+        assert_eq!(
+            channels::update_video_enriched_fields(
+                &state,
+                &[channels::EnrichUpdate {
+                    id: "ch_v1".to_string(),
+                    published_at: 2000,
+                    title: "V1 Exact".to_string(),
+                    thumbnail: "".to_string(),
+                    duration: Some(130.0),
+                    view_count: None,
+                }]
+            )
+            .unwrap(),
+            1
+        );
+        assert!(channels::get_enrich_targets(&state, "ch", None).unwrap().is_empty());
+        // 精确行即使被显式点名也不再返回：B 站等 flat 自带真日期的平台不会被重复逐条抓取
+        assert!(
+            channels::get_enrich_targets(&state, "ch", Some(&["v1".to_string()]))
+                .unwrap()
+                .is_empty()
+        );
+
+        // 后续 flat 同步的 approx 值不得覆盖 exact
+        let mut stale = channels::get_channel_videos_page(
+            &state,
+            &channels::ChannelVideosQuery {
+                channel_id: "ch".to_string(),
+                content_type: None,
+                query: None,
+                sort_by: None,
+                sort_order: None,
+                page: 1,
+                page_size: 10,
+            },
+        )
+        .unwrap()
+        .items
+        .into_iter()
+        .next()
+        .unwrap();
+        assert_eq!(stale.published_at, Some(2000));
+        assert_eq!(stale.published_accuracy, "exact");
+        // 顺带回填的其他字段也应生效（空字符串/None 不覆盖）
+        assert_eq!(stale.title, "V1 Exact");
+        assert_eq!(stale.duration, Some(130.0));
+        stale.published_at = Some(1000);
+        stale.published_accuracy = "approx".to_string();
+        channels::upsert_channel_videos_batch(&state, &[stale]).unwrap();
+        let kept = channels::get_channel_videos_page(
+            &state,
+            &channels::ChannelVideosQuery {
+                channel_id: "ch".to_string(),
+                content_type: None,
+                query: None,
+                sort_by: None,
+                sort_order: None,
+                page: 1,
+                page_size: 10,
+            },
+        )
+        .unwrap()
+        .items
+        .into_iter()
+        .next()
+        .unwrap();
+        assert_eq!(kept.published_at, Some(2000));
+        assert_eq!(kept.published_accuracy, "exact");
     }
 }

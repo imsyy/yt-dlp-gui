@@ -113,6 +113,8 @@
     "dialogOk": "确定",
     "showDetail": "查看详情",
     "err_tool_already_running": "该工具已有任务在执行中",
+    "err_channel_already_syncing": "该频道已有同步或校准任务在执行中",
+    "err_enrich_all_chunks_failed": "所有校准请求均失败，请检查网络或代理设置后重试",
     "err_plugin_layout": "仅支持 zip 格式的插件包",
     "err_invalid_plugin_name": "插件包文件名无效",
     "err_read_plugin": "读取插件包失败",

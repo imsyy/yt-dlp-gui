@@ -2,12 +2,13 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { save } from "@tauri-apps/plugin-dialog";
 import { useI18n } from "vue-i18n";
-import { showErrorDialog, sanitizeFilename } from "@/utils/format";
+import { showErrorDialog, formatError, sanitizeFilename } from "@/utils/format";
 import { useSettingStore } from "@/stores/setting";
 import { useVideoStore } from "@/stores/video";
 import type {
   ChannelRecord,
   ChannelSyncProgressPayload,
+  ChannelEnrichProgressPayload,
   ChannelVideoRecord,
   ChannelVideosPage,
   ChannelVideosQuery,
@@ -35,7 +36,16 @@ const csvCell = (value: string | number | null | undefined): string => {
 
 /** 将归档视频序列化为 CSV 文本 */
 const buildCsv = (items: ChannelVideoRecord[]): string => {
-  const header = ["id", "title", "url", "contentType", "duration", "viewCount", "publishedAt"];
+  const header = [
+    "id",
+    "title",
+    "url",
+    "contentType",
+    "duration",
+    "viewCount",
+    "publishedAt",
+    "publishedAccuracy",
+  ];
   const rows = items.map((item) =>
     [
       csvCell(item.videoId),
@@ -45,6 +55,7 @@ const buildCsv = (items: ChannelVideoRecord[]): string => {
       csvCell(item.duration),
       csvCell(item.viewCount),
       csvCell(item.publishedAt ? new Date(item.publishedAt).toISOString() : null),
+      csvCell(item.publishedAccuracy ?? ""),
     ].join(","),
   );
   return [header.join(","), ...rows].join("\r\n");
@@ -78,6 +89,7 @@ export const useChannelArchive = () => {
   const syncTabs = ref<string[]>(["videos", "shorts", "streams"]);
   const sleepInterval = ref(0.5);
   const syncProgress = ref<Record<string, ChannelSyncProgressPayload>>({});
+  const enrichProgress = ref<Record<string, ChannelEnrichProgressPayload>>({});
 
   /** 组装一次归档视频查询，列表与导出共用同一组筛选条件 */
   const buildQuery = (channelId: string, page: number): ChannelVideosQuery => ({
@@ -187,11 +199,44 @@ export const useChannelArchive = () => {
     }
   };
 
+  /** 手动查漏补缺：重抓本频道所有仍是模糊日期的视频（自动链路只跑一遍） */
+  const startEnrich = async (channelId?: string) => {
+    const targetId = channelId ?? activeChannelId.value;
+    if (!targetId) return;
+
+    try {
+      const { cookieFile, cookieBrowser } = await videoStore.getCookieArgs();
+      const total = await invoke<number>("channel_enrich_start", {
+        channelId: targetId,
+        videoIds: null,
+        cookieFile,
+        cookieBrowser,
+        proxy: settingStore.proxy || null,
+        concurrency: 6,
+      });
+      if (total === 0) {
+        window.$message.success(t("channelArchive.enrichNothingToDo"));
+      }
+    } catch (error: unknown) {
+      showErrorDialog(String(error));
+    }
+  };
+
+  /** 取消进行中的日期校准任务（同步成功后自动链式启动的后台任务） */
+  const cancelEnrich = async (channelId: string) => {
+    try {
+      await invoke("channel_enrich_cancel", { channelId });
+    } catch (error: unknown) {
+      showErrorDialog(String(error));
+    }
+  };
+
   /** 删除频道及其归档视频 */
   const removeChannel = async (channelId: string) => {
     try {
       await invoke("channel_delete", { channelId });
       delete syncProgress.value[channelId];
+      delete enrichProgress.value[channelId];
       window.$message.success(t("channelArchive.deleteSuccess"));
       await loadChannels();
     } catch (error: unknown) {
@@ -221,7 +266,7 @@ export const useChannelArchive = () => {
     }
   };
 
-  /** 应用后台同步进度事件 */
+  /** 应用后台同步进度事件（进度明细供详情区按类型展示） */
   const applyProgress = (payload: ChannelSyncProgressPayload) => {
     syncProgress.value[payload.channelId] = payload;
 
@@ -253,23 +298,72 @@ export const useChannelArchive = () => {
     }
   };
 
+  /** 应用后台日期校准进度事件 */
+  const applyEnrichProgress = (payload: ChannelEnrichProgressPayload) => {
+    enrichProgress.value[payload.channelId] = payload;
+
+    if (payload.status === "completed") {
+      window.$message.success(
+        t("channelArchive.enrichSuccess", {
+          fixed: payload.fixed,
+          total: payload.total,
+        }),
+      );
+      if (activeChannelId.value === payload.channelId) void loadVideos();
+    } else if (payload.status === "error") {
+      // 后端 message 可能是 err_ 错误码或 yt-dlp 原生 stderr 行，走 formatError 统一友好化，
+      // 避免右下角弹出裸错误码
+      const reason = payload.message ? formatError(payload.message) : t("common.unknown");
+      window.$message.error(t("channelArchive.enrichError", { error: reason }));
+    } else if (payload.status === "cancelled") {
+      window.$message.info(t("channelArchive.enrichCancelled"));
+      if (activeChannelId.value === payload.channelId) void loadVideos();
+    }
+  };
+
   // 频道或筛选条件变化时重新加载归档视频
   watch([activeChannelId, debouncedSearch, contentType, sortBy, sortOrder], () => {
     void loadVideos();
   });
 
   let unlistenProgress: UnlistenFn | null = null;
+  let unlistenEnrich: UnlistenFn | null = null;
 
   onMounted(async () => {
     unlistenProgress = await listen<ChannelSyncProgressPayload>("channel-sync-progress", (event) =>
       applyProgress(event.payload),
     );
+    unlistenEnrich = await listen<ChannelEnrichProgressPayload>(
+      "channel-enrich-progress",
+      (event) => applyEnrichProgress(event.payload),
+    );
     await loadChannels();
+    // 重进页面时恢复仍在跑的校准任务状态（事件监听在切页时已注销，靠后端在跑任务表补种）
+    try {
+      const active = await invoke<string[]>("channel_enrich_active");
+      for (const id of active) {
+        const current = enrichProgress.value[id];
+        if (!current || current.status !== "enriching") {
+          enrichProgress.value[id] = {
+            channelId: id,
+            status: "enriching",
+            total: 0,
+            done: 0,
+            fixed: 0,
+            message: null,
+          };
+        }
+      }
+    } catch {
+      // 查询失败不影响列表展示
+    }
   });
 
   onUnmounted(() => {
     unlistenProgress?.();
     unlistenProgress = null;
+    unlistenEnrich?.();
+    unlistenEnrich = null;
   });
 
   return {
@@ -287,10 +381,13 @@ export const useChannelArchive = () => {
     syncTabs,
     sleepInterval,
     syncProgress,
+    enrichProgress,
     selectChannel,
     handleChannelAdded,
     startSync,
     cancelSync,
+    startEnrich,
+    cancelEnrich,
     removeChannel,
     exportVideos,
     loadVideos,

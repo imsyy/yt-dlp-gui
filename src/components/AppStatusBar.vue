@@ -11,7 +11,12 @@ import { useDownloadStore } from "@/stores/download";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import type { ToolTaskState } from "@/composables/useToolTask";
-import type { ToolOperationProgress, ToolStatus } from "@/types";
+import type {
+  ChannelEnrichProgressPayload,
+  ChannelSyncProgressPayload,
+  ToolOperationProgress,
+  ToolStatus,
+} from "@/types";
 import type { Component } from "vue";
 
 type ToolKey = "yt-dlp" | "deno" | "ffmpeg";
@@ -148,8 +153,41 @@ const goToTool = (toolId: string) => {
   router.push({ name: toolTaskMeta[toolId]?.route ?? "toolbox" });
 };
 
+const channelJobs = ref<string[]>([]);
+
+const upsertChannelJob = (id: string, running: boolean) => {
+  const index = channelJobs.value.indexOf(id);
+  if (running) {
+    if (index === -1) channelJobs.value.push(id);
+  } else if (index !== -1) {
+    channelJobs.value.splice(index, 1);
+  }
+};
+
+const refreshChannelJobs = async () => {
+  try {
+    const [syncing, enriching] = await Promise.all([
+      invoke<string[]>("channel_sync_active"),
+      invoke<string[]>("channel_enrich_active"),
+    ]);
+    channelJobs.value = [...new Set([...syncing, ...enriching])];
+  } catch {
+    channelJobs.value = [];
+  }
+};
+
+const totalRunningCount = computed(() => runningTools.value.length + channelJobs.value.length);
+const hasRunningJobs = computed(() => totalRunningCount.value > 0);
+
+const goToChannelArchive = () => {
+  showRunningTools.value = false;
+  router.push({ name: "toolbox-channel" });
+};
+
 let unlistenProgress: (() => void) | null = null;
 let unlistenToolTask: (() => void) | null = null;
+let unlistenChannelSync: (() => void) | null = null;
+let unlistenChannelEnrich: (() => void) | null = null;
 
 watch(
   () => [
@@ -166,8 +204,7 @@ onMounted(async () => {
   unlistenProgress = await listen<ToolOperationProgress>("tool-operation-progress", (event) => {
     if (event.payload.stage === "complete") void refreshStatuses();
   });
-  // 工具任务状态变化：刷新底栏指示，并统一在这里发出通知
-  // （底栏常驻，用户不在该工具页时也能收到取消/失败提示）
+  // 工具任务状态变化
   unlistenToolTask = await listen<ToolTaskState>("tool-task-state-changed", ({ payload }) => {
     void refreshRunningTools();
     if (payload.status === "cancelled") window.$message.info(t("toolbox.taskCancelled"));
@@ -175,12 +212,27 @@ onMounted(async () => {
       window.$message.error(formatError(payload.error));
     }
   });
+  unlistenChannelSync = await listen<ChannelSyncProgressPayload>(
+    "channel-sync-progress",
+    ({ payload }) => {
+      upsertChannelJob(payload.channelId, payload.status === "syncing");
+    },
+  );
+  unlistenChannelEnrich = await listen<ChannelEnrichProgressPayload>(
+    "channel-enrich-progress",
+    ({ payload }) => {
+      upsertChannelJob(payload.channelId, payload.status === "enriching");
+    },
+  );
   void refreshRunningTools();
+  void refreshChannelJobs();
 });
 
 onUnmounted(() => {
   unlistenProgress?.();
   unlistenToolTask?.();
+  unlistenChannelSync?.();
+  unlistenChannelEnrich?.();
 });
 </script>
 
@@ -221,15 +273,15 @@ onUnmounted(() => {
               text
               size="tiny"
               class="status-summary"
-              :aria-label="$t('statusBar.runningToolTasks', { count: runningTools.length })"
+              :aria-label="$t('statusBar.runningToolTasks', { count: totalRunningCount })"
             >
               <template #icon>
                 <n-icon><icon-mdi-toolbox /></n-icon>
               </template>
-              {{ $t("statusBar.runningToolTasks", { count: runningTools.length }) }}
+              {{ $t("statusBar.runningToolTasks", { count: totalRunningCount }) }}
             </n-button>
           </template>
-          <n-text v-if="runningTools.length === 0" style="font-size: 13px">
+          <n-text v-if="!hasRunningJobs" style="font-size: 13px">
             {{ $t("statusBar.noRunningToolTasks") }}
           </n-text>
           <n-flex v-else vertical :size="10">
@@ -243,6 +295,25 @@ onUnmounted(() => {
             >
               <n-text style="font-size: 13px">{{ toolTaskLabel(tool) }}</n-text>
               <n-button secondary strong size="small" :focusable="false" @click="goToTool(tool)">
+                {{ $t("common.open") }}
+              </n-button>
+            </n-flex>
+            <n-flex
+              v-for="jobId in channelJobs"
+              :key="`channel-${jobId}`"
+              align="center"
+              justify="space-between"
+              :size="10"
+              :wrap="false"
+            >
+              <n-text style="font-size: 13px">{{ $t("channelArchive.title") }}</n-text>
+              <n-button
+                secondary
+                strong
+                size="small"
+                :focusable="false"
+                @click="goToChannelArchive"
+              >
                 {{ $t("common.open") }}
               </n-button>
             </n-flex>

@@ -27,10 +27,13 @@ const {
   syncTabs,
   sleepInterval,
   syncProgress,
+  enrichProgress,
   selectChannel,
   handleChannelAdded,
   startSync,
   cancelSync,
+  startEnrich,
+  cancelEnrich,
   removeChannel,
   exportVideos,
 } = useChannelArchive();
@@ -39,7 +42,32 @@ const showAddModal = ref(false);
 
 /** 当前频道的实时同步进度 */
 const activeProgress = computed(() =>
-  activeChannel.value ? syncProgress.value[activeChannel.value.id] : null,
+  activeChannel.value ? (syncProgress.value[activeChannel.value.id] ?? null) : null,
+);
+
+/** 当前频道的日期校准进度（与同步共用“忙”态展示，不区分任务种类） */
+const activeEnrich = computed(() =>
+  activeChannel.value ? (enrichProgress.value[activeChannel.value.id] ?? null) : null,
+);
+
+const enriching = computed(() => activeEnrich.value?.status === "enriching");
+
+/** 当前频道的校准进度文本 */
+const enrichText = computed(() => {
+  const p = activeEnrich.value;
+  if (!p || p.status !== "enriching") return null;
+  return t("channelArchive.enrichProgress", {
+    done: p.done,
+    total: p.total,
+    fixed: p.fixed,
+  });
+});
+
+/** 正在校准的频道 ID 列表，供左侧列表打 tag */
+const enrichingIds = computed(() =>
+  Object.values(enrichProgress.value)
+    .filter((p) => p.status === "enriching")
+    .map((p) => p.channelId),
 );
 
 /** 复制视频链接到剪贴板 */
@@ -119,8 +147,8 @@ const confirmRemoveChannel = (channel: ChannelRecord) => {
         :channels="channels"
         :loading="channelsLoading"
         :active-id="activeChannelId"
+        :enriching-ids="enrichingIds"
         @select="selectChannel"
-        @sync="startSync('full', $event.id)"
         @open="openInBrowser($event.url)"
         @remove="confirmRemoveChannel"
       />
@@ -136,8 +164,12 @@ const confirmRemoveChannel = (channel: ChannelRecord) => {
           v-model:sleep-interval="sleepInterval"
           :channel="activeChannel"
           :progress="activeProgress"
+          :enriching="enriching"
+          :enrich-text="enrichText"
           @sync="startSync"
           @cancel="cancelSync(activeChannel.id)"
+          @cancel-enrich="cancelEnrich(activeChannel.id)"
+          @enrich-gap="startEnrich(activeChannel.id)"
           @export="exportVideos"
           @open="openInBrowser(activeChannel.url)"
         />

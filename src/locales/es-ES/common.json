@@ -112,6 +112,8 @@
     "dialogOk": "Aceptar",
     "showDetail": "Ver detalles",
     "err_tool_already_running": "Esta herramienta ya tiene una tarea en ejecución",
+    "err_channel_already_syncing": "Este canal ya tiene una tarea de sincronización o calibración en ejecución",
+    "err_enrich_all_chunks_failed": "Todas las solicitudes de calibración han fallado. Verifique la configuración de red/proxy e inténtelo de nuevo",
     "err_plugin_layout": "Solo se admiten paquetes de plugins en formato zip",
     "err_invalid_plugin_name": "Nombre de archivo de paquete de plugin inválido",
     "err_read_plugin": "Error al leer el paquete de plugin",

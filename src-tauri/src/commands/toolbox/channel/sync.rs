@@ -1,5 +1,11 @@
-//! 频道/主播视频归档工具后端命令实现。
+//! 频道 CRUD 与列表同步任务（flat-playlist 流式抓取）。
 
+use super::enrich::{spawn_enrich_job, EnrichJobParams};
+use super::extract::{
+    clean_channel_url, detect_platform, extract_channel_avatar, extract_channel_banner,
+    extract_channel_id, extract_channel_title, extract_published_at, extract_video_thumbnail,
+    now_millis,
+};
 use crate::commands::support::{append_cookie_proxy_args, run_ytdlp_json_tracked};
 use crate::db::channels::{
     delete_channel, get_channel, get_channel_existing_video_ids, get_channel_videos_page,
@@ -38,206 +44,6 @@ pub struct ChannelSyncProgressPayload {
     pub new_synced: usize,
     pub current_tab: Option<String>,
     pub message: Option<String>,
-}
-
-fn now_millis() -> i64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|d| d.as_millis() as i64)
-        .unwrap_or_default()
-}
-
-/// 规范化频道基础 URL
-fn clean_channel_url(url: &str) -> String {
-    let mut cleaned = url.trim().trim_end_matches('/').to_string();
-    for suffix in [
-        "/videos",
-        "/shorts",
-        "/streams",
-        "/featured",
-        "/podcasts",
-        "/playlists",
-        "/community",
-        "/about",
-    ] {
-        if cleaned.ends_with(suffix) {
-            cleaned.truncate(cleaned.len() - suffix.len());
-            break;
-        }
-    }
-    cleaned
-}
-
-/// 检测平台类型
-fn detect_platform(url: &str, info: &Value) -> String {
-    let lower_url = url.to_lowercase();
-    if lower_url.contains("youtube.com") || lower_url.contains("youtu.be") {
-        return "youtube".to_string();
-    }
-    if lower_url.contains("bilibili.com") {
-        return "bilibili".to_string();
-    }
-    if lower_url.contains("twitch.tv") {
-        return "twitch".to_string();
-    }
-    if let Some(extractor) = info.get("extractor_key").and_then(Value::as_str) {
-        let ext_lower = extractor.to_lowercase();
-        if ext_lower.contains("youtube") {
-            return "youtube".to_string();
-        }
-        if ext_lower.contains("bili") {
-            return "bilibili".to_string();
-        }
-        return extractor.to_string();
-    }
-    "generic".to_string()
-}
-
-/// 提取频道唯一 ID
-fn extract_channel_id(info: &Value, url: &str, platform: &str) -> String {
-    if let Some(id) = info.get("channel_id").and_then(Value::as_str) {
-        if !id.is_empty() {
-            return id.to_string();
-        }
-    }
-    if let Some(id) = info.get("uploader_id").and_then(Value::as_str) {
-        if !id.is_empty() {
-            return id.to_string();
-        }
-    }
-    if let Some(id) = info.get("id").and_then(Value::as_str) {
-        if !id.is_empty() {
-            return id.to_string();
-        }
-    }
-    if platform == "bilibili" {
-        if let Some(pos) = url.find("space.bilibili.com/") {
-            let sub = &url[pos + "space.bilibili.com/".len()..];
-            let mid: String = sub.chars().take_while(|c| c.is_ascii_digit()).collect();
-            if !mid.is_empty() {
-                return format!("bilibili:{}", mid);
-            }
-        }
-    }
-    clean_channel_url(url)
-}
-
-/// 提取频道名称
-fn extract_channel_title(info: &Value, url: &str) -> String {
-    if let Some(name) = info.get("channel").and_then(Value::as_str) {
-        if !name.trim().is_empty() {
-            return name.trim().to_string();
-        }
-    }
-    if let Some(name) = info.get("uploader").and_then(Value::as_str) {
-        if !name.trim().is_empty() {
-            return name.trim().to_string();
-        }
-    }
-    if let Some(name) = info.get("title").and_then(Value::as_str) {
-        if !name.trim().is_empty() {
-            return name.trim().to_string();
-        }
-    }
-    clean_channel_url(url)
-}
-
-/// 提取频道头像
-fn extract_channel_avatar(info: &Value) -> String {
-    if let Some(thumbs) = info.get("thumbnails").and_then(Value::as_array) {
-        // 优先查找 id 或 url 包含 avatar 的项
-        for t in thumbs {
-            if let Some(id) = t.get("id").and_then(Value::as_str) {
-                if id.to_lowercase().contains("avatar") {
-                    if let Some(u) = t.get("url").and_then(Value::as_str) {
-                        return u.to_string();
-                    }
-                }
-            }
-        }
-        // 其次查找正方形缩略图（width == height）
-        for t in thumbs {
-            let w = t.get("width").and_then(Value::as_i64);
-            let h = t.get("height").and_then(Value::as_i64);
-            if let (Some(w_val), Some(h_val)) = (w, h) {
-                if w_val > 0 && w_val == h_val {
-                    if let Some(u) = t.get("url").and_then(Value::as_str) {
-                        return u.to_string();
-                    }
-                }
-            }
-        }
-        // 兜底返回偏好最高的缩略图
-        if let Some(last) = thumbs.last() {
-            if let Some(u) = last.get("url").and_then(Value::as_str) {
-                return u.to_string();
-            }
-        }
-    }
-    if let Some(thumb) = info.get("thumbnail").and_then(Value::as_str) {
-        return thumb.to_string();
-    }
-    String::new()
-}
-
-/// 提取频道 Banner
-fn extract_channel_banner(info: &Value) -> String {
-    if let Some(thumbs) = info.get("thumbnails").and_then(Value::as_array) {
-        for t in thumbs {
-            if let Some(id) = t.get("id").and_then(Value::as_str) {
-                if id.to_lowercase().contains("banner") {
-                    if let Some(u) = t.get("url").and_then(Value::as_str) {
-                        return u.to_string();
-                    }
-                }
-            }
-        }
-    }
-    String::new()
-}
-
-/// 提取视频条目最佳缩略图
-fn extract_video_thumbnail(entry: &Value) -> String {
-    if let Some(thumbs) = entry.get("thumbnails").and_then(Value::as_array) {
-        if let Some(best) = thumbs.iter().max_by_key(|t| {
-            let w = t.get("width").and_then(Value::as_i64).unwrap_or(0);
-            let h = t.get("height").and_then(Value::as_i64).unwrap_or(0);
-            w * h
-        }) {
-            if let Some(u) = best.get("url").and_then(Value::as_str) {
-                return u.to_string();
-            }
-        }
-        if let Some(last) = thumbs.last() {
-            if let Some(u) = last.get("url").and_then(Value::as_str) {
-                return u.to_string();
-            }
-        }
-    }
-    entry
-        .get("thumbnail")
-        .and_then(Value::as_str)
-        .unwrap_or("")
-        .to_string()
-}
-
-/// 解析发布日期字符串 (YYYYMMDD) 为毫秒时间戳
-fn parse_upload_date(date_str: &str) -> Option<i64> {
-    if date_str.len() == 8 {
-        let year: i32 = date_str[0..4].parse().ok()?;
-        let month: u32 = date_str[4..6].parse().ok()?;
-        let day: u32 = date_str[6..8].parse().ok()?;
-        if month < 1 || month > 12 || day < 1 || day > 31 {
-            return None;
-        }
-        let y = if month <= 2 { year - 1 } else { year } as i64;
-        let m = if month <= 2 { month + 9 } else { month - 3 } as i64;
-        let d = day as i64;
-        let days = 365 * y + y / 4 - y / 100 + y / 400 + (m * 306 + 5) / 10 + (d - 1) - 719468;
-        Some(days * 86400 * 1000)
-    } else {
-        None
-    }
 }
 
 /// 添加并解析新频道/主播
@@ -409,6 +215,10 @@ pub async fn channel_sync_cancel(app: AppHandle, channel_id: String) -> Result<(
 }
 
 /// 启动频道视频同步（后台异步流式抓取与增量更新）
+///
+/// 注意：tauri 命令的签名即前端 `invoke` 的 IPC 契约，参数与前端载荷一对一映射，
+/// 不得为降参数个数而合并，此处是有意为之的例外。
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn channel_sync_start(
     app: AppHandle,
@@ -478,6 +288,8 @@ pub async fn channel_sync_start(
 
         let mut total_synced_count = 0usize;
         let mut new_synced_count = 0usize;
+        // 本轮新收录的 video_id：同步成功后自动链式校准它们的精确日期
+        let mut new_video_ids: Vec<String> = Vec::new();
         let mut encountered_error: Option<String> = None;
 
         let ytdlp_path = match utils::get_ytdlp_path(&app_handle) {
@@ -622,28 +434,21 @@ pub async fn channel_sync_start(
                     let view_count = entry.get("view_count").and_then(Value::as_i64);
                     let thumbnail = extract_video_thumbnail(&entry);
 
-                    let published_at = entry
-                        .get("timestamp")
-                        .and_then(|v| v.as_i64().or_else(|| v.as_f64().map(|f| f as i64)))
-                        .map(|s| s * 1000)
-                        .or_else(|| {
-                            entry
-                                .get("upload_date")
-                                .and_then(Value::as_str)
-                                .and_then(parse_upload_date)
-                        })
-                        .or_else(|| {
-                            entry
-                                .get("release_timestamp")
-                                .and_then(|v| v.as_i64().or_else(|| v.as_f64().map(|f| f as i64)))
-                                .map(|s| s * 1000)
-                        })
-                        .or_else(|| {
-                            entry
-                                .get("release_date")
-                                .and_then(Value::as_str)
-                                .and_then(parse_upload_date)
-                        });
+                    // 精度标记规则：
+                    // - YouTube：一律 approx。tab 渲染层没有真实日期，
+                    //   youtubetab:approximate_date 只是由“N 年/月前”反推，
+                    //   月日会漂到抓取当天，必须靠校准任务回填；
+                    // - 其他平台：flat 条目自带真实时间戳（pubdate 等），
+                    //   有值即视为 exact，只有缺失才需要后续校准。
+                    //   这样 B 站等平台不会被重复逐条抓取。
+                    let published_at = extract_published_at(&entry);
+                    let published_accuracy = if channel.platform == "youtube" || published_at.is_none()
+                    {
+                        "approx"
+                    } else {
+                        "exact"
+                    }
+                    .to_string();
 
                     let content_type = if tab_name == "shorts" || video_url.contains("/shorts/") {
                         "short".to_string()
@@ -672,10 +477,12 @@ pub async fn channel_sync_start(
                         } else {
                             consecutive_existing_count = 0;
                             new_synced_count += 1;
+                            new_video_ids.push(video_id.clone());
                             existing_ids.insert(video_id.clone());
                         }
                     } else if !is_known {
                         new_synced_count += 1;
+                        new_video_ids.push(video_id.clone());
                         existing_ids.insert(video_id.clone());
                     }
 
@@ -691,6 +498,7 @@ pub async fn channel_sync_start(
                         duration,
                         view_count,
                         published_at,
+                        published_accuracy,
                         content_type,
                         created_at: now_ms,
                     });
@@ -779,8 +587,37 @@ pub async fn channel_sync_start(
                     message: None,
                 },
             );
+            // 全自动链路：同步成功后顺手校准日期（后台任务，前端已有进度监听）。
+            // 增量同步只校准本轮新增（便宜）；全量同步校准全频道未精确的行，
+            // 存量数据的精确化就靠点一次全量同步完成，无需额外手动入口。
+            if !is_incremental || !new_video_ids.is_empty() {
+                let auto_ids: Option<&[String]> =
+                    if is_incremental { Some(&new_video_ids) } else { None };
+                // 已有校准任务在跑等情况：静默跳过，不打断同步完成态
+                let _ = spawn_enrich_job(
+                    &app_handle,
+                    EnrichJobParams {
+                        channel_id: channel_id.as_str(),
+                        channel_platform: channel.platform.as_str(),
+                        video_ids: auto_ids,
+                        cookie_file,
+                        cookie_browser,
+                        proxy,
+                        concurrency: Some(6),
+                    },
+                );
+            }
         }
     });
 
     Ok(())
+}
+
+/// 查询当前正在同步的频道 ID 列表（供底栏与页面重进时恢复状态）
+#[tauri::command]
+pub async fn channel_sync_active() -> Result<Vec<String>, String> {
+    get_active_syncs()
+        .lock()
+        .map(|syncs| syncs.keys().cloned().collect())
+        .map_err(|e| format!("Failed to acquire lock: {}", e))
 }

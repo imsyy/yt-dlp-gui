@@ -113,6 +113,8 @@
     "dialogOk": "OK",
     "showDetail": "Show details",
     "err_tool_already_running": "This tool already has a running task",
+    "err_channel_already_syncing": "This channel already has a sync or calibration task running",
+    "err_enrich_all_chunks_failed": "All calibration requests failed. Check network/proxy settings and retry",
     "err_plugin_layout": "Only zip format plugin packages are supported",
     "err_invalid_plugin_name": "Invalid plugin package file name",
     "err_read_plugin": "Failed to read plugin package",

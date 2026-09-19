@@ -370,6 +370,8 @@ export interface ChannelVideoRecord {
   duration: number | null;
   viewCount: number | null;
   publishedAt: number | null;
+  /** 发布日期精度：approx=列表近似值，exact=详情校准值 */
+  publishedAccuracy: "approx" | "exact";
   contentType: "video" | "short" | "stream";
   createdAt: number;
 }
@@ -397,6 +399,15 @@ export interface ChannelSyncProgressPayload {
   totalSynced: number;
   newSynced: number;
   currentTab?: string | null;
+  message?: string | null;
+}
+
+export interface ChannelEnrichProgressPayload {
+  channelId: string;
+  status: "enriching" | "completed" | "error" | "cancelled";
+  total: number;
+  done: number;
+  fixed: number;
   message?: string | null;
 }
 

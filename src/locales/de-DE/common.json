@@ -112,6 +112,8 @@
     "dialogOk": "OK",
     "showDetail": "Details anzeigen",
     "err_tool_already_running": "Für dieses Werkzeug läuft bereits eine Aufgabe",
+    "err_channel_already_syncing": "Für diesen Kanal läuft bereits eine Synchron- oder Kalibrierungsaufgabe",
+    "err_enrich_all_chunks_failed": "Alle Kalibrierungsanfragen sind fehlgeschlagen. Überprüfen Sie die Netzwerk-/Proxy-Einstellungen und versuchen Sie es erneut",
     "err_plugin_layout": "Es werden nur Plugin-Pakete im zip-Format unterstützt",
     "err_invalid_plugin_name": "Ungültiger Dateiname des Plugin-Pakets",
     "err_read_plugin": "Lesen des Plugin-Pakets fehlgeschlagen",

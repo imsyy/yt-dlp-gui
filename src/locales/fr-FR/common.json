@@ -112,6 +112,8 @@
     "dialogOk": "OK",
     "showDetail": "Afficher les détails",
     "err_tool_already_running": "Une tâche est déjà en cours pour cet outil",
+    "err_channel_already_syncing": "Une tâche de synchronisation ou de calibrage est déjà en cours pour cette chaîne",
+    "err_enrich_all_chunks_failed": "Toutes les requêtes de calibrage ont échoué. Vérifiez les paramètres réseau/proxy et réessayez",
     "err_plugin_layout": "Seuls les paquets de plugins au format zip sont pris en charge",
     "err_invalid_plugin_name": "Nom de fichier du paquet de plugin invalide",
     "err_read_plugin": "Échec de la lecture du paquet de plugin",

@@ -112,6 +112,8 @@
     "dialogOk": "OK",
     "showDetail": "詳細を表示",
     "err_tool_already_running": "このツールには実行中のタスクがあります",
+    "err_channel_already_syncing": "このチャンネルでは同期または補正タスクが実行中です",
+    "err_enrich_all_chunks_failed": "すべての補正リクエストが失敗しました。ネットワークまたはプロキシ設定を確認して再試行してください",
     "err_plugin_layout": "zip 形式のプラグインパッケージのみサポートされています",
     "err_invalid_plugin_name": "プラグインパッケージファイル名が無効です",
     "err_read_plugin": "プラグインパッケージの読み取りに失敗しました",

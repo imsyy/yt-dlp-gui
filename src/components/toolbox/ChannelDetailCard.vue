@@ -1,20 +1,30 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
+import { NIcon } from "naive-ui";
+import IconMdiCalendarClock from "~icons/mdi/calendar-clock";
+import IconMdiCloudSyncOutline from "~icons/mdi/cloud-sync-outline";
+import IconMdiSync from "~icons/mdi/sync";
 import { formatViewCount } from "@/utils/format";
 import type { ChannelSyncMode, ChannelExportFormat } from "@/composables/useChannelArchive";
 import type { ChannelRecord, ChannelSyncProgressPayload } from "@/types";
 import type { DropdownOption } from "naive-ui";
+import type { Component } from "vue";
 
 const { t } = useI18n();
 
 const props = defineProps<{
   channel: ChannelRecord;
   progress?: ChannelSyncProgressPayload | null;
+  /** 是否正在日期校准：与同步共用同一个“忙”状态，进度文本按类型显示 */
+  enriching?: boolean;
+  enrichText?: string | null;
 }>();
 
 const emit = defineEmits<{
   (e: "sync", mode: ChannelSyncMode): void;
   (e: "cancel"): void;
+  (e: "cancelEnrich"): void;
+  (e: "enrichGap"): void;
   (e: "export", format: ChannelExportFormat): void;
   (e: "open"): void;
 }>();
@@ -24,6 +34,15 @@ const syncTabs = defineModel<string[]>("syncTabs", { required: true });
 const sleepInterval = defineModel<number>("sleepInterval", { required: true });
 
 const syncing = computed(() => props.channel.syncStatus === "syncing");
+
+/** 统一忙态：同步中或校准中都只表达为“加载中”，不区分任务种类 */
+const busy = computed(() => syncing.value || props.enriching === true);
+
+/** 忙时进度明细：任务槽位单一，但按类型显示对应进度 */
+const busyDetail = computed(() => {
+  if (syncing.value) return syncStatusText.value;
+  return props.enrichText ?? t("channelArchive.loading");
+});
 
 const lastSyncedText = computed(() =>
   props.channel.lastSyncedAt
@@ -38,10 +57,10 @@ const exportOptions = computed<DropdownOption[]>(() => [
   { label: t("channelArchive.exportCsv"), key: "csv" },
 ]);
 
-/** 格式化同步中实时进度文本 */
+/** 同步进度明细 */
 const syncStatusText = computed(() => {
   const p = props.progress;
-  if (!p) return t("channelArchive.syncing");
+  if (!p) return t("channelArchive.loading");
   const tabMap: Record<string, string> = {
     videos: t("channelArchive.typeVideo"),
     shorts: t("channelArchive.typeShort"),
@@ -64,6 +83,43 @@ const handleFullSyncClick = () => {
     negativeText: t("common.cancel"),
     onPositiveClick: () => emit("sync", "full"),
   });
+};
+
+/** 查漏补缺（重校模糊日期）二次确认：目标数由后端返回，无需前端计数 */
+const handleEnrichGapClick = () => {
+  window.$dialog.warning({
+    title: t("channelArchive.gapFill"),
+    content: t("channelArchive.gapFillConfirm"),
+    positiveText: t("common.confirm"),
+    negativeText: t("common.cancel"),
+    onPositiveClick: () => emit("enrichGap"),
+  });
+};
+
+/** 下拉菜单图标渲染 */
+const menuIcon = (icon: Component) => () => h(NIcon, null, { default: () => h(icon) });
+
+/** 同步方式下拉菜单：所有功能都在菜单里，主按钮只负责打开菜单与统一加载态 */
+const syncMenuOptions = computed<DropdownOption[]>(() => [
+  {
+    label: t("channelArchive.incrementalSync"),
+    key: "incremental",
+    icon: menuIcon(IconMdiSync),
+  },
+  { label: t("channelArchive.fullSync"), key: "full", icon: menuIcon(IconMdiCloudSyncOutline) },
+  {
+    label: t("channelArchive.gapFill"),
+    key: "enrich",
+    icon: menuIcon(IconMdiCalendarClock),
+    // 自动重查兜底跑着的时候手动项禁用，避免重复提交（后端也会拒绝）
+    disabled: props.enriching,
+  },
+]);
+
+const handleSyncMenuSelect = (key: string) => {
+  if (key === "full") handleFullSyncClick();
+  else if (key === "enrich") handleEnrichGapClick();
+  else emit("sync", "incremental");
 };
 </script>
 
@@ -89,10 +145,10 @@ const handleFullSyncClick = () => {
             </n-button>
           </n-flex>
 
-          <n-flex v-if="syncing" align="center" :size="6" :wrap="false" class="detail-meta syncing-meta">
+          <n-flex v-if="busy" align="center" :size="6" :wrap="false" class="detail-meta syncing-meta">
             <n-spin :size="13" />
             <n-text depth="2" class="syncing-text">
-              {{ syncStatusText }}
+              {{ busyDetail }}
             </n-text>
           </n-flex>
           <n-flex v-else align="center" :size="10" :wrap="false" class="detail-meta">
@@ -110,49 +166,38 @@ const handleFullSyncClick = () => {
       </n-flex>
 
       <n-flex align="center" :size="8" :wrap="false">
-        <!-- 增量更新 -->
-        <n-button
-          type="primary"
-          size="small"
-          :loading="syncing"
-          :disabled="syncing"
-          @click="emit('sync', 'incremental')"
+        <!-- 同步入口：按钮只负责打开菜单与统一加载态，具体功能都在下拉菜单里。
+             忙时入口禁用，与列表菜单行为一致 -->
+        <n-dropdown
+          trigger="click"
+          :disabled="busy"
+          :options="syncMenuOptions"
+          @select="(key: string) => handleSyncMenuSelect(key)"
         >
-          <template #icon>
-            <n-icon><icon-mdi-sync /></n-icon>
-          </template>
-          {{ syncing ? $t("channelArchive.syncing") : $t("channelArchive.incrementalSync") }}
-        </n-button>
-        <!-- 全量同步 -->
+          <n-button type="primary" size="small" :loading="busy" :disabled="busy">
+            <template #icon>
+              <n-icon><icon-mdi-sync /></n-icon>
+            </template>
+            {{ busy ? $t("channelArchive.loading") : $t("channelArchive.sync") }}
+          </n-button>
+        </n-dropdown>
+        <!-- 忙时取消：同步中取消同步，纯校准时取消校准 -->
         <n-button
-          v-if="syncing"
+          v-if="busy"
           type="warning"
           secondary
           size="small"
-          @click="emit('cancel')"
+          @click="syncing ? emit('cancel') : emit('cancelEnrich')"
         >
           <template #icon>
             <n-icon><icon-mdi-cancel /></n-icon>
           </template>
-          {{ $t("channelArchive.cancelSync") }}
+          {{ $t("common.cancel") }}
         </n-button>
 
-        <n-button
-          v-else
-          secondary
-          size="small"
-          :disabled="syncing"
-          @click="handleFullSyncClick"
-        >
-          <template #icon>
-            <n-icon><icon-mdi-cloud-sync-outline /></n-icon>
-          </template>
-          {{ $t("channelArchive.fullSync") }}
-        </n-button>
-
-        <n-popover trigger="click" placement="bottom-end" :disabled="syncing">
+        <n-popover trigger="click" placement="bottom-end" :disabled="busy">
           <template #trigger>
-            <n-button quaternary circle size="small" :disabled="syncing">
+            <n-button quaternary circle size="small" :disabled="busy">
               <template #icon>
                 <n-icon><icon-mdi-cog-outline /></n-icon>
               </template>
@@ -190,11 +235,11 @@ const handleFullSyncClick = () => {
 
         <n-dropdown
           trigger="click"
-          :disabled="syncing"
+          :disabled="busy"
           :options="exportOptions"
           @select="(key: ChannelExportFormat) => emit('export', key)"
         >
-          <n-button secondary size="small" :disabled="syncing">
+          <n-button secondary size="small" :disabled="busy">
             <template #icon>
               <n-icon><icon-mdi-export /></n-icon>
             </template>

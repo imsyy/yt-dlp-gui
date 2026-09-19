@@ -112,6 +112,8 @@
     "dialogOk": "OK",
     "showDetail": "Részletek",
     "err_tool_already_running": "Ehhez az eszközhöz már fut egy feladat",
+    "err_channel_already_syncing": "Ehhez a csatornához már fut egy szinkronizálási vagy kalibrálási feladat",
+    "err_enrich_all_chunks_failed": "Minden kalibrálási kérés sikertelen. Ellenőrizze a hálózati/proxy beállításokat és próbálja újra",
     "err_plugin_layout": "Csak zip formátumú bővítménycsomagok támogatottak",
     "err_invalid_plugin_name": "Érvénytelen bővítménycsomag fájlnév",
     "err_read_plugin": "A bővítménycsomag beolvasása sikertelen",

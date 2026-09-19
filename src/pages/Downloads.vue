@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useDownloadStore } from "@/stores/download";
 import { useI18n } from "vue-i18n";
+import { formatDateYMD } from "@/utils/format";
 import type { DownloadTask } from "@/types";
 
 const { t } = useI18n();
@@ -81,7 +82,7 @@ const formatDateLabel = (timestamp: number): string => {
   if (diffMilliseconds === 0) return t("downloads.today");
   if (diffMilliseconds === oneDayMilliseconds) return t("downloads.yesterday");
   if (diffMilliseconds === oneDayMilliseconds * 2) return t("downloads.dayBeforeYesterday");
-  return `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, "0")}-${String(targetDate.getDate()).padStart(2, "0")}`;
+  return formatDateYMD(timestamp);
 };
 
 /** 仅用于已完成历史记录的日期分组 */

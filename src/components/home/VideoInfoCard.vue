@@ -1,22 +1,12 @@
 <script setup lang="ts">
 import type { VideoInfo } from "@/types";
-import { formatViewCount } from "@/utils/format";
+import { formatDuration, formatViewCount } from "@/utils/format";
 
 const props = defineProps<{
   videoInfo: VideoInfo;
   isPlaylist?: boolean;
   playlistCount?: number;
 }>();
-
-/** 格式化时长为 h:mm:ss 或 m:ss */
-const formatDuration = (seconds: number): string => {
-  if (!seconds) return "0:00";
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  return `${m}:${String(s).padStart(2, "0")}`;
-};
 
 /** 是否为正在直播 */
 const isLive = computed(
@@ -55,7 +45,7 @@ watch(
           @error="coverError = true"
         />
         <div v-if="coverLoaded && !coverError && !isLive" class="video-duration">
-          {{ formatDuration(videoInfo.duration) }}
+          {{ formatDuration(videoInfo.duration, "0:00") }}
         </div>
         <div v-if="coverLoaded && !coverError && isLive" class="video-live-badge">
           <span class="live-dot" />

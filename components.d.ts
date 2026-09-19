@@ -33,6 +33,7 @@ declare module 'vue' {
     IconMdiCancel: typeof import('~icons/mdi/cancel')['default']
     IconMdiCheck: typeof import('~icons/mdi/check')['default']
     IconMdiCheckCircleOutline: typeof import('~icons/mdi/check-circle-outline')['default']
+    IconMdiChevronDown: typeof import('~icons/mdi/chevron-down')['default']
     IconMdiChevronRight: typeof import('~icons/mdi/chevron-right')['default']
     IconMdiChevronUp: typeof import('~icons/mdi/chevron-up')['default']
     IconMdiClose: typeof import('~icons/mdi/close')['default']

@@ -112,6 +112,8 @@
     "dialogOk": "OK",
     "showDetail": "Hiện chi tiết",
     "err_tool_already_running": "Công cụ này đã có tác vụ đang chạy",
+    "err_channel_already_syncing": "Kênh này đã có tác vụ đồng bộ hoặc hiệu chỉnh đang chạy",
+    "err_enrich_all_chunks_failed": "Tất cả yêu cầu hiệu chỉnh đều thất bại. Vui lòng kiểm tra cài đặt mạng/proxy và thử lại",
     "err_plugin_layout": "Chỉ hỗ trợ gói plugin định dạng zip",
     "err_invalid_plugin_name": "Tên tệp gói plugin không hợp lệ",
     "err_read_plugin": "Đọc gói plugin thất bại",
