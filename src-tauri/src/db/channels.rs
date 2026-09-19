@@ -479,6 +479,7 @@ pub fn get_enrich_targets(
 
 /// 日期校准回填的单行更新：精确日期 + 详情页顺带拿到的其他字段。
 /// 标题/封面用空字符串表示“未取到，不覆盖”；时长/播放量用 None 表示不覆盖。
+#[derive(Debug)]
 pub struct EnrichUpdate {
     pub id: String,
     pub published_at: i64,

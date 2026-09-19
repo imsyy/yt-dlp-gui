@@ -217,23 +217,27 @@ pub(crate) fn extract_published_at(entry: &Value) -> Option<i64> {
         })
 }
 
-/// 解析发布日期字符串 (YYYYMMDD) 为毫秒时间戳
-fn parse_upload_date(date_str: &str) -> Option<i64> {
-    if date_str.len() == 8 {
-        let year: i32 = date_str[0..4].parse().ok()?;
-        let month: u32 = date_str[4..6].parse().ok()?;
-        let day: u32 = date_str[6..8].parse().ok()?;
-        if !(1..=12).contains(&month) || !(1..=31).contains(&day) {
-            return None;
-        }
-        let y = if month <= 2 { year - 1 } else { year } as i64;
-        let m = if month <= 2 { month + 9 } else { month - 3 } as i64;
-        let d = day as i64;
-        let days = 365 * y + y / 4 - y / 100 + y / 400 + (m * 306 + 5) / 10 + (d - 1) - 719468;
-        Some(days * 86400 * 1000)
-    } else {
-        None
+/// 年月日 -> 自 Unix 纪元起的天数（各日期解析共用，非法月/日返回 None）。
+pub(crate) fn civil_days(year: i32, month: u32, day: u32) -> Option<i64> {
+    if !(1..=12).contains(&month) || !(1..=31).contains(&day) {
+        return None;
     }
+    let y = if month <= 2 { year - 1 } else { year } as i64;
+    let m = if month <= 2 { month + 9 } else { month - 3 } as i64;
+    let d = day as i64;
+    Some(365 * y + y / 4 - y / 100 + y / 400 + (m * 306 + 5) / 10 + (d - 1) - 719468)
+}
+
+/// 解析发布日期字符串 (YYYYMMDD) 为毫秒时间戳（UTC 零点）
+pub(crate) fn parse_upload_date(date_str: &str) -> Option<i64> {
+    if date_str.len() != 8 {
+        return None;
+    }
+    // 用 get 而非直接切片：脏输入含多字节字符时返回 None，不 panic
+    let year: i32 = date_str.get(0..4)?.parse().ok()?;
+    let month: u32 = date_str.get(4..6)?.parse().ok()?;
+    let day: u32 = date_str.get(6..8)?.parse().ok()?;
+    civil_days(year, month, day).map(|days| days * 86400 * 1000)
 }
 
 /// 从 B 站空间首条完整视频 JSON 中提取作者信息。
@@ -262,6 +266,18 @@ pub(crate) fn extract_space_author(entry: &Value) -> Option<(String, String, Str
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn test_parse_upload_date() {
+        assert_eq!(parse_upload_date("20240501"), Some(1714521600000));
+        assert_eq!(parse_upload_date("19700101"), Some(0));
+        // 非 YYYYMMDD 形态与非法月日
+        assert!(parse_upload_date("2024-05-01").is_none());
+        assert!(parse_upload_date("20241301").is_none());
+        assert!(parse_upload_date("").is_none());
+        // 多字节脏输入不得 panic（len 为 8 但不构成合法年月日）
+        assert!(parse_upload_date("2024😀").is_none());
+    }
 
     #[test]
     fn test_extract_space_author() {

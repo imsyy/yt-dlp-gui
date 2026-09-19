@@ -145,7 +145,13 @@ const handleSyncMenuSelect = (key: string) => {
             </n-button>
           </n-flex>
 
-          <n-flex v-if="busy" align="center" :size="6" :wrap="false" class="detail-meta syncing-meta">
+          <n-flex
+            v-if="busy"
+            align="center"
+            :size="6"
+            :wrap="false"
+            class="detail-meta syncing-meta"
+          >
             <n-spin :size="13" />
             <n-text depth="2" class="syncing-text">
               {{ busyDetail }}
@@ -166,8 +172,6 @@ const handleSyncMenuSelect = (key: string) => {
       </n-flex>
 
       <n-flex align="center" :size="8" :wrap="false">
-        <!-- 同步入口：按钮只负责打开菜单与统一加载态，具体功能都在下拉菜单里。
-             忙时入口禁用，与列表菜单行为一致 -->
         <n-dropdown
           trigger="click"
           :disabled="busy"
@@ -181,7 +185,6 @@ const handleSyncMenuSelect = (key: string) => {
             {{ busy ? $t("channelArchive.loading") : $t("channelArchive.sync") }}
           </n-button>
         </n-dropdown>
-        <!-- 忙时取消：同步中取消同步，纯校准时取消校准 -->
         <n-button
           v-if="busy"
           type="warning"
@@ -197,7 +200,7 @@ const handleSyncMenuSelect = (key: string) => {
 
         <n-popover trigger="click" placement="bottom-end" :disabled="busy">
           <template #trigger>
-            <n-button quaternary circle size="small" :disabled="busy">
+            <n-button strong secondary circle size="small" :disabled="busy">
               <template #icon>
                 <n-icon><icon-mdi-cog-outline /></n-icon>
               </template>

@@ -1,10 +1,17 @@
-//! 发布日期校准任务：对精度非 exact 的归档视频逐个抓取详情并回填精确日期。
+//! 发布日期校准任务：对精度非 exact 的归档视频回填精确日期。
 //!
 //! 数据流：命令/同步收尾 -> spawn_enrich_job 注册并起后台任务 ->
-//! 按分片并发跑 yt-dlp（首轮 + 最多补查轮）-> channel-enrich-progress 事件推进 ->
-//! 终态 completed/error/cancelled。ACTIVE_ENRICHS 表项跨轮持有，任务结束才释放。
+//! 快查阶段（YouTube watch 页直连 / B 站官方 API 直连，高并发）->
+//! 兜底阶段（剩余行才走 yt-dlp 分片抓取）-> channel-enrich-progress 事件推进 ->
+//! 终态 completed/error/cancelled。ACTIVE_ENRICHS 表项跨阶段持有，任务结束才释放。
+//!
+//! 两阶段设计的原因：yt-dlp 子进程有秒级启动开销且分片内串行，
+//! 一个慢视频拖住整片；直接 HTTP 单请求 300~800ms、16 并发，
+//! 实测 200 条从分钟级降到十秒级。失败分永久（私有/删除/无 Cookie 登录限制，
+//! 不再重试）与瞬时（超时/限流，补查一次后进兜底），避免全量多轮空转。
 
 use super::extract::{extract_published_at, extract_video_thumbnail, BILIBILI_USER_AGENT};
+use super::fast::{run_fast, FastJobParams};
 use crate::commands::support::append_cookie_proxy_args;
 use crate::db::channels::{
     get_channel, get_enrich_targets, update_video_enriched_fields, EnrichTarget, EnrichUpdate,
@@ -43,23 +50,54 @@ pub struct ChannelEnrichProgressPayload {
     pub message: Option<String>,
 }
 
-/// 校准分片大小：每批塞进同一个 yt-dlp 进程的 URL 数
+/// 校准分片大小：通用平台每批塞进同一个 yt-dlp 进程的 URL 数
 const ENRICH_CHUNK_SIZE: usize = 20;
-/// 底层兜底轮数上限（含首轮）：首轮后仍有模糊行则自动重查
+/// 兜底分片大小：快查剩下的问题行更小分片隔离，单个坏链最多拖住 10 个
+const FALLBACK_CHUNK_SIZE: usize = 10;
+/// 通用平台兜底轮数上限（含首轮）：首轮后仍有模糊行则自动重查
 const ENRICH_MAX_ROUNDS: usize = 3;
 /// 轮间休眠秒数，给可能的限流留喘息
 const ENRICH_ROUND_INTERVAL_SECS: u64 = 3;
+/// 兜底阶段并发 worker 数上限（run_id 编号与收尾清理都按此值展开）
+const ENRICH_MAX_WORKERS: usize = 8;
+/// 分片失败时保留的 stderr 尾部行数（用于错误采样）
+const STDERR_TAIL_LINES: usize = 30;
 
-/// 日期校准的 yt-dlp 参数（经实测确认）：
+/// 日期校准共用的 yt-dlp 参数（经实测确认）：
 /// - `-j` 多 URL 单进程输出一行一个 JSON，`--ignore-errors` 让坏链不中断整批；
-/// - `player_client=android,web_embedded` 走免挑战客户端，无需 JS 运行时/PO Token
-///   即可返回 microformat 的精确 upload_date（tv 客户端实测会报
-///   "The page needs to be reloaded"，不可用）；
-///   web_embedded 顺带给“允许嵌入的年龄限制视频”留一条免登录活路
-///   （实测部分视频仍需登录，见下）；
-/// - `player_skip=webpage` 砍掉 watch 网页请求（日期来自 player API，不受影响），
-///   configs 保留以保证匿名请求可用；
+/// - 只做详情提取不碰媒体流，`--no-check-formats`/`--no-playlist`/
+///   `--no-flat-playlist` 砍掉无关请求；
 /// - 不传 deno/ffmpeg/plugin/po-token 参数，纯日期提取不需要它们。
+fn base_enrich_args() -> Vec<String> {
+    [
+        "-j",
+        "--ignore-config",
+        "--color",
+        "never",
+        "--no-warnings",
+        "--socket-timeout",
+        "15",
+        "--retries",
+        "2",
+        "--extractor-retries",
+        "1",
+        "--no-check-formats",
+        "--no-playlist",
+        "--no-flat-playlist",
+        "--ignore-errors",
+    ]
+    .into_iter()
+    .map(String::from)
+    .collect()
+}
+
+/// YouTube 详情抓取的额外参数：
+/// `player_client=android,web_embedded` 走免挑战客户端，无需 JS 运行时/PO Token
+/// 即可返回 microformat 的精确 upload_date（tv 客户端实测会报
+/// "The page needs to be reloaded"，不可用）；web_embedded 顺带给“允许嵌入的
+/// 年龄限制视频”留一条免登录活路（实测部分视频仍需登录，见下）；
+/// `player_skip=webpage` 砍掉 watch 网页请求（日期来自 player API，不受影响），
+/// configs 保留以保证匿名请求可用。
 ///
 /// 年龄限制视频说明（已用 yt-dlp 自带测试用例实测）：
 /// 网页上能看到日期，是因为年龄确认页 HTML 里带了展示文本；但 yt-dlp 的日期
@@ -68,25 +106,9 @@ const ENRICH_ROUND_INTERVAL_SECS: u64 = 3;
 /// 允许嵌入的视频有时能被 web_embedded 绕过；其余一律需要登录 Cookie，
 /// 本任务已透传 Cookie/代理参数，在设置里配好 Cookie 即可校准这类视频。
 fn build_enrich_args(urls: &[String]) -> Vec<String> {
-    let mut args = vec![
-        "-j".to_string(),
-        "--ignore-config".to_string(),
-        "--color".to_string(),
-        "never".to_string(),
-        "--no-warnings".to_string(),
-        "--socket-timeout".to_string(),
-        "15".to_string(),
-        "--retries".to_string(),
-        "2".to_string(),
-        "--extractor-retries".to_string(),
-        "1".to_string(),
-        "--no-check-formats".to_string(),
-        "--no-playlist".to_string(),
-        "--no-flat-playlist".to_string(),
-        "--ignore-errors".to_string(),
-        "--extractor-args".to_string(),
-        "youtube:player_client=android,web_embedded;player_skip=webpage".to_string(),
-    ];
+    let mut args = base_enrich_args();
+    args.push("--extractor-args".to_string());
+    args.push("youtube:player_client=android,web_embedded;player_skip=webpage".to_string());
     for url in urls {
         args.push(url.clone());
     }
@@ -148,25 +170,15 @@ async fn enrich_worker(ctx: EnrichWorkerCtx) {
         }
 
         let mut args = if is_youtube {
-            build_enrich_args(&chunk.iter().map(|(_, _, url)| url.clone()).collect::<Vec<_>>())
+            build_enrich_args(
+                &chunk
+                    .iter()
+                    .map(|(_, _, url)| url.clone())
+                    .collect::<Vec<_>>(),
+            )
         } else {
-            let mut generic = vec![
-                "-j".to_string(),
-                "--ignore-config".to_string(),
-                "--color".to_string(),
-                "never".to_string(),
-                "--no-warnings".to_string(),
-                "--socket-timeout".to_string(),
-                "15".to_string(),
-                "--retries".to_string(),
-                "2".to_string(),
-                "--extractor-retries".to_string(),
-                "1".to_string(),
-                "--no-check-formats".to_string(),
-                "--no-playlist".to_string(),
-                "--no-flat-playlist".to_string(),
-                "--ignore-errors".to_string(),
-            ];
+            // 非 YouTube 站点没有 player_client 概念，用共用参数即可
+            let mut generic = base_enrich_args();
             for (_, _, url) in &chunk {
                 generic.push(url.clone());
             }
@@ -227,6 +239,27 @@ async fn enrich_worker(ctx: EnrichWorkerCtx) {
             app_handle.state::<ProcessRegistry>().register(&run_id, pid);
         }
 
+        // stderr 必须与 stdout 同时消费：整批硬失败（20 条全带 traceback）时输出
+        // 会超过管道缓冲区，只读 stdout 会让子进程卡在写、wait() 永不返回。
+        // --no-warnings 下输出量小，只留尾部 STDERR_TAIL_LINES 行做错误采样。
+        let stderr_task = child.stderr.take().map(|stderr| {
+            tokio::spawn(async move {
+                let mut reader = tokio::io::BufReader::new(stderr).lines();
+                let mut tail: Vec<String> = Vec::new();
+                while let Ok(Some(line)) = reader.next_line().await {
+                    let trimmed = line.trim();
+                    if trimmed.is_empty() {
+                        continue;
+                    }
+                    if tail.len() == STDERR_TAIL_LINES {
+                        tail.remove(0);
+                    }
+                    tail.push(trimmed.to_string());
+                }
+                tail
+            })
+        });
+
         // video_id -> 行主键 id，用于把逐行 JSON 结果映射回数据库行
         let id_map: HashMap<&str, &str> = chunk
             .iter()
@@ -278,33 +311,23 @@ async fn enrich_worker(ctx: EnrichWorkerCtx) {
 
         app_handle.state::<ProcessRegistry>().take(&run_id);
         let exit_ok = child.wait().await.map(|s| s.success()).unwrap_or(false);
+        let stderr_tail = match stderr_task {
+            Some(task) => task.await.unwrap_or_default(),
+            None => Vec::new(),
+        };
 
-        // 分片级失败时收集 stderr 尾部错误行，全失败时拼出可读原因；
-        // --no-warnings 下输出量很小，不会有管道阻塞风险
+        // 分片级失败时用 stderr 尾部错误行做可读原因
         if !exit_ok {
-            if let Some(stderr) = child.stderr.take() {
-                let mut reader = tokio::io::BufReader::new(stderr).lines();
-                let mut tail: Vec<String> = Vec::new();
-                while let Ok(Some(line)) = reader.next_line().await {
-                    let trimmed = line.trim();
-                    if !trimmed.is_empty() {
-                        tail.push(trimmed.to_string());
-                        if tail.len() > 30 {
-                            tail.remove(0);
-                        }
-                    }
-                }
-                let sample = tail
-                    .iter()
-                    .rev()
-                    .find(|l| l.contains("ERROR"))
-                    .or_else(|| tail.last())
-                    .cloned();
-                if let Some(sample) = sample {
-                    if let Ok(mut slot) = err_sample.lock() {
-                        if slot.is_none() {
-                            *slot = Some(sample);
-                        }
+            let sample = stderr_tail
+                .iter()
+                .rev()
+                .find(|l| l.contains("ERROR"))
+                .or_else(|| stderr_tail.last())
+                .cloned();
+            if let Some(sample) = sample {
+                if let Ok(mut slot) = err_sample.lock() {
+                    if slot.is_none() {
+                        *slot = Some(sample);
                     }
                 }
             }
@@ -405,30 +428,9 @@ pub(crate) fn spawn_enrich_job(app: &AppHandle, params: EnrichJobParams) -> Resu
 
     let app_handle = app.clone();
     tokio::spawn(async move {
-        let ytdlp_path = match utils::get_ytdlp_path(&app_handle) {
-            Ok(p) => p,
-            Err(e) => {
-                if let Ok(mut enriches) = get_active_enriches().lock() {
-                    enriches.remove(&channel_id);
-                }
-                let _ = app_handle.emit(
-                    "channel-enrich-progress",
-                    ChannelEnrichProgressPayload {
-                        channel_id: channel_id.clone(),
-                        status: "error".to_string(),
-                        total,
-                        done: 0,
-                        fixed: 0,
-                        message: Some(e),
-                    },
-                );
-                return;
-            }
-        };
-
         let db_state = app_handle.state::<DatabaseState>();
         let err_sample = Arc::new(Mutex::new(None::<String>));
-        // 启动即推送：首个分片完成前（几十秒）前端也能立刻转圈+禁用按钮，
+        // 启动即推送：首个结果回来前（快查约 1s 内就有）前端也能立刻转圈+禁用按钮，
         // 与同步任务“点下就有反馈”的体验对齐
         let _ = app_handle.emit(
             "channel-enrich-progress",
@@ -441,45 +443,161 @@ pub(crate) fn spawn_enrich_job(app: &AppHandle, params: EnrichJobParams) -> Resu
                 message: None,
             },
         );
-        // 底层兜底：首轮结束后仍有模糊行则自动重查，最多 ENRICH_MAX_ROUNDS 轮；
-        // 方法与首轮共用（同一 worker）。ACTIVE_ENRICHS 表项跨轮持有，
-        // 因此自动重查期间手动再点会被拒绝，前端据此禁用菜单项。
+        // 两阶段：快查（直接 HTTP，高并发）-> 兜底（仅剩行走 yt-dlp 单轮）。
+        // 通用平台无快查路径，走原多轮 yt-dlp。
+        // ACTIVE_ENRICHS 表项跨阶段持有，期间手动再点会被拒绝，前端据此禁用菜单项。
         let mut acc_done = 0usize;
         let mut acc_fixed = 0usize;
+        let mut acc_permanent = 0usize;
         let (mut last_failed, mut last_chunks) = (0usize, 0usize);
-        let mut first_targets: Option<Vec<EnrichTarget>> = Some(targets);
+        let mut first_targets: Option<Vec<EnrichTarget>> = None;
+        let mut max_rounds = ENRICH_MAX_ROUNDS;
+        let mut chunk_size = ENRICH_CHUNK_SIZE;
+        let has_cookie = cookie_file
+            .as_deref()
+            .map(|s| !s.trim().is_empty())
+            .unwrap_or(false)
+            || cookie_browser
+                .as_deref()
+                .map(|s| !s.trim().is_empty())
+                .unwrap_or(false);
+
+        if channel_platform == "youtube" || channel_platform == "bilibili" {
+            let fast_inputs: Vec<(String, String, String)> = targets
+                .into_iter()
+                .map(|t| (t.id, t.video_id, t.url))
+                .collect();
+            // 客户端构造失败（如代理配错）才用得上：快查一行没跑就直接全量兜底
+            let fallback_inputs = fast_inputs.clone();
+            let fast_outcome = run_fast(
+                &app_handle,
+                FastJobParams {
+                    channel_id: &channel_id,
+                    kind: if channel_platform == "youtube" {
+                        "youtube"
+                    } else {
+                        "bilibili"
+                    },
+                    targets: fast_inputs,
+                    proxy: proxy.clone(),
+                    has_cookie,
+                    concurrency,
+                    total,
+                    cancel_flag: cancel_flag.clone(),
+                },
+            )
+            .await;
+            match fast_outcome {
+                Ok(o) => {
+                    acc_done = o.done;
+                    acc_fixed = o.fixed;
+                    acc_permanent = o.permanent;
+                    if let Some(sample) = o.err_sample {
+                        if let Ok(mut slot) = err_sample.lock() {
+                            *slot = Some(sample);
+                        }
+                    }
+                    let retry_count = o.retry_targets.len();
+                    if retry_count > 0 && !cancel_flag.load(Ordering::Relaxed) {
+                        // 兜底行在快查阶段已计过一次 done，这里扣掉：
+                        // 否则兜底还没跑，进度就已经顶到 total/total。
+                        acc_done = acc_done.saturating_sub(retry_count);
+                        first_targets = Some(
+                            o.retry_targets
+                                .into_iter()
+                                .map(|(id, video_id, url)| EnrichTarget { id, video_id, url })
+                                .collect(),
+                        );
+                    }
+                }
+                Err(e) => {
+                    if let Ok(mut slot) = err_sample.lock() {
+                        *slot = Some(e);
+                    }
+                    if !cancel_flag.load(Ordering::Relaxed) {
+                        first_targets = Some(
+                            fallback_inputs
+                                .into_iter()
+                                .map(|(id, video_id, url)| EnrichTarget { id, video_id, url })
+                                .collect(),
+                        );
+                    }
+                }
+            }
+            // 快查已覆盖绝大多数行：兜底最多一轮，且用更小分片隔离问题行
+            max_rounds = 1;
+            chunk_size = FALLBACK_CHUNK_SIZE;
+        } else {
+            first_targets = Some(targets);
+        }
         let mut round = 0usize;
-        while round < ENRICH_MAX_ROUNDS {
+        // 兜底阶段：需要 yt-dlp 且确有剩余行时才起进程；
+        // 快查已全搞定（或已取消）则跳过，yt-dlp 缺失也不影响快查成果。
+        let need_fallback = first_targets
+            .as_ref()
+            .map(|t| !t.is_empty())
+            .unwrap_or(false)
+            && !cancel_flag.load(Ordering::Relaxed);
+        let ytdlp_path = if need_fallback {
+            match utils::get_ytdlp_path(&app_handle) {
+                Ok(p) => Some(p),
+                Err(e) => {
+                    if acc_fixed == 0 && acc_permanent == 0 {
+                        if let Ok(mut enriches) = get_active_enriches().lock() {
+                            enriches.remove(&channel_id);
+                        }
+                        let _ = app_handle.emit(
+                            "channel-enrich-progress",
+                            ChannelEnrichProgressPayload {
+                                channel_id: channel_id.clone(),
+                                status: "error".to_string(),
+                                total,
+                                done: acc_done.min(total),
+                                fixed: 0,
+                                message: Some(e),
+                            },
+                        );
+                        return;
+                    }
+                    // 快查已有成果：yt-dlp 缺失只影响剩余行，按完成收尾
+                    None
+                }
+            }
+        } else {
+            None
+        };
+        while round < max_rounds {
+            let Some(ytdlp_path) = ytdlp_path.clone() else {
+                break;
+            };
             round += 1;
             if cancel_flag.load(Ordering::Relaxed) {
                 break;
             }
             let round_targets: Vec<EnrichTarget> = match first_targets.take() {
                 Some(t) => t,
-                None => match get_enrich_targets(
-                    &db_state,
-                    &channel_id,
-                    video_ids_owned.as_deref(),
-                ) {
-                    Ok(t) if !t.is_empty() => t,
-                    _ => break,
-                },
+                None => {
+                    match get_enrich_targets(&db_state, &channel_id, video_ids_owned.as_deref()) {
+                        Ok(t) if !t.is_empty() => t,
+                        _ => break,
+                    }
+                }
             };
 
-            // 每批 ENRICH_CHUNK_SIZE 个 URL 塞进同一个 yt-dlp 进程，摊薄启动开销
+            // 每批 chunk_size 个 URL 塞进同一个 yt-dlp 进程，摊薄启动开销
             let queue = Arc::new(Mutex::new(
                 round_targets
                     .into_iter()
                     .map(|t| (t.id, t.video_id, t.url))
                     .collect::<Vec<EnrichItem>>()
-                    .chunks(ENRICH_CHUNK_SIZE)
+                    .chunks(chunk_size)
                     .map(|c| c.to_vec())
                     .collect::<VecDeque<EnrichChunk>>(),
             ));
             let chunk_count = queue.lock().map(|q| q.len()).unwrap_or(0);
             let worker_count = concurrency
                 .unwrap_or(4)
-                .clamp(1, 8)
+                .clamp(1, ENRICH_MAX_WORKERS)
                 .min(chunk_count.max(1));
             let stats = Arc::new(Mutex::new((0usize, 0usize, 0usize)));
             let mut handles = Vec::with_capacity(worker_count);
@@ -523,21 +641,18 @@ pub(crate) fn spawn_enrich_job(app: &AppHandle, params: EnrichJobParams) -> Resu
             {
                 break;
             }
-            if round >= ENRICH_MAX_ROUNDS {
+            if round >= max_rounds {
                 break;
             }
             // 轮间休眠，给可能的限流留喘息；取消会被下一轮顶部的检查捕获
-            tokio::time::sleep(std::time::Duration::from_secs(
-                ENRICH_ROUND_INTERVAL_SECS,
-            ))
-            .await;
+            tokio::time::sleep(std::time::Duration::from_secs(ENRICH_ROUND_INTERVAL_SECS)).await;
         }
 
         if let Ok(mut enriches) = get_active_enriches().lock() {
             enriches.remove(&channel_id);
         }
         // 取消时顺手清理可能残留的 pid 登记（worker 正常退出时已 take）
-        for idx in 0..8 {
+        for idx in 0..ENRICH_MAX_WORKERS {
             app_handle
                 .state::<ProcessRegistry>()
                 .take(&format!("channel_enrich_{}_{}", channel_id, idx));
@@ -559,9 +674,11 @@ pub(crate) fn spawn_enrich_job(app: &AppHandle, params: EnrichJobParams) -> Resu
                     message: None,
                 },
             );
-        } else if fixed == 0 && failed_chunks >= chunk_count.max(1) {
-            // 所有分片进程级失败（如断网）：优先用 stderr 采样出的真实原因，
-            // 兜底才是通用错误码（前端会对两者做友好化翻译）
+        } else if fixed == 0 && acc_permanent == 0 && failed_chunks >= chunk_count.max(1) {
+            // 网络级全失败（如断网/代理配错）且无任何永久跳过行：
+            // 优先用 stderr/HTTP 采样出的真实原因，
+            // 兜底才是通用错误码（前端会对两者做友好化翻译）。
+            // 注意：fixed==0 但有永久跳过行（全是私有/删除）是正常完成，不是错误。
             let detail = err_sample
                 .lock()
                 .ok()
@@ -635,7 +752,7 @@ pub async fn channel_enrich_cancel(app: AppHandle, channel_id: String) -> Result
             return Ok(());
         }
     }
-    for idx in 0..8 {
+    for idx in 0..ENRICH_MAX_WORKERS {
         let run_id = format!("channel_enrich_{}_{}", channel_id, idx);
         if let Some(pid) = app.state::<ProcessRegistry>().take(&run_id) {
             let _ = crate::platform::process::kill_process(pid);
