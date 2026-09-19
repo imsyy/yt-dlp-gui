@@ -26,14 +26,13 @@ const emit = defineEmits<{
   (e: "remove", channel: ChannelRecord): void;
 }>();
 
-/** 平台标识的展示名与标签配色 */
-const platformMeta: Record<string, { label: string; type: "error" | "info" | "default" }> = {
-  youtube: { label: "YouTube", type: "error" },
-  bilibili: { label: "Bilibili", type: "info" },
+/** 平台标识的展示名 */
+const platformLabel: Record<string, string> = {
+  youtube: "YouTube",
+  bilibili: "Bilibili",
 };
 
-const platformOf = (platform: string) =>
-  platformMeta[platform] ?? { label: platform, type: "default" as const };
+const platformOf = (platform: string) => platformLabel[platform] ?? platform;
 
 /** 下拉菜单图标渲染 */
 const menuIcon = (icon: Component) => () => h(NIcon, null, { default: () => h(icon) });
@@ -62,59 +61,51 @@ const handleMenuSelect = (key: string, channel: ChannelRecord) => {
 <template>
   <n-card size="small" :title="$t('channelArchive.channelList')" class="channel-list-card">
     <template #header-extra>
-      <n-text depth="3" class="channel-count">{{ channels.length }}</n-text>
+      <n-tag size="tiny" :bordered="false" round>{{ channels.length }}</n-tag>
     </template>
 
-    <n-spin :show="loading">
-      <n-empty
-        v-if="channels.length === 0"
-        size="small"
-        :description="$t('channelArchive.emptyChannels')"
-      />
+    <n-scrollbar>
+      <n-spin :show="loading">
+        <n-empty
+          v-if="channels.length === 0"
+          size="small"
+          :description="$t('channelArchive.emptyChannels')"
+        />
 
-      <n-list v-else hoverable class="channel-list">
-        <n-list-item
-          v-for="channel in channels"
-          :key="channel.id"
-          class="channel-item"
-          :class="{ 'is-active': channel.id === activeId }"
-          @click="emit('select', channel.id)"
-        >
-          <n-flex align="center" :size="10" :wrap="false">
-            <n-avatar round :size="36" :src="channel.avatar || undefined">
-              <template #fallback>
-                <n-icon :size="20"><icon-mdi-account-circle /></n-icon>
-              </template>
-            </n-avatar>
+        <n-flex v-else vertical :size="6" class="channel-list">
+          <n-flex
+            v-for="channel in channels"
+            :key="channel.id"
+            align="center"
+            :size="8"
+            :wrap="false"
+            class="channel-item"
+            :class="{ 'is-active': channel.id === activeId }"
+            @click="emit('select', channel.id)"
+          >
+            <n-badge
+              :show="channel.syncStatus === 'syncing' || isEnriching(channel.id)"
+              dot
+              type="warning"
+              :offset="[-4, 4]"
+              processing
+            >
+              <n-avatar round :size="30" :src="channel.avatar || undefined">
+                <template #fallback>
+                  <n-icon :size="16"><icon-mdi-account-circle /></n-icon>
+                </template>
+              </n-avatar>
+            </n-badge>
 
-            <n-flex vertical :size="2" class="channel-info">
+            <n-flex vertical :size="0" class="channel-info" align="stretch">
               <n-ellipsis :tooltip="true" class="channel-name">
                 {{ channel.title }}
               </n-ellipsis>
-              <n-flex align="center" :size="6" :wrap="false">
-                <n-tag
-                  size="tiny"
-                  round
-                  :bordered="false"
-                  :type="platformOf(channel.platform).type"
-                >
-                  {{ platformOf(channel.platform).label }}
-                </n-tag>
-                <n-text depth="3" class="channel-meta">
-                  {{ $t("channelArchive.videoCount", { count: channel.videoCount }) }}
-                </n-text>
-              </n-flex>
+              <n-ellipsis :tooltip="false" class="channel-meta">
+                {{ platformOf(channel.platform) }} ·
+                {{ $t("channelArchive.videoCount", { count: channel.videoCount }) }}
+              </n-ellipsis>
             </n-flex>
-
-            <n-tag
-              v-if="channel.syncStatus === 'syncing' || isEnriching(channel.id)"
-              size="tiny"
-              round
-              :bordered="false"
-              type="warning"
-            >
-              {{ $t("channelArchive.loading") }}
-            </n-tag>
 
             <n-dropdown
               trigger="click"
@@ -128,25 +119,42 @@ const handleMenuSelect = (key: string, channel: ChannelRecord) => {
               </n-button>
             </n-dropdown>
           </n-flex>
-        </n-list-item>
-      </n-list>
-    </n-spin>
+        </n-flex>
+      </n-spin>
+    </n-scrollbar>
   </n-card>
 </template>
 
 <style scoped lang="scss">
 .channel-list-card {
-  width: 280px;
+  width: 260px;
   flex-shrink: 0;
 
-  /* overflow 非 visible 时 flex 项的自动最小高度为 0，卡片主体因此可内部滚动 */
   :deep(.n-card-content) {
-    overflow: auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 0 8px 8px;
+  }
+
+  :deep(.n-scrollbar) {
+    flex: 1;
+    min-height: 0;
   }
 }
 
-.channel-count {
-  font-size: 12px;
+.channel-item {
+  flex: 0 0 auto;
+  padding: 6px 8px;
+  cursor: pointer;
+  overflow: hidden;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+
+  &:hover,
+  &.is-active {
+    background-color: var(--n-action-color);
+  }
 }
 
 .channel-info {
@@ -156,15 +164,10 @@ const handleMenuSelect = (key: string, channel: ChannelRecord) => {
 
 .channel-name {
   font-size: 13px;
-  font-weight: 500;
+  line-height: normal;
 }
 
 .channel-meta {
-  font-size: 11px;
-}
-
-/* 选中项复用列表自身的悬浮底色，随主题变化 */
-.channel-list :deep(.channel-item.is-active) {
-  background-color: var(--n-merged-color-hover);
+  font-size: 12px;
 }
 </style>

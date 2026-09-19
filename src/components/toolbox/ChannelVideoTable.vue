@@ -166,13 +166,15 @@ const columns = computed<DataTableColumns<ChannelVideoRecord>>(() => [
     :title="$t('channelArchive.videoCount', { count: total })"
     class="video-table-card"
   >
-    <n-flex align="center" justify="space-between" :size="12">
+    <template #header-extra>
       <n-radio-group v-model:value="contentType" size="small">
         <n-radio-button value="video">{{ $t("channelArchive.typeVideo") }}</n-radio-button>
-        <n-radio-button value="short">{{ $t("channelArchive.typeShort") }}</n-radio-button>
         <n-radio-button value="stream">{{ $t("channelArchive.typeStream") }}</n-radio-button>
+        <n-radio-button value="short">{{ $t("channelArchive.typeShort") }}</n-radio-button>
       </n-radio-group>
+    </template>
 
+    <n-flex align="center" justify="space-between" :size="8" :wrap="false">
       <n-flex align="center" :size="8" :wrap="false">
         <n-input
           v-model:value="searchQuery"
@@ -186,34 +188,31 @@ const columns = computed<DataTableColumns<ChannelVideoRecord>>(() => [
           </template>
         </n-input>
 
-        <n-select v-model:value="sortBy" size="small" style="width: 120px" :options="sortOptions" />
+        <n-select v-model:value="sortBy" size="small" style="width: 130px" :options="sortOptions" />
 
-        <n-tooltip>
-          <template #trigger>
-            <n-button secondary size="small" @click="toggleSortOrder">
-              <template #icon>
-                <n-icon>
-                  <component
-                    :is="sortOrder === 'desc' ? IconMdiSortDescending : IconMdiSortAscending"
-                  />
-                </n-icon>
-              </template>
-            </n-button>
+        <n-button secondary size="small" @click="toggleSortOrder">
+          <template #icon>
+            <n-icon>
+              <component
+                :is="sortOrder === 'desc' ? IconMdiSortDescending : IconMdiSortAscending"
+              />
+            </n-icon>
           </template>
           {{ sortOrder === "desc" ? $t("channelArchive.sortDesc") : $t("channelArchive.sortAsc") }}
-        </n-tooltip>
+        </n-button>
       </n-flex>
-    </n-flex>
 
-    <n-flex v-if="checkedVideos.length > 0" align="center" :size="8" :wrap="false">
-      <n-text depth="3" style="font-size: 12px">
-        {{ $t("channelArchive.selectedCount", { count: checkedVideos.length }) }}
-      </n-text>
-      <n-button type="primary" secondary size="tiny" @click="emit('batch-send', checkedVideos)">
+      <n-button
+        type="primary"
+        secondary
+        size="small"
+        :disabled="checkedVideos.length === 0"
+        @click="emit('batch-send', checkedVideos)"
+      >
         <template #icon>
           <n-icon><icon-mdi-download /></n-icon>
         </template>
-        {{ $t("channelArchive.batchDownload") }}
+        {{ $t("channelArchive.sendToDownload") }}{{ checkedVideos.length > 0 ? ` (${checkedVideos.length})` : "" }}
       </n-button>
     </n-flex>
 
