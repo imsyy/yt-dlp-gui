@@ -1,14 +1,14 @@
 {
-  "migration": {
-    "title": "Zistené údaje z predchádzajúcej verzie",
-    "description": "Boli zistené úlohy sťahovania a história z predchádzajúcej verzie. Chcete ich importovať do aktuálnej verzie a pokračovať v používaní? Po dokončení migrácie sa staré údaje vyrovnávacej pamäte automaticky vymažú.",
-    "tasksCount": "{n} úloh sťahovania",
-    "historyCount": "{n} položiek histórie",
-    "migrateNow": "Premigrovať",
-    "migratingTasks": "Migrácia úloh…",
-    "migratingHistory": "Migrácia histórie…",
-    "failed": "Migrácia zlyhala: {message}",
-    "retry": "Opakovať",
-    "success": "Migrácia dokončená"
-  }
+    "migration": {
+        "title": "Zistené staršie údaje",
+        "description": "Boli nájdené úlohy na stiahnutie a história analýzy z predchádzajúcej verzie. Chcete ich preniesť do aktuálnej verzie? Staré údaje v cache budú po migrácii automaticky odstránené.",
+        "tasksCount": "{n} úlohy na stiahnutie",
+        "historyCount": "{n} záznamov v histórii",
+        "migrateNow": "Preneste údaje",
+        "migratingTasks": "Presúvajú sa úlohy na sťahovanie…",
+        "migratingHistory": "Presúvajú sa histórie analýzy …",
+        "failed": "Migrácia sa nepodarila: {message}",
+        "retry": "Skúsiť znova",
+        "success": "Migrácia údajov bola dokončená"
+    }
 }
