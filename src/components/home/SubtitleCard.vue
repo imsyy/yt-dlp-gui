@@ -54,6 +54,9 @@ const props = defineProps<{
 const selectedSubtitles = defineModel<string[]>("selectedSubtitles", {
   required: true,
 });
+const selectedSubtitleFormat = defineModel<string>("selectedSubtitleFormat", {
+  required: true,
+});
 
 /** 是否为正在直播或直播回放 */
 const isLiveRelated = computed(
@@ -67,8 +70,11 @@ const hasLiveChat = computed(
   () => !!(props.videoInfo.subtitles?.live_chat || props.videoInfo.automatic_captions?.live_chat),
 );
 
+/**字幕格式及名称 */
+type SubtitleTrack = { ext: string; name?: string };
+
 /** 获取语言显示名称 */
-const getLangLabel = (lang: string, tracks: { name?: string }[]): string => {
+const getLangLabel = (lang: string, tracks: SubtitleTrack[]): string => {
   const name = tracks[0]?.name;
   const mapped = LANG_NAMES[lang];
   if (name && mapped) return `${mapped} (${name})`;
@@ -77,10 +83,43 @@ const getLangLabel = (lang: string, tracks: { name?: string }[]): string => {
   return lang;
 };
 
+/** 合并视频所有字幕（subtitles 和 automatic_captions）到subtitleMaps */
+const subtitleMaps = computed(() => [
+  props.videoInfo.subtitles || {},
+  props.videoInfo.automatic_captions || {},
+]);
+/** 收集subtitleMaps中所有的字幕格式并去重，生成字幕格式选项subtitleFormatOptions */
+const subtitleFormatOptions = computed(() => {
+  const formats = new Set<string>();
+  for (const subtitleMap of subtitleMaps.value) {
+    for (const tracks of Object.values(subtitleMap)) {
+      for (const track of tracks) formats.add(track.ext);
+    }
+  }
+  return [...formats].sort().map((format) => ({
+    label: `${format.toUpperCase()} (.${format})`,
+    value: format,
+  }));
+});
+/** 当前格式不存在时，自动选择第一个可用格式 */
+watch(
+  subtitleFormatOptions,
+  (options) => {
+    if (!options.some((option) => option.value === selectedSubtitleFormat.value)) {
+      selectedSubtitleFormat.value = options[0]?.value || "";
+    }
+  },
+  { immediate: true },
+);
+/** 检查给定的字幕轨道tracks是否包含选中的格式selectedSubtitleFormat */
+const hasSelectedFormat = (tracks: SubtitleTrack[]): boolean =>
+  tracks.some((track) => track.ext === selectedSubtitleFormat.value);
+
 /** 手动上传的字幕选项 */
 const manualOptions = computed(() =>
   Object.entries(props.videoInfo.subtitles || {})
     .filter(([lang]) => !FILTERED_KEYS.has(lang))
+    .filter(([, tracks]) => hasSelectedFormat(tracks))
     .map(([lang, tracks]) => ({
       label: getLangLabel(lang, tracks),
       value: `sub:${lang}`,
@@ -91,6 +130,7 @@ const manualOptions = computed(() =>
 const autoOptions = computed(() =>
   Object.entries(props.videoInfo.automatic_captions || {})
     .filter(([lang]) => !FILTERED_KEYS.has(lang))
+    .filter(([, tracks]) => hasSelectedFormat(tracks))
     .map(([lang, tracks]) => ({
       label: getLangLabel(lang, tracks),
       value: `auto:${lang}`,
@@ -124,12 +164,24 @@ const groupedOptions = computed(() => {
   return groups;
 });
 
-const hasSubtitles = computed(() => manualOptions.value.length > 0 || autoOptions.value.length > 0);
+const hasSubtitles = computed(() => subtitleFormatOptions.value.length > 0);
 </script>
 
 <template>
   <n-card :title="$t('detail.subtitles')" size="small">
     <template v-if="hasSubtitles">
+      <n-flex align="center" :size="8" style="margin-bottom: 8px">
+        <n-text depth="3" style="font-size: 13px; flex-shrink: 0">
+          {{ $t("detail.subtitleFormat") }}
+        </n-text>
+        <n-select
+          v-model:value="selectedSubtitleFormat"
+          :options="subtitleFormatOptions"
+          size="small"
+          style="width: 150px; flex-shrink: 0"
+          :aria-label="$t('detail.subtitleFormat')"
+        />
+      </n-flex>
       <n-select
         v-model:value="selectedSubtitles"
         :options="groupedOptions"
@@ -148,7 +200,7 @@ const hasSubtitles = computed(() => manualOptions.value.length > 0 || autoOption
       </n-text>
     </template>
     <n-text v-else depth="3" style="font-size: 13px">
-      {{ $t("detail.noSubtitles") }}
+      {{ $t("detail.noSubtitleFormats") }}
     </n-text>
   </n-card>
 </template>

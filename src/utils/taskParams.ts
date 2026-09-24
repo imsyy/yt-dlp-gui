@@ -36,6 +36,7 @@ export const normalizeTaskParams = (params?: Partial<DownloadTaskParams>): Downl
   ffmpegArgs: params?.ffmpegArgs ?? null,
   customArgs: params?.customArgs ?? null,
   subtitles: Array.isArray(params?.subtitles) ? params.subtitles : [],
+  subtitleFormat: params?.subtitleFormat ?? null,
   startTime: params?.startTime ?? null,
   endTime: params?.endTime ?? null,
   noPlaylist: Boolean(params?.noPlaylist),

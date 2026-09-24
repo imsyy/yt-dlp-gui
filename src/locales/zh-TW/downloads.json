@@ -118,6 +118,8 @@
     "liveFormatHint": "直播流正在推流中，部分格式可能不完整，建議等直播結束後下載更穩定",
     "liveChatSubtitleHint": "偵測到直播彈幕（live_chat），已自動排除。如需下載請使用工具箱中的「取得直播彈幕」功能",
     "subtitles": "字幕",
+    "subtitleFormat": "字幕格式",
+    "noSubtitleFormats": "無可選字幕格式",
     "selectSubtitleLangs": "選擇需要下載的字幕語言...",
     "noSubtitles": "該影片沒有可用的字幕",
     "subtitlesGroup": "字幕",

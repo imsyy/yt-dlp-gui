@@ -118,6 +118,8 @@
     "liveFormatHint": "A transmissão ao vivo está ativa. Alguns formatos podem estar incompletos, é recomendável baixar após o término para maior estabilidade.",
     "liveChatSubtitleHint": "Live chat detectado (live_chat) e excluído automaticamente. Use a ferramenta \"Obter chat da transmissão\" se necessário",
     "subtitles": "Legendas",
+    "subtitleFormat": "Formato da legenda",
+    "noSubtitleFormats": "Nenhum formato de legenda disponível",
     "selectSubtitleLangs": "Selecione os idiomas de legenda para baixar...",
     "noSubtitles": "Nenhuma legenda disponível para este vídeo",
     "subtitlesGroup": "Legendas",

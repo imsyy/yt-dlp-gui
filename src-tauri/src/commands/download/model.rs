@@ -80,6 +80,7 @@ pub struct DownloadParams {
     /// 自定义 yt-dlp 附加参数（如 --sleep-requests、--sleep-interval）
     pub custom_args: Option<String>,
     pub subtitles: Vec<String>,
+    pub subtitle_format: Option<String>,
     pub start_time: Option<f64>,
     pub end_time: Option<f64>,
     pub no_playlist: bool,

@@ -118,6 +118,8 @@
     "liveFormatHint": "Der Live-Stream ist aktiv. Einige Formate können unvollständig sein. Es wird empfohlen, für mehr Stabilität nach dem Ende des Streams herunterzuladen",
     "liveChatSubtitleHint": "Live-Chat (live_chat) erkannt und automatisch ausgeschlossen. Verwenden Sie das Werkzeug „Live-Chat abrufen“, falls benötigt",
     "subtitles": "Untertitel",
+    "subtitleFormat": "Untertitelformat",
+    "noSubtitleFormats": "Keine Untertitelformate verfügbar",
     "selectSubtitleLangs": "Untertitelsprachen zum Herunterladen auswählen...",
     "noSubtitles": "Für dieses Video sind keine Untertitel verfügbar",
     "subtitlesGroup": "Untertitel",
