@@ -220,7 +220,7 @@ pub(super) fn build_download_args(
     }
 
     // 字幕
-    append_subtitle_args(&mut args, &params.subtitles);
+    append_subtitle_args(&mut args, &params.subtitles, params.subtitle_format.as_deref());
 
     // 时间范围裁剪（仅在有实际裁剪范围时添加，避免 *0-inf 触发不必要的 ffmpeg 处理）
     // 前端已将 time picker 值转换为秒数
@@ -259,7 +259,7 @@ pub(super) fn build_download_args(
 
 /// 将前端的 `sub:<lang>` / `auto:<lang>` 选择转换为 yt-dlp 参数。
 /// `--sub-langs` 对普通和自动字幕共用，因此语言只需去重后传递一次。
-fn append_subtitle_args(args: &mut Vec<String>, selections: &[String]) {
+fn append_subtitle_args(args: &mut Vec<String>, selections: &[String], format: Option<&str>) {
     let mut write_manual = false;
     let mut write_auto = false;
     let mut languages: Vec<&str> = Vec::new();
@@ -296,6 +296,10 @@ fn append_subtitle_args(args: &mut Vec<String>, selections: &[String]) {
     }
     args.push("--sub-langs".to_string());
     args.push(languages.join(","));
+    if let Some(format) = format.filter(|format| !format.is_empty()) {
+        args.push("--sub-format".to_string());
+        args.push(format.to_string());
+    }
 }
 
 #[cfg(test)]
@@ -305,15 +309,18 @@ mod subtitle_arg_tests {
     #[test]
     fn manual_subtitles_strip_source_prefix() {
         let mut args = Vec::new();
-        append_subtitle_args(&mut args, &["sub:en".to_string()]);
-        assert_eq!(args, ["--write-subs", "--sub-langs", "en"]);
+        append_subtitle_args(&mut args, &["sub:en".to_string()], Some("srt"));
+        assert_eq!(args, ["--write-subs", "--sub-langs", "en", "--sub-format", "srt"]);
     }
 
     #[test]
     fn automatic_subtitles_enable_auto_caption_download() {
         let mut args = Vec::new();
-        append_subtitle_args(&mut args, &["auto:zh-Hans".to_string()]);
-        assert_eq!(args, ["--write-auto-subs", "--sub-langs", "zh-Hans"]);
+        append_subtitle_args(&mut args, &["auto:zh-Hans".to_string()], Some("vtt"));
+        assert_eq!(
+            args,
+            ["--write-auto-subs", "--sub-langs", "zh-Hans", "--sub-format", "vtt"]
+        );
     }
 
     #[test]
@@ -326,6 +333,7 @@ mod subtitle_arg_tests {
                 "auto:ja".to_string(),
                 "auto:en".to_string(),
             ],
+            None,
         );
         assert_eq!(
             args,
@@ -368,6 +376,7 @@ mod ffmpeg_requirement_tests {
             ffmpeg_args: None,
             custom_args: None,
             subtitles: Vec::new(),
+            subtitle_format: None,
             start_time: None,
             end_time: None,
             no_playlist: false,

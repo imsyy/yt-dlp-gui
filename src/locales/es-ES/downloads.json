@@ -118,6 +118,8 @@
     "liveFormatHint": "La transmisión en vivo está activa. Algunos formatos pueden estar incompletos, se recomienda descargar después de que termine para mayor estabilidad.",
     "liveChatSubtitleHint": "Se detectó live chat (live_chat) y se excluyó automáticamente. Use la herramienta \"Obtener chat en vivo\" si es necesario",
     "subtitles": "Subtítulos",
+    "subtitleFormat": "Formato de subtítulos",
+    "noSubtitleFormats": "No hay formatos de subtítulos disponibles",
     "selectSubtitleLangs": "Selecciona los idiomas de subtítulos a descargar...",
     "noSubtitles": "Este vídeo no tiene subtítulos disponibles",
     "subtitlesGroup": "Subtítulos",

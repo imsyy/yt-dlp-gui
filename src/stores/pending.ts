@@ -53,6 +53,7 @@ export const createPendingItem = (data: FetchedVideoData, quick = false): Pendin
     ffmpegArgs: quick ? settingStore.quickFfmpegArgs : settingStore.defaultFfmpegArgs,
     customArgs: quick ? settingStore.quickCustomArgs : settingStore.defaultCustomArgs,
     selectedSubtitles: [],
+    selectedSubtitleFormat: "srt",
     liveFromStart: data.videoInfo.is_live === true || data.videoInfo.live_status === "is_live",
   };
 };

@@ -129,6 +129,8 @@
     "liveFormatHint": "Live stream is broadcasting. Some formats may be incomplete, it is recommended to download after the stream ends for better stability.",
     "liveChatSubtitleHint": "Live chat detected (live_chat) and auto-excluded. Use the “Fetch Live Chat” tool if needed",
     "subtitles": "Subtitles",
+    "subtitleFormat": "Subtitle format",
+    "noSubtitleFormats": "No subtitle formats available",
     "selectSubtitleLangs": "Select subtitle languages to download...",
     "noSubtitles": "No subtitles available for this video",
     "subtitlesGroup": "Subtitles",

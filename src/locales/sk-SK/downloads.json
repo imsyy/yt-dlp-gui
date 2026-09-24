@@ -122,6 +122,8 @@
     "liveFormatHint": "Prebieha živé vysielanie. Niektoré formáty môžu byť neúplné, pre väčšiu stabilitu odporúčame stiahnuť ich až po ukončení streamovania.",
     "liveChatSubtitleHint": "Bol zistený živý chat (live_chat) a automaticky vylúčený. V prípade potreby použite nástroj „Načítať živý chat“",
     "subtitles": "Titulky",
+    "subtitleFormat": "Formát titulkov",
+    "noSubtitleFormats": "Nie sú dostupné žiadne formáty titulkov",
     "selectSubtitleLangs": "Vyberte jazyky titulkov, ktoré chcete stiahnuť...",
     "noSubtitles": "K tomuto videu nie sú k dispozícii žiadne titulky",
     "subtitlesGroup": "Titulky",

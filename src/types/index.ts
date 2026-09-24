@@ -175,6 +175,7 @@ export interface DownloadTaskParams {
   ffmpegArgs: string | null;
   customArgs: string | null;
   subtitles: string[];
+  subtitleFormat: string | null;
   startTime: number | null;
   endTime: number | null;
   noPlaylist: boolean;
@@ -244,6 +245,7 @@ export interface PendingItem extends FetchedVideoData {
   ffmpegArgs: string;
   customArgs: string;
   selectedSubtitles: string[];
+  selectedSubtitleFormat: string;
   /** 是否从开始下载直播流（--live-from-start） */
   liveFromStart: boolean;
 }

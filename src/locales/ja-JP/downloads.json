@@ -118,6 +118,8 @@
     "liveFormatHint": "ライブ配信が進行中です。一部の形式が不完全な可能性があります。安定したダウンロードのために配信終了後のダウンロードをお勧めします",
     "liveChatSubtitleHint": "ライブチャット（live_chat）を検出し、自動的に除外しました。必要な場合はツールボックスの「ライブチャットを取得」をご利用ください",
     "subtitles": "字幕",
+    "subtitleFormat": "字幕形式",
+    "noSubtitleFormats": "利用可能な字幕形式がありません",
     "selectSubtitleLangs": "ダウンロードする字幕の言語を選択...",
     "noSubtitles": "この動画には利用可能な字幕がありません",
     "subtitlesGroup": "字幕",

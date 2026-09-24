@@ -118,6 +118,8 @@
     "liveFormatHint": "Luồng trực tiếp đang phát. Một số định dạng có thể không đầy đủ, nên tải xuống sau khi kết thúc phát trực tiếp để ổn định hơn",
     "liveChatSubtitleHint": "Đã phát hiện live chat (live_chat) và tự động loại bỏ. Nếu cần, hãy dùng công cụ \"Lấy live chat\"",
     "subtitles": "Phụ đề",
+    "subtitleFormat": "Định dạng phụ đề",
+    "noSubtitleFormats": "Không có định dạng phụ đề khả dụng",
     "selectSubtitleLangs": "Chọn ngôn ngữ phụ đề để tải...",
     "noSubtitles": "Video này không có phụ đề",
     "subtitlesGroup": "Phụ đề",

@@ -118,6 +118,8 @@
     "liveFormatHint": "Az élő közvetítés aktív. Egyes formátumok hiányosak lehetnek, a nagyobb stabilitás érdekében ajánlott a közvetítés befejezése után letölteni",
     "liveChatSubtitleHint": "Élő chat (live_chat) észlelve és automatikusan kizárva. Használja a \"Élő chat lekérése\" eszközt, ha szükséges",
     "subtitles": "Feliratok",
+    "subtitleFormat": "Felirat formátuma",
+    "noSubtitleFormats": "Nincsenek elérhető feliratformátumok",
     "selectSubtitleLangs": "Letöltendő nyelvek megadása…",
     "noSubtitles": "Ehhez a videóhoz nincsenek elérhető feliratok",
     "subtitlesGroup": "Feliratok",

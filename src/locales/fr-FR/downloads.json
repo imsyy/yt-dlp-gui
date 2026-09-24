@@ -118,6 +118,8 @@
     "liveFormatHint": "Le stream en direct est actif. Certains formats peuvent être incomplets, il est recommandé de télécharger après la fin du stream pour une meilleure stabilité.",
     "liveChatSubtitleHint": "Live chat (live_chat) détecté et exclu automatiquement. Utilisez l'outil « Obtenir le chat » si nécessaire",
     "subtitles": "Sous-titres",
+    "subtitleFormat": "Format des sous-titres",
+    "noSubtitleFormats": "Aucun format de sous-titres disponible",
     "selectSubtitleLangs": "Sélectionnez les langues à télécharger...",
     "noSubtitles": "Aucun sous-titre disponible pour cette vidéo",
     "subtitlesGroup": "Sous-titres",

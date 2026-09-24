@@ -246,6 +246,7 @@ const handleDownload = async () => {
 
         <SubtitleCard
           v-model:selected-subtitles="activeItem.selectedSubtitles"
+          v-model:selected-subtitle-format="activeItem.selectedSubtitleFormat"
           :video-info="activeItem.videoInfo as VideoInfo"
           class="section-card"
         />
