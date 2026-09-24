@@ -36,8 +36,8 @@ struct ToolSources {
 impl Default for ToolSources {
     fn default() -> Self {
         Self {
-            ytdlp: ToolSource::Managed,
-            deno: ToolSource::Managed,
+            ytdlp: ToolSource::System,
+            deno: ToolSource::System,
             ffmpeg: ToolSource::System,
         }
     }

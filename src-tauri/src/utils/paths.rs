@@ -50,9 +50,7 @@ fn resolve_executable_path(
 ) -> PathBuf {
     match source {
         ToolSource::Managed => managed_path,
-        ToolSource::System => {
-            find_system_executable(system_name).unwrap_or_else(|| PathBuf::from(system_name))
-        }
+        ToolSource::System => find_system_executable(system_name).unwrap_or_default(),
     }
 }
 
