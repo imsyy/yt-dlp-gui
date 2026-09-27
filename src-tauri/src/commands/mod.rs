@@ -7,6 +7,7 @@
 //! - download: 下载任务控制
 //! - toolbox: 工具箱命令（封面、字幕、弹幕等）
 
+mod collector;
 mod download;
 mod external_tools;
 mod proxy;
@@ -15,6 +16,7 @@ mod toolbox;
 mod video;
 
 // 使用 glob 导出：Tauri generate_handler! 宏需要访问 __cmd__ 隐藏项
+pub use collector::*;
 pub use download::*;
 pub use external_tools::*;
 pub use proxy::*;

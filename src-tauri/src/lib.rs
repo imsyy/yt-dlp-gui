@@ -81,6 +81,7 @@ pub fn run() {
         })
         .manage(app::commands::CliRequestState::new(initial_request))
         .manage(app::browser_bridge::BrowserBridgeState::default())
+        .manage(commands::CollectorState::default())
         .manage(commands::DownloadState::default())
         .manage(platform::process::ProcessRegistry::default())
         .invoke_handler(tauri::generate_handler![
@@ -138,6 +139,7 @@ pub fn run() {
             commands::channel_enrich_start,
             commands::channel_enrich_cancel,
             commands::test_proxy,
+            commands::open_collector_window,
             db::db_health_check,
             db::tasks::db_get_tasks,
             db::tasks::db_upsert_task,
