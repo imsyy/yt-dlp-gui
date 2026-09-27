@@ -8,6 +8,7 @@ import IconMdiCommentTextMultipleOutline from "~icons/mdi/comment-text-multiple-
 import IconMdiAccountBoxMultipleOutline from "~icons/mdi/account-box-multiple-outline";
 import IconMdiPuzzleOutline from "~icons/mdi/puzzle-outline";
 import IconMdiOpenInApp from "~icons/mdi/open-in-app";
+import IconMdiSelectionSearch from "~icons/mdi/selection-search";
 import { useI18n } from "vue-i18n";
 
 useI18n();
@@ -89,6 +90,15 @@ const tools: ToolItem[] = [
     bg: "rgba(6,182,212,0.1)",
     titleKey: "toolbox.browserExtTitle",
     descKey: "toolbox.browserExtDesc",
+    tagKey: "browserExt.tagBeta",
+  },
+  {
+    key: "collector",
+    icon: IconMdiSelectionSearch,
+    color: "#f59e0b",
+    bg: "rgba(245,158,11,0.1)",
+    titleKey: "collector.title",
+    descKey: "collector.desc",
     tagKey: "browserExt.tagBeta",
   },
 ];
