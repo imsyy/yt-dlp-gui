@@ -219,8 +219,10 @@ pub(super) async fn build_tool_status(
     version_arg: &str,
 ) -> Result<ToolStatus, String> {
     let configured_source = utils::get_tool_source(tool)?;
-    let has_cli_override = utils::get_cli_tool_path(tool).is_some();
-    let source = if has_cli_override {
+    let is_cli_managed = utils::get_cli_tool_path(tool).is_some();
+    let has_custom_override = is_cli_managed
+        || (tool == "yt-dlp" && utils::get_custom_ytdlp_path().is_some());
+    let source = if has_custom_override {
         "custom"
     } else {
         configured_source.as_str()
@@ -233,7 +235,8 @@ pub(super) async fn build_tool_status(
             version: String::new(),
             path: path.to_string_lossy().to_string(),
             source: source.to_string(),
-            is_managed: !has_cli_override && configured_source == utils::ToolSource::Managed,
+            is_cli_managed,
+            is_managed: !has_custom_override && configured_source == utils::ToolSource::Managed,
             can_update: false,
         });
     }
@@ -276,8 +279,9 @@ pub(super) async fn build_tool_status(
         version,
         path: path.to_string_lossy().to_string(),
         source: source.to_string(),
-        is_managed: path == managed_path,
-        can_update: !has_cli_override
+        is_cli_managed,
+        is_managed: !has_custom_override && path == managed_path,
+        can_update: !has_custom_override
             && (configured_source == utils::ToolSource::Managed || tool != "ffmpeg"),
     })
 }
@@ -304,7 +308,9 @@ fn parse_version(tool: &str, first_line: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::ProgressThrottle;
+    use super::{build_tool_status, ProgressThrottle};
+    use crate::utils;
+    use std::path::PathBuf;
 
     #[test]
     fn throttle_pushes_first_progress_immediately() {
@@ -330,5 +336,31 @@ mod tests {
         assert!(throttle.should_emit(50.0));
         // 进度原地不动时不得反复推送同一个值
         assert!(!throttle.should_emit(50.0));
+    }
+
+    #[test]
+    fn custom_ytdlp_status_disables_app_updates() {
+        let custom_path = std::env::temp_dir().join(format!(
+            "yt-dlp-gui-missing-ytdlp-test-{}",
+            std::process::id()
+        ));
+        let managed_path = PathBuf::from("managed-yt-dlp");
+        utils::set_custom_ytdlp_path(Some(custom_path.clone())).unwrap();
+
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+        let status = runtime
+            .block_on(build_tool_status(
+                "yt-dlp",
+                custom_path,
+                managed_path,
+                "--version",
+            ))
+            .unwrap();
+
+        assert_eq!(status.source, "custom");
+        assert!(!status.installed);
+        assert!(!status.can_update);
+        assert!(!status.is_managed);
+        utils::set_custom_ytdlp_path(None).unwrap();
     }
 }

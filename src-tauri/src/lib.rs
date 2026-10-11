@@ -91,6 +91,7 @@ pub fn run() {
             app::browser_bridge::take_browser_extension_imports,
             commands::get_platform,
             commands::set_tool_sources,
+            commands::set_ytdlp_custom_path,
             commands::set_youtube_extractor_args,
             commands::get_ytdlp_status,
             commands::get_ytdlp_channel,

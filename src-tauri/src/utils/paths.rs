@@ -70,6 +70,9 @@ pub fn get_ytdlp_path(app: &AppHandle) -> Result<PathBuf, String> {
     if let Some(path) = get_cli_tool_path("yt-dlp") {
         return Ok(path);
     }
+    if let Some(path) = get_custom_ytdlp_path() {
+        return Ok(path);
+    }
     let managed_path = get_managed_ytdlp_path(app)?;
     Ok(resolve_executable_path(
         managed_path,

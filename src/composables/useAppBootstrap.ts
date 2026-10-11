@@ -27,6 +27,11 @@ export const useAppBootstrap = () => {
       ffmpeg: settingStore.ffmpegSource,
     });
 
+  const applyYtdlpCustomPath = (): Promise<unknown> =>
+    invoke("set_ytdlp_custom_path", {
+      path: settingStore.ytdlpCustomPath || null,
+    });
+
   /**
    * 将前端配置的 yt-dlp 分支通道同步至 Rust 后端
    *
@@ -69,6 +74,12 @@ export const useAppBootstrap = () => {
       () => applyYtdlpChannel(),
     );
 
+    watch(
+      () => settingStore.ytdlpCustomPath,
+      () => applyYtdlpCustomPath(),
+    );
+
+    await applyYtdlpCustomPath();
     await applyToolSources();
     await applyYtdlpChannel();
 

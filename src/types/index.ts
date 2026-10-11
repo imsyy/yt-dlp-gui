@@ -20,9 +20,11 @@ export interface BrowserExtensionImport {
 
 export interface ToolStatus {
   installed: boolean;
+  runnable: boolean;
   version: string;
   path: string;
   source: ToolSource;
+  isCliManaged: boolean;
   isManaged: boolean;
   canUpdate: boolean;
 }
@@ -410,4 +412,3 @@ export interface ChannelEnrichProgressPayload {
   fixed: number;
   message?: string | null;
 }
-

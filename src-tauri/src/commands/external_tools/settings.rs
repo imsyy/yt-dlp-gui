@@ -20,6 +20,15 @@ pub fn set_tool_sources(ytdlp: String, deno: String, ffmpeg: String) -> Result<(
     utils::set_tool_sources(&ytdlp, &deno, &ffmpeg)
 }
 
+/// Set or clear the user-selected yt-dlp executable path.
+#[tauri::command]
+pub fn set_ytdlp_custom_path(path: Option<String>) -> Result<(), String> {
+    let path = path
+        .filter(|value| !value.trim().is_empty())
+        .map(std::path::PathBuf::from);
+    utils::set_custom_ytdlp_path(path)
+}
+
 /// 设置 YouTube 提取器参数（PO Token / visitor_data），用于绕过 YouTube 403 / 限流
 #[tauri::command]
 pub fn set_youtube_extractor_args(po_token: String, visitor_data: String) -> Result<(), String> {
