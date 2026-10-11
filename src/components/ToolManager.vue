@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { open } from "@tauri-apps/plugin-dialog";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { useI18n } from "vue-i18n";
 import { useSettingStore } from "@/stores/setting";
@@ -89,6 +90,10 @@ const sourceOptions = computed(() => [
   { label: t("settings.sourceManaged"), value: "managed" },
   { label: t("settings.sourceSystem"), value: "system" },
 ]);
+const ytdlpSourceOptions = computed(() => [
+  ...sourceOptions.value,
+  { label: t("settings.sourceCustom"), value: "custom" as const },
+]);
 
 /** yt-dlp 发行通道：专有名词，无需翻译 */
 const ytdlpChannelOptions: { label: string; value: YtdlpChannel }[] = [
@@ -97,7 +102,8 @@ const ytdlpChannelOptions: { label: string; value: YtdlpChannel }[] = [
   { label: "Master", value: "master" },
 ];
 
-const getSource = (tool: ToolKey): SelectableToolSource => {
+const getSource = (tool: ToolKey): ToolSource => {
+  if (statuses[tool]?.source === "custom") return "custom";
   if (tool === "yt-dlp") return settingStore.ytdlpSource;
   if (tool === "deno") return settingStore.denoSource;
   return settingStore.ffmpegSource;
@@ -114,6 +120,11 @@ const applySources = () =>
     ytdlp: settingStore.ytdlpSource,
     deno: settingStore.denoSource,
     ffmpeg: settingStore.ffmpegSource,
+  });
+
+const applyYtdlpCustomPath = () =>
+  invoke("set_ytdlp_custom_path", {
+    path: settingStore.ytdlpCustomPath || null,
   });
 
 /** 将前端持久化的 yt-dlp 通道同步到后端（后端通道状态随应用重启丢失，以前端为准） */
@@ -136,6 +147,7 @@ const refreshAll = async () => {
     checking[tool.key] = true;
   });
   try {
+    await applyYtdlpCustomPath();
     await applyYtdlpChannel();
     await applySources();
     await Promise.all(tools.value.map(refreshTool));
@@ -152,6 +164,10 @@ const refreshAll = async () => {
 const handleSourceChange = async (tool: ToolDefinition, value: SelectableToolSource) => {
   checking[tool.key] = true;
   try {
+    if (tool.key === "yt-dlp" && settingStore.ytdlpCustomPath) {
+      settingStore.ytdlpCustomPath = "";
+      await applyYtdlpCustomPath();
+    }
     setSource(tool.key, value);
     await applySources();
     await refreshTool(tool);
@@ -159,6 +175,44 @@ const handleSourceChange = async (tool: ToolDefinition, value: SelectableToolSou
     window.$message.error(t("settings.toolStatusFailed", { tool: tool.title, e }));
   } finally {
     checking[tool.key] = false;
+  }
+};
+
+const handleSelectYtdlp = async () => {
+  const selected = await open({
+    multiple: false,
+    title: t("settings.selectYtdlpExecutable"),
+  });
+  if (typeof selected !== "string" || !selected) return;
+
+  const previousPath = settingStore.ytdlpCustomPath;
+  checking["yt-dlp"] = true;
+  try {
+    settingStore.ytdlpCustomPath = selected;
+    await applyYtdlpCustomPath();
+    const status = await invoke<ToolStatus>("get_ytdlp_status");
+    if (!status.runnable || !status.version) {
+      settingStore.ytdlpCustomPath = previousPath;
+      await applyYtdlpCustomPath();
+      const ytdlpTool = tools.value.find((tool) => tool.key === "yt-dlp");
+      if (ytdlpTool) await refreshTool(ytdlpTool);
+      window.$message.error(t("settings.invalidYtdlpExecutable"));
+      return;
+    }
+    statuses["yt-dlp"] = status;
+    statusStore.toolUpdates["yt-dlp"] = null;
+  } catch (e: unknown) {
+    settingStore.ytdlpCustomPath = previousPath;
+    try {
+      await applyYtdlpCustomPath();
+    } catch (restoreError: unknown) {
+      window.$message.error(
+        t("settings.toolOperationFailed", { tool: "yt-dlp", e: restoreError }),
+      );
+    }
+    window.$message.error(t("settings.toolOperationFailed", { tool: "yt-dlp", e }));
+  } finally {
+    checking["yt-dlp"] = false;
   }
 };
 
@@ -292,13 +346,17 @@ const hasToolUpdate = (tool: ToolKey) => statusStore.toolUpdates[tool]?.updateAv
 
 const toolTagType = (tool: ToolKey) => {
   if (hasToolUpdate(tool)) return "warning";
-  return statuses[tool]?.installed ? "success" : "error";
+  return statuses[tool]?.installed && statuses[tool]?.runnable ? "success" : "error";
 };
 
 const toolTagText = (tool: ToolKey) => {
   if (hasToolUpdate(tool)) return t("settings.updateAvailable");
+  if (statuses[tool]?.installed && !statuses[tool]?.runnable) return t("settings.toolUnavailable");
   return statuses[tool]?.installed ? t("settings.installed") : t("settings.notInstalled");
 };
+
+const toolSourceOptions = (tool: ToolKey) =>
+  tool === "yt-dlp" ? ytdlpSourceOptions.value : sourceOptions.value;
 
 const stageLabel = (state: OperationState) => {
   const key = `settings.toolStage.${state.stage}`;
@@ -368,15 +426,22 @@ onUnmounted(() => unlistenProgress?.());
             <n-flex align="center" :size="8" :wrap="false" class="tool-controls">
               <n-select
                 :value="getSource(tool.key)"
-                :options="sourceOptions"
+                :options="toolSourceOptions(tool.key)"
                 size="small"
                 :disabled="
                   checking[tool.key] ||
                   operations[tool.key].active ||
-                  statuses[tool.key]?.source === 'custom'
+                  statuses[tool.key]?.isCliManaged ||
+                  (tool.key !== 'yt-dlp' && statuses[tool.key]?.source === 'custom')
                 "
                 class="source-select"
-                @update:value="(value: SelectableToolSource) => handleSourceChange(tool, value)"
+                @update:value="(value: ToolSource) => {
+                  if (value === 'custom') {
+                    void handleSelectYtdlp();
+                  } else {
+                    void handleSourceChange(tool, value);
+                  }
+                }"
               />
               <n-button
                 v-if="!statuses[tool.key]?.installed && statuses[tool.key]?.source !== 'custom'"
@@ -409,14 +474,18 @@ onUnmounted(() => unlistenProgress?.());
                   <n-button size="small" secondary disabled>
                     {{
                       statuses[tool.key]?.source === "custom"
-                        ? $t("settings.cliManaged")
+                        ? statuses[tool.key]?.isCliManaged
+                          ? $t("settings.cliManaged")
+                          : $t("settings.sourceCustom")
                         : $t("settings.systemManaged")
                     }}
                   </n-button>
                 </template>
                 {{
                   statuses[tool.key]?.source === "custom"
-                    ? $t("settings.cliManagedHint")
+                    ? statuses[tool.key]?.isCliManaged
+                      ? $t("settings.cliManagedHint")
+                      : $t("settings.sourceCustomHint")
                     : $t("settings.systemManagedHint")
                 }}
               </n-tooltip>

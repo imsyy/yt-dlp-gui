@@ -133,6 +133,8 @@ export const useSettingStore = defineStore(
 
     /** 每个外部工具独立选择应用管理版本或系统 PATH 版本 */
     const ytdlpSource = ref<"managed" | "system">("managed");
+    /** 用户通过界面选择的 yt-dlp 可执行文件；空字符串表示使用所选来源 */
+    const ytdlpCustomPath = ref("");
     const denoSource = ref<"managed" | "system">("managed");
     const ffmpegSource = ref<"managed" | "system">("system");
 
@@ -203,6 +205,7 @@ export const useSettingStore = defineStore(
       showTrayIcon,
       autoCheckUpdate,
       ytdlpSource,
+      ytdlpCustomPath,
       denoSource,
       ffmpegSource,
       ytdlpChannel,

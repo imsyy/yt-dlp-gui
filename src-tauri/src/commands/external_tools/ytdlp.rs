@@ -34,6 +34,11 @@ pub fn set_ytdlp_channel(channel: String) -> Result<(), String> {
 }
 
 async fn download_ytdlp_impl(app: AppHandle, operation: &str) -> Result<(), String> {
+    if utils::get_cli_tool_path("yt-dlp").is_some()
+        || utils::get_custom_ytdlp_path().is_some()
+    {
+        return Err("err_ytdlp_custom_path_operation_unsupported".to_string());
+    }
     emit_tool_progress(&app, "yt-dlp", operation, "downloading", Some(0.0));
     let ytdlp_path = utils::get_managed_ytdlp_path(&app)?;
     let temp_path = executable_temp_path(&ytdlp_path, "download")?;
@@ -79,6 +84,11 @@ pub async fn download_ytdlp(app: AppHandle) -> Result<(), String> {
 /// 更新当前选择的 yt-dlp；应用版本原子替换，系统版本使用其内置更新器。
 #[tauri::command]
 pub async fn update_ytdlp(app: AppHandle) -> Result<String, String> {
+    if utils::get_cli_tool_path("yt-dlp").is_some()
+        || utils::get_custom_ytdlp_path().is_some()
+    {
+        return Err("err_ytdlp_custom_path_operation_unsupported".to_string());
+    }
     let source = utils::get_tool_source("yt-dlp")?;
     if source == utils::ToolSource::Managed {
         download_ytdlp_impl(app, "update").await?;

@@ -45,6 +45,7 @@ impl Default for ToolSources {
 
 static TOOL_SOURCES: OnceLock<RwLock<ToolSources>> = OnceLock::new();
 static CLI_TOOL_PATHS: OnceLock<RwLock<(Option<PathBuf>, Option<PathBuf>)>> = OnceLock::new();
+static CUSTOM_YTDLP_PATH: OnceLock<RwLock<Option<PathBuf>>> = OnceLock::new();
 
 fn tool_sources_lock() -> &'static RwLock<ToolSources> {
     TOOL_SOURCES.get_or_init(|| RwLock::new(ToolSources::default()))
@@ -98,6 +99,22 @@ pub fn get_cli_tool_path(tool: &str) -> Option<PathBuf> {
         "deno" => guard.1.clone(),
         _ => None,
     }
+}
+
+fn custom_ytdlp_path_lock() -> &'static RwLock<Option<PathBuf>> {
+    CUSTOM_YTDLP_PATH.get_or_init(|| RwLock::new(None))
+}
+
+pub fn set_custom_ytdlp_path(path: Option<PathBuf>) -> Result<(), String> {
+    let mut guard = custom_ytdlp_path_lock()
+        .write()
+        .map_err(|e| format!("err_set_custom_ytdlp_path:{}", e))?;
+    *guard = path;
+    Ok(())
+}
+
+pub fn get_custom_ytdlp_path() -> Option<PathBuf> {
+    custom_ytdlp_path_lock().read().ok()?.clone()
 }
 
 // YouTube extractor 参数（po_token / visitor_data）

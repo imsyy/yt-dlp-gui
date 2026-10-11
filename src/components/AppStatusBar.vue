@@ -80,6 +80,9 @@ const totalSpeed = computed(() =>
 );
 
 const refreshStatuses = async () => {
+  await invoke("set_ytdlp_custom_path", {
+    path: settingStore.ytdlpCustomPath || null,
+  });
   await invoke("set_tool_sources", {
     ytdlp: settingStore.ytdlpSource,
     deno: settingStore.denoSource,
@@ -102,26 +105,31 @@ const sourceText = (tool: ToolKey) => {
   if (!status) return "—";
   if (status.source === "managed") return t("settings.sourceManaged");
   if (status.source === "system") return t("settings.sourceSystem");
-  return t("settings.cliManaged");
+  return status.isCliManaged ? t("settings.cliManaged") : t("settings.sourceCustom");
 };
 
 /** 工具图标是否亮点：未安装，或检测到可用更新 */
 const showToolDot = (tool: ToolKey) =>
-  statuses[tool]?.installed === false || statusStore.toolUpdates[tool]?.updateAvailable === true;
+  statuses[tool]?.installed === false ||
+  statuses[tool]?.runnable === false ||
+  statusStore.toolUpdates[tool]?.updateAvailable === true;
 
 /** 亮点类型：未安装用 error 红点，有可用更新用 warning 黄点 */
 const toolDotType = (tool: ToolKey): "error" | "warning" =>
-  statuses[tool]?.installed === false ? "error" : "warning";
+  statuses[tool]?.installed === false || statuses[tool]?.runnable === false
+    ? "error"
+    : "warning";
 
 /** 弹窗标签：与设置页一致，有更新时显示"有更新" */
 const toolTagType = (tool: ToolKey) => {
   if (statusStore.toolUpdates[tool]?.updateAvailable === true) return "warning";
-  return statuses[tool]?.installed ? "success" : "error";
+  return statuses[tool]?.installed && statuses[tool]?.runnable ? "success" : "error";
 };
 
 const toolTagText = (tool: ToolKey) => {
   if (!statuses[tool]) return t("statusBar.checking");
   if (statusStore.toolUpdates[tool]?.updateAvailable === true) return t("settings.updateAvailable");
+  if (statuses[tool]?.installed && !statuses[tool]?.runnable) return t("settings.toolUnavailable");
   return statuses[tool]?.installed ? t("settings.installed") : t("settings.notInstalled");
 };
 
@@ -192,6 +200,7 @@ let unlistenChannelEnrich: (() => void) | null = null;
 watch(
   () => [
     settingStore.ytdlpSource,
+    settingStore.ytdlpCustomPath,
     settingStore.denoSource,
     settingStore.ffmpegSource,
     settingStore.ytdlpChannel,

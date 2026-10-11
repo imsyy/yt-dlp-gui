@@ -30,6 +30,7 @@ pub struct ToolStatus {
     pub version: String,
     pub path: String,
     pub source: String,
+    pub is_cli_managed: bool,
     pub is_managed: bool,
     pub can_update: bool,
 }
