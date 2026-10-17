@@ -8,6 +8,7 @@ pub fn get_tool_latest_release_url(tool: &str) -> Option<String> {
     match tool {
         "yt-dlp" => Some(get_ytdlp_latest_release_url()),
         "deno" => Some("https://github.com/denoland/deno/releases/latest".to_string()),
+        "bun" => Some("https://github.com/oven-sh/bun/releases/latest".to_string()),
         "ffmpeg" => Some("https://github.com/eugeneware/ffmpeg-static/releases/latest".to_string()),
         _ => None,
     }
@@ -77,6 +78,27 @@ pub fn get_deno_download_url() -> &'static str {
         "https://github.com/denoland/deno/releases/latest/download/deno-aarch64-unknown-linux-gnu.zip"
     } else {
         "https://github.com/denoland/deno/releases/latest/download/deno-x86_64-unknown-linux-gnu.zip"
+    }
+}
+
+/// 获取 Bun 下载地址（根据平台和架构）
+pub fn get_bun_download_url() -> &'static str {
+    if cfg!(target_os = "windows") {
+        if cfg!(target_arch = "aarch64") {
+            "https://github.com/oven-sh/bun/releases/latest/download/bun-windows-aarch64.zip"
+        } else {
+            "https://github.com/oven-sh/bun/releases/latest/download/bun-windows-x64.zip"
+        }
+    } else if cfg!(target_os = "macos") {
+        if cfg!(target_arch = "aarch64") {
+            "https://github.com/oven-sh/bun/releases/latest/download/bun-darwin-aarch64.zip"
+        } else {
+            "https://github.com/oven-sh/bun/releases/latest/download/bun-darwin-x64.zip"
+        }
+    } else if cfg!(target_arch = "aarch64") {
+        "https://github.com/oven-sh/bun/releases/latest/download/bun-linux-aarch64.zip"
+    } else {
+        "https://github.com/oven-sh/bun/releases/latest/download/bun-linux-x64.zip"
     }
 }
 

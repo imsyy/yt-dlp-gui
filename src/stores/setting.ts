@@ -50,6 +50,9 @@ export const useSettingStore = defineStore(
     /** 下载目录 */
     const downloadDir = ref("");
 
+    /** 临时文件夹路径（用于 --temp-dir） */
+    const tempDir = ref("");
+
     /** Cookie 模式 */
     const cookieMode = ref<"none" | "text" | "file" | "browser">("none");
 
@@ -134,7 +137,11 @@ export const useSettingStore = defineStore(
     /** 每个外部工具独立选择应用管理版本或系统 PATH 版本 */
     const ytdlpSource = ref<"managed" | "system">("managed");
     const denoSource = ref<"managed" | "system">("managed");
+    const bunSource = ref<"managed" | "system">("system");
     const ffmpegSource = ref<"managed" | "system">("system");
+
+    /** JavaScript runtime used by yt-dlp for supported extractors */
+    const jsRuntime = ref<"deno" | "node" | "bun" | "quickjs">("deno");
 
     /** 内置 yt-dlp 的发行通道：stable（稳定版）/ nightly（每日构建）/ master（最新提交构建） */
     const ytdlpChannel = ref<YtdlpChannel>("stable");
@@ -171,6 +178,7 @@ export const useSettingStore = defineStore(
       quickFfmpegArgs,
       quickCustomArgs,
       downloadDir,
+      tempDir,
       cookieMode,
       cookieText,
       cookieFile,
@@ -204,7 +212,9 @@ export const useSettingStore = defineStore(
       autoCheckUpdate,
       ytdlpSource,
       denoSource,
+      bunSource,
       ffmpegSource,
+      jsRuntime,
       ytdlpChannel,
       ytdlpInstalledChannel,
       youtubePoToken,

@@ -19,7 +19,7 @@ import type {
 } from "@/types";
 import type { Component } from "vue";
 
-type ToolKey = "yt-dlp" | "deno" | "ffmpeg";
+type ToolKey = "yt-dlp" | "deno" | "bun" | "ffmpeg";
 
 const { t } = useI18n();
 const router = useRouter();
@@ -29,6 +29,7 @@ const downloadStore = useDownloadStore();
 const statuses = reactive<Record<ToolKey, ToolStatus | null>>({
   "yt-dlp": null,
   deno: null,
+  bun: null,
   ffmpeg: null,
 });
 
@@ -38,6 +39,12 @@ const tools: { key: ToolKey; label: string; command: string; icon: Component }[]
     key: "deno",
     label: "Deno",
     command: "get_deno_status",
+    icon: IconMdiLanguageJavascript,
+  },
+  {
+    key: "bun",
+    label: "Bun",
+    command: "get_bun_status",
     icon: IconMdiLanguageJavascript,
   },
   { key: "ffmpeg", label: "FFmpeg", command: "get_ffmpeg_status", icon: IconMdiMovieOpenCog },
@@ -83,6 +90,7 @@ const refreshStatuses = async () => {
   await invoke("set_tool_sources", {
     ytdlp: settingStore.ytdlpSource,
     deno: settingStore.denoSource,
+    bun: settingStore.bunSource,
     ffmpeg: settingStore.ffmpegSource,
   });
   await invoke("set_ytdlp_channel", { channel: settingStore.ytdlpChannel }).catch(() => {});

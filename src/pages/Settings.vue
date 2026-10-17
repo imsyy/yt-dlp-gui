@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
 import { check } from "@tauri-apps/plugin-updater";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
@@ -54,6 +55,15 @@ const applyYoutubeExtractorArgs = async () => {
     poToken: settingStore.youtubePoToken,
     visitorData: settingStore.youtubeVisitorData,
   });
+};
+
+const selectTempDir = async () => {
+  const selected = await open({
+    directory: true,
+    multiple: false,
+    title: t("settings.selectTempDir"),
+  });
+  if (typeof selected === "string") settingStore.tempDir = selected;
 };
 
 /** 检查应用更新 */
@@ -222,6 +232,24 @@ watch(
           <div class="info-row">
             <span class="info-label">{{ $t("settings.noOverwrites") }}</span>
             <n-switch v-model:value="settingStore.noOverwrites" />
+          </div>
+        </div>
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">{{ $t("settings.tempDir") }}</span>
+            <n-input
+              v-model:value="settingStore.tempDir"
+              size="small"
+              clearable
+              :placeholder="$t('settings.tempDirDefault')"
+              style="flex: 1; max-width: 480px"
+            />
+            <n-button size="small" @click="selectTempDir">
+              <template #icon>
+                <n-icon><icon-mdi-folder-open-outline /></n-icon>
+              </template>
+              {{ $t("common.select") }}
+            </n-button>
           </div>
         </div>
         <div class="info-list">

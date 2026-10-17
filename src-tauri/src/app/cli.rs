@@ -20,6 +20,7 @@ pub struct CliOptions {
     pub request: CliOpenRequest,
     pub ytdlp_path: Option<PathBuf>,
     pub deno_path: Option<PathBuf>,
+    pub bun_path: Option<PathBuf>,
 }
 
 pub fn parse_cli_args<I, S>(args: I) -> CliOptions
@@ -47,6 +48,9 @@ where
             }
             "--deno-path" => {
                 options.deno_path = value().filter(|item| !item.is_empty()).map(PathBuf::from)
+            }
+            "--bun-path" => {
+                options.bun_path = value().filter(|item| !item.is_empty()).map(PathBuf::from)
             }
             _ if options.request.url.is_none()
                 && (argument.starts_with("https://") || argument.starts_with("http://")) =>
@@ -88,6 +92,7 @@ mod tests {
             "--yt-dlp-path",
             "/opt/tools/yt-dlp",
             "--deno-path=/opt/tools/deno",
+            "--bun-path=/opt/tools/bun",
         ]);
 
         assert_eq!(
@@ -100,6 +105,7 @@ mod tests {
         );
         assert_eq!(parsed.ytdlp_path, Some(PathBuf::from("/opt/tools/yt-dlp")));
         assert_eq!(parsed.deno_path, Some(PathBuf::from("/opt/tools/deno")));
+        assert_eq!(parsed.bun_path, Some(PathBuf::from("/opt/tools/bun")));
     }
 
     #[test]

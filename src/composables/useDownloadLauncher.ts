@@ -42,10 +42,15 @@ export const useDownloadLauncher = () => {
     const parts: string[] = [];
     if (item.downloadMode === "audio") {
       parts.push(t("detail.audioOnly"));
-      const audio = item.audioFormats.find(
-        (format) => format.format_id === item.selectedAudioFormat,
+      // 优先使用多音频格式
+      const audioIds = item.selectedAudioFormats?.length
+        ? item.selectedAudioFormats
+        : [item.selectedAudioFormat].filter(Boolean);
+      const audio = item.audioFormats.find((format) =>
+        audioIds.includes(format.format_id),
       );
       if (audio) parts.push(audio.format_note || audio.ext);
+      if (audioIds.length > 1) parts.push(`(+${audioIds.length - 1})`);
     } else {
       const video = item.videoFormats.find(
         (format) => format.format_id === item.selectedVideoFormat,
@@ -85,6 +90,7 @@ export const useDownloadLauncher = () => {
         downloadMode: settingStore.quickDownloadMode,
         videoFormat: null,
         audioFormat: null,
+        audioFormats: null,
         cookieFile: null,
         cookieBrowser: null,
         proxy: settingStore.proxy || null,
@@ -112,6 +118,7 @@ export const useDownloadLauncher = () => {
         noPlaylist: false,
         playlistItems: null,
         liveFromStart: false,
+        tempDir: null,
       },
     });
     return taskId;
@@ -177,6 +184,7 @@ export const useDownloadLauncher = () => {
       downloadMode: item.downloadMode,
       videoFormat: item.selectedVideoFormat || null,
       audioFormat: item.selectedAudioFormat || null,
+      audioFormats: item.selectedAudioFormats?.length ? item.selectedAudioFormats : null,
       cookieFile,
       cookieBrowser,
       proxy: settingStore.proxy || null,
@@ -210,6 +218,7 @@ export const useDownloadLauncher = () => {
               .sort((a, b) => a - b)
               .join(",")
           : null,
+      tempDir: settingStore.tempDir || null,
     };
     const shouldQueue = !downloadStore.canStartNow();
 

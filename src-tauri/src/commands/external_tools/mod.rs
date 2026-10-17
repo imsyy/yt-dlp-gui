@@ -1,5 +1,6 @@
 //! 外部工具的探测、安装和升级命令。
 
+mod bun;
 mod deno;
 mod ffmpeg;
 mod plugins;
@@ -8,6 +9,7 @@ mod support;
 mod updates;
 mod ytdlp;
 
+pub use bun::*;
 pub use deno::*;
 pub use ffmpeg::*;
 pub use plugins::*;

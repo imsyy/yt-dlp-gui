@@ -11,10 +11,6 @@ pub(super) fn requires_ffmpeg_merge(params: &DownloadParams) -> bool {
             .video_format
             .as_deref()
             .is_some_and(|format| !format.is_empty())
-        && params
-            .audio_format
-            .as_deref()
-            .is_some_and(|format| !format.is_empty())
         && !params.no_merge
 }
 
@@ -32,6 +28,17 @@ fn build_format_args(params: &DownloadParams) -> Vec<String> {
             Vec::new()
         }
         "audio" => {
+            // 优先使用多音频格式，否则回退到单音频格式
+            if let Some(ref afs) = params.audio_formats {
+                if !afs.is_empty() {
+                    let audio_part = afs
+                        .iter()
+                        .map(|af| format!("bestaudio[format_id={}]", af))
+                        .collect::<Vec<_>>()
+                        .join("+");
+                    return vec!["-f".to_string(), audio_part];
+                }
+            }
             if let Some(ref af) = params.audio_format {
                 if !af.is_empty() {
                     return vec!["-f".to_string(), af.clone()];
@@ -41,23 +48,53 @@ fn build_format_args(params: &DownloadParams) -> Vec<String> {
         }
         _ => {
             let vf = params.video_format.as_deref().filter(|s| !s.is_empty());
+            // 优先使用多音频格式
+            let afs = params.audio_formats.as_ref().filter(|afs| !afs.is_empty());
             let af = params.audio_format.as_deref().filter(|s| !s.is_empty());
-            match (vf, af) {
-                (Some(v), Some(a)) => {
+
+            match (vf, afs, af) {
+                (Some(v), Some(afs_vec), _) => {
+                    // 多音频格式：bestvideo+bestaudio[id1]+bestaudio[id2]+...
+                    if params.no_merge {
+                        vec!["-f".to_string(), v.to_string()]
+                    } else {
+                        let audio_part = afs_vec
+                            .iter()
+                            .map(|af| format!("bestaudio[format_id={}]", af))
+                            .collect::<Vec<_>>()
+                            .join("+");
+                        vec!["-f".to_string(), format!("{}+{}", v, audio_part)]
+                    }
+                }
+                (Some(v), None, Some(a)) => {
                     if params.no_merge {
                         vec!["-f".to_string(), v.to_string()]
                     } else {
                         vec!["-f".to_string(), format!("{}+{}", v, a)]
                     }
                 }
-                (Some(v), None) => {
+                (Some(v), None, None) => {
                     if params.no_merge {
                         vec!["-f".to_string(), v.to_string()]
                     } else {
-                        vec!["-f".to_string(), format!("{}+bestaudio/{}", v, v)]
+                        // 使用 bestvideo+bestaudio/best，确保选择最佳音频而非静默失败
+                        vec!["-f".to_string(), format!("{}+bestaudio/best", v)]
                     }
                 }
-                (None, Some(a)) => {
+                (None, Some(afs_vec), _) => {
+                    // 仅多音频：bestaudio[id1]+bestaudio[id2]+...
+                    if params.no_merge {
+                        vec!["-f".to_string(), afs_vec[0].clone()]
+                    } else {
+                        let audio_part = afs_vec
+                            .iter()
+                            .map(|af| format!("bestaudio[format_id={}]", af))
+                            .collect::<Vec<_>>()
+                            .join("+");
+                        vec!["-f".to_string(), format!("bestvideo+{}", audio_part)]
+                    }
+                }
+                (None, None, Some(a)) => {
                     if params.no_merge {
                         vec!["-f".to_string(), a.to_string()]
                     } else {
@@ -70,11 +107,35 @@ fn build_format_args(params: &DownloadParams) -> Vec<String> {
     }
 }
 
+/// 构建多音频流相关参数（--audio-multistreams）
+/// 当视频包含多个音频轨道时（如 Dropbox 多语言视频），此标志允许下载所有轨道
+fn build_audio_multistream_args(params: &DownloadParams) -> Vec<String> {
+    // 仅在合并模式且选择视频+音频时启用多音频流
+    if params.download_mode == "default"
+        && !params.no_merge
+        && params.video_format.is_some()
+        && (params.audio_format.is_some()
+            || params
+                .audio_formats
+                .as_ref()
+                .is_some_and(|formats| !formats.is_empty()))
+    {
+        vec!["--audio-multistreams".to_string()]
+    } else {
+        Vec::new()
+    }
+}
+
 /// 构建 yt-dlp 下载参数
 pub(super) fn build_download_args(
     app: &AppHandle,
     params: &DownloadParams,
 ) -> Result<Vec<String>, String> {
+    // 如果需要 FFmpeg 合并但 FFmpeg 不可用，提前报错
+    if requires_ffmpeg_merge(params) && !utils::is_ffmpeg_available(app) {
+        return Err("err_ffmpeg_required_not_available".to_string());
+    }
+
     let mut args: Vec<String> = vec![
         "--newline".to_string(),
         "--ignore-config".to_string(),  // 忽略用户系统配置，防止干扰 GUI
@@ -100,6 +161,8 @@ pub(super) fn build_download_args(
 
     // 格式选择
     args.extend(build_format_args(params));
+    // 多音频流支持（用于处理多轨道音频视频，如 Dropbox 双音频）
+    args.extend(build_audio_multistream_args(params));
 
     // 代理
     if let Some(ref proxy) = params.proxy {
@@ -122,6 +185,14 @@ pub(super) fn build_download_args(
     args.push("-o".to_string());
     args.push(output_template);
     args.push("--windows-filenames".to_string());
+
+    // 临时文件夹（Issue #62）
+    if let Some(ref temp_dir) = params.temp_dir {
+        if !temp_dir.is_empty() {
+            args.push("--temp-dir".to_string());
+            args.push(temp_dir.clone());
+        }
+    }
 
     // 不覆盖已有文件
     if params.no_overwrites {
@@ -336,7 +407,9 @@ mod subtitle_arg_tests {
 
 #[cfg(test)]
 mod ffmpeg_requirement_tests {
-    use super::{build_format_args, requires_ffmpeg_merge, DownloadParams};
+    use super::{
+        build_audio_multistream_args, build_format_args, requires_ffmpeg_merge, DownloadParams,
+    };
 
     fn params() -> DownloadParams {
         DownloadParams {
@@ -346,7 +419,9 @@ mod ffmpeg_requirement_tests {
             download_mode: "default".to_string(),
             video_format: Some("137".to_string()),
             audio_format: Some("140".to_string()),
+            audio_formats: None,
             cookie_file: None,
+            temp_dir: None,
             cookie_browser: None,
             proxy: None,
             output_template: None,
@@ -400,5 +475,36 @@ mod ffmpeg_requirement_tests {
     fn merge_mode_uses_plus_concatenation() {
         let args = build_format_args(&params());
         assert_eq!(args, ["-f", "137+140"]);
+    }
+
+    #[test]
+    fn video_only_format_includes_bestaudio_fallback() {
+        let mut value = params();
+        value.audio_format = None;
+        let args = build_format_args(&value);
+        assert_eq!(args, ["-f", "137+bestaudio/best"]);
+    }
+
+    #[test]
+    fn audio_multistream_enabled_for_merge_mode() {
+        let args = build_audio_multistream_args(&params());
+        assert_eq!(args, ["--audio-multistreams"]);
+    }
+
+    #[test]
+    fn audio_multistream_disabled_for_no_merge() {
+        let mut value = params();
+        value.no_merge = true;
+        let args = build_audio_multistream_args(&value);
+        assert!(args.is_empty());
+    }
+
+    #[test]
+    fn audio_multistream_enabled_for_multiple_audio_formats() {
+        let mut value = params();
+        value.audio_format = None;
+        value.audio_formats = Some(vec!["140".to_string(), "141".to_string()]);
+        let args = build_audio_multistream_args(&value);
+        assert_eq!(args, ["--audio-multistreams"]);
     }
 }

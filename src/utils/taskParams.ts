@@ -14,6 +14,7 @@ export const normalizeTaskParams = (params?: Partial<DownloadTaskParams>): Downl
   downloadMode: params?.downloadMode || "default",
   videoFormat: params?.videoFormat ?? null,
   audioFormat: params?.audioFormat ?? null,
+  audioFormats: Array.isArray(params?.audioFormats) ? params.audioFormats : null,
   cookieFile: params?.cookieFile ?? null,
   cookieBrowser: params?.cookieBrowser ?? null,
   proxy: params?.proxy ?? null,
@@ -41,4 +42,5 @@ export const normalizeTaskParams = (params?: Partial<DownloadTaskParams>): Downl
   noPlaylist: Boolean(params?.noPlaylist),
   playlistItems: params?.playlistItems ?? null,
   liveFromStart: Boolean(params?.liveFromStart),
+  tempDir: params?.tempDir ?? null,
 });

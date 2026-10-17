@@ -36,6 +36,8 @@ describe("normalizeTaskParams", () => {
     expect(normalized.downloadDir).toBe("C:/Downloads");
     expect(normalized.downloadMode).toBe("default");
     expect(normalized.videoFormat).toBeNull();
+    expect(normalized.audioFormats).toBeNull();
+    expect(normalized.tempDir).toBeNull();
     expect(normalized.noOverwrites).toBe(false);
     expect(normalized.embedSubs).toBe(false);
     expect(normalized.subtitles).toEqual([]);
@@ -48,6 +50,18 @@ describe("normalizeTaskParams", () => {
     expect(normalized.downloadDir).toBe("");
     expect(normalized.downloadMode).toBe("default");
     expect(normalized.noOverwrites).toBe(false);
+    expect(normalized.audioFormats).toBeNull();
+    expect(normalized.tempDir).toBeNull();
+  });
+
+  it("preserves multi-audio and temporary directory settings", () => {
+    const normalized = normalizeTaskParams({
+      audioFormats: ["140", "141"],
+      tempDir: "/mnt/fast-temp",
+    });
+
+    expect(normalized.audioFormats).toEqual(["140", "141"]);
+    expect(normalized.tempDir).toBe("/mnt/fast-temp");
   });
 });
 

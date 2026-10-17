@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { invoke } from "@tauri-apps/api/core";
 import { readText } from "@tauri-apps/plugin-clipboard-manager";
 import { isValidUrl } from "@/utils/validate";
 import { useVideoStore } from "@/stores/video";
@@ -255,14 +256,24 @@ const handleParsedData = async (
 
 /**
  * 校验快速下载模式所需配置（如下载路径是否已设置）
+ * 如果未设置，自动检测并提示用户
  *
  * @returns boolean 配置是否就绪
  */
-const ensureQuickDownloadConfigured = (): boolean => {
+const ensureQuickDownloadConfigured = async (): Promise<boolean> => {
   if (settingStore.homeDownloadBehavior !== "quick" || settingStore.downloadDir) return true;
-  window.$message.warning(translate("detail.setDownloadDirFirst"));
-  showQuickSettings.value = true;
-  return false;
+
+  // 尝试自动检测默认下载目录
+  try {
+    const defaultDir = await invoke<string>("get_default_download_dir");
+    settingStore.downloadDir = defaultDir;
+    window.$message.success(translate("downloadDir.autoDetectSuccess"));
+    return true;
+  } catch (e: unknown) {
+    window.$message.warning(translate("detail.setDownloadDirFirst"));
+    showQuickSettings.value = true;
+    return false;
+  }
 };
 
 /**
@@ -277,7 +288,7 @@ const handleSearch = async (): Promise<void> => {
     window.$message.warning(translate("home.enterValidUrl"));
     return;
   }
-  if (!ensureQuickDownloadConfigured()) return;
+  if (!(await ensureQuickDownloadConfigured())) return;
   const preparingTaskId =
     settingStore.homeDownloadBehavior === "quick"
       ? await createPreparingTask(trimmedUrl)
@@ -310,7 +321,7 @@ const handleBatchSearch = async (): Promise<void> => {
     window.$message.warning(translate("home.batchLimit", { count: BATCH_LIMIT }));
     return;
   }
-  if (!ensureQuickDownloadConfigured()) return;
+  if (!(await ensureQuickDownloadConfigured())) return;
 
   batchParsing.value = true;
   let succeededCount = 0;

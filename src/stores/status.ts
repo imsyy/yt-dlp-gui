@@ -26,9 +26,10 @@ export const useStatusStore = defineStore("status", () => {
    * 各外部工具检测到的可用更新（检测更新后写入，安装/更新成功后清除）。
    * ToolManager 与底部状态栏共用：工具行标签切为"有更新"，状态栏图标亮红点。
    */
-  const toolUpdates = ref<Record<"yt-dlp" | "deno" | "ffmpeg", ToolUpdateCheck | null>>({
+  const toolUpdates = ref<Record<"yt-dlp" | "deno" | "bun" | "ffmpeg", ToolUpdateCheck | null>>({
     "yt-dlp": null,
     deno: null,
+    bun: null,
     ffmpeg: null,
   });
 

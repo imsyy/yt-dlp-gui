@@ -6,11 +6,13 @@
 //! - video: 视频信息获取、Cookie 管理
 //! - download: 下载任务控制
 //! - toolbox: 工具箱命令（封面、字幕、弹幕等）
+//! - system: 系统相关命令（目录检测等）
 
 mod download;
 mod external_tools;
 mod proxy;
 pub(crate) mod support;
+mod system;
 mod toolbox;
 mod video;
 
@@ -18,6 +20,7 @@ mod video;
 pub use download::*;
 pub use external_tools::*;
 pub use proxy::*;
+pub use system::*;
 pub use toolbox::*;
 pub use video::*;
 

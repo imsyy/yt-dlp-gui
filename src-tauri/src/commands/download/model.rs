@@ -44,7 +44,11 @@ pub struct DownloadParams {
     pub download_mode: String,
     pub video_format: Option<String>,
     pub audio_format: Option<String>,
+    /// 多音频格式选择（用于下载多个音频轨道，如不同语言）
+    pub audio_formats: Option<Vec<String>>,
     pub cookie_file: Option<String>,
+    /// 临时文件夹路径（用于 --temp-dir）
+    pub temp_dir: Option<String>,
     /// 从浏览器读取 Cookie 的浏览器名称
     pub cookie_browser: Option<String>,
     /// 代理地址

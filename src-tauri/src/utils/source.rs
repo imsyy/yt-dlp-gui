@@ -26,11 +26,51 @@ impl ToolSource {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum JsRuntime {
+    Deno,
+    Node,
+    Bun,
+    QuickJs,
+}
+
+impl JsRuntime {
+    fn parse(value: &str) -> Result<Self, String> {
+        match value {
+            "deno" => Ok(Self::Deno),
+            "node" => Ok(Self::Node),
+            "bun" => Ok(Self::Bun),
+            "quickjs" => Ok(Self::QuickJs),
+            _ => Err(format!("err_invalid_js_runtime:{}", value)),
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Deno => "deno",
+            Self::Node => "node",
+            Self::Bun => "bun",
+            Self::QuickJs => "quickjs",
+        }
+    }
+
+    pub fn executable(self) -> &'static str {
+        match self {
+            Self::Deno => "deno",
+            Self::Node => "node",
+            Self::Bun => "bun",
+            Self::QuickJs => "qjs",
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 struct ToolSources {
     ytdlp: ToolSource,
     deno: ToolSource,
+    bun: ToolSource,
     ffmpeg: ToolSource,
+    js_runtime: JsRuntime,
 }
 
 impl Default for ToolSources {
@@ -38,29 +78,49 @@ impl Default for ToolSources {
         Self {
             ytdlp: ToolSource::Managed,
             deno: ToolSource::Managed,
+            bun: ToolSource::System,
             ffmpeg: ToolSource::System,
+            js_runtime: JsRuntime::Deno,
         }
     }
 }
 
 static TOOL_SOURCES: OnceLock<RwLock<ToolSources>> = OnceLock::new();
-static CLI_TOOL_PATHS: OnceLock<RwLock<(Option<PathBuf>, Option<PathBuf>)>> = OnceLock::new();
+static CLI_TOOL_PATHS: OnceLock<RwLock<(Option<PathBuf>, Option<PathBuf>, Option<PathBuf>)>> = OnceLock::new();
 
 fn tool_sources_lock() -> &'static RwLock<ToolSources> {
     TOOL_SOURCES.get_or_init(|| RwLock::new(ToolSources::default()))
 }
 
-pub fn set_tool_sources(ytdlp: &str, deno: &str, ffmpeg: &str) -> Result<(), String> {
-    let sources = ToolSources {
-        ytdlp: ToolSource::parse(ytdlp)?,
-        deno: ToolSource::parse(deno)?,
-        ffmpeg: ToolSource::parse(ffmpeg)?,
-    };
+pub fn set_tool_sources(ytdlp: &str, deno: &str, bun: &str, ffmpeg: &str) -> Result<(), String> {
+    let ytdlp = ToolSource::parse(ytdlp)?;
+    let deno = ToolSource::parse(deno)?;
+    let bun = ToolSource::parse(bun)?;
+    let ffmpeg = ToolSource::parse(ffmpeg)?;
     let mut guard = tool_sources_lock()
         .write()
         .map_err(|e| format!("err_set_tool_sources:{}", e))?;
-    *guard = sources;
+    guard.ytdlp = ytdlp;
+    guard.deno = deno;
+    guard.bun = bun;
+    guard.ffmpeg = ffmpeg;
     Ok(())
+}
+
+pub fn set_js_runtime(runtime: &str) -> Result<(), String> {
+    let runtime = JsRuntime::parse(runtime)?;
+    let mut guard = tool_sources_lock()
+        .write()
+        .map_err(|e| format!("err_set_js_runtime:{}", e))?;
+    guard.js_runtime = runtime;
+    Ok(())
+}
+
+pub fn get_js_runtime() -> Result<JsRuntime, String> {
+    let guard = tool_sources_lock()
+        .read()
+        .map_err(|e| format!("err_get_tool_sources:{}", e))?;
+    Ok(guard.js_runtime)
 }
 
 pub fn get_tool_source(tool: &str) -> Result<ToolSource, String> {
@@ -70,13 +130,14 @@ pub fn get_tool_source(tool: &str) -> Result<ToolSource, String> {
     match tool {
         "yt-dlp" => Ok(guard.ytdlp),
         "deno" => Ok(guard.deno),
+        "bun" => Ok(guard.bun),
         "ffmpeg" => Ok(guard.ffmpeg),
         _ => Err(format!("err_unknown_tool:{}", tool)),
     }
 }
 
-fn cli_tool_paths_lock() -> &'static RwLock<(Option<PathBuf>, Option<PathBuf>)> {
-    CLI_TOOL_PATHS.get_or_init(|| RwLock::new((None, None)))
+fn cli_tool_paths_lock() -> &'static RwLock<(Option<PathBuf>, Option<PathBuf>, Option<PathBuf>)> {
+    CLI_TOOL_PATHS.get_or_init(|| RwLock::new((None, None, None)))
 }
 
 pub fn set_cli_tool_path(tool: &str, path: PathBuf) -> Result<(), String> {
@@ -86,6 +147,7 @@ pub fn set_cli_tool_path(tool: &str, path: PathBuf) -> Result<(), String> {
     match tool {
         "yt-dlp" => guard.0 = Some(path),
         "deno" => guard.1 = Some(path),
+        "bun" => guard.2 = Some(path),
         _ => return Err(format!("err_unknown_tool:{}", tool)),
     }
     Ok(())
@@ -96,6 +158,7 @@ pub fn get_cli_tool_path(tool: &str) -> Option<PathBuf> {
     match tool {
         "yt-dlp" => guard.0.clone(),
         "deno" => guard.1.clone(),
+        "bun" => guard.2.clone(),
         _ => None,
     }
 }

@@ -72,10 +72,16 @@ const estimatedSize = computed(() => {
     }
   }
   if (item.downloadMode !== "video") {
-    const af = item.audioFormats.find((f) => f.format_id === item.selectedAudioFormat);
-    if (af) {
-      const { size } = estimateFileSize(af, duration);
-      total += size;
+    // 优先使用多音频格式，否则回退到单音频格式
+    const audioIds = item.selectedAudioFormats?.length
+      ? item.selectedAudioFormats
+      : [item.selectedAudioFormat].filter(Boolean);
+    for (const id of audioIds) {
+      const af = item.audioFormats.find((f) => f.format_id === id);
+      if (af) {
+        const { size } = estimateFileSize(af, duration);
+        total += size;
+      }
     }
   }
   return total;
@@ -238,6 +244,7 @@ const handleDownload = async () => {
           v-model:download-mode="activeItem.downloadMode"
           v-model:selected-video-format="activeItem.selectedVideoFormat"
           v-model:selected-audio-format="activeItem.selectedAudioFormat"
+          v-model:selected-audio-formats="activeItem.selectedAudioFormats"
           :video-formats="activeItem.videoFormats"
           :audio-formats="activeItem.audioFormats"
           :video-info="activeItem.videoInfo as VideoInfo"

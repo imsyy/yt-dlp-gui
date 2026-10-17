@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useSettingStore } from "@/stores/setting";
 import { useI18n } from "vue-i18n";
@@ -25,6 +26,17 @@ const handleSelectDir = async () => {
     settingStore.downloadDir = selected as string;
   }
 };
+
+/** 自动检测默认下载目录 */
+const handleAutoDetect = async () => {
+  try {
+    const defaultDir = await invoke<string>("get_default_download_dir");
+    settingStore.downloadDir = defaultDir;
+    window.$message.success(t("downloadDir.autoDetectSuccess"));
+  } catch (e: unknown) {
+    window.$message.error(t("downloadDir.autoDetectFailed", { e }));
+  }
+};
 </script>
 
 <template>
@@ -38,6 +50,14 @@ const handleSelectDir = async () => {
         readonly
         style="flex: 1"
       />
+      <n-button size="small" @click="handleAutoDetect">
+        <template #icon>
+          <n-icon>
+            <icon-mdi-folder-heart-outline />
+          </n-icon>
+        </template>
+        {{ $t("downloadDir.autoDetect") }}
+      </n-button>
       <n-button size="small" @click="handleSelectDir">
         <template #icon>
           <n-icon>
@@ -57,6 +77,14 @@ const handleSelectDir = async () => {
         readonly
         style="flex: 1"
       />
+      <n-button size="small" @click="handleAutoDetect">
+        <template #icon>
+          <n-icon>
+            <icon-mdi-folder-heart-outline />
+          </n-icon>
+        </template>
+        {{ $t("downloadDir.autoDetect") }}
+      </n-button>
       <n-button size="small" @click="handleSelectDir">
         <template #icon>
           <n-icon>

@@ -36,6 +36,14 @@
     "path": "路径",
     "denoTitle": "Deno JS 运行时",
     "denoDesc": "YouTube 需要 JavaScript 运行时来解析视频信息",
+    "bunTitle": "Bun JS 运行时",
+    "bunDesc": "用于 YouTube 视频解析的替代 JavaScript 运行时，支持 bun install 和 bun build",
+    "jsRuntime": "JavaScript 运行时",
+    "jsRuntimeUpdateFailed": "更新 JavaScript 运行时失败：{e}",
+    "addFfmpegToPath": "添加 FFmpeg 到 PATH",
+    "ffmpegAlreadyInPath": "FFmpeg 已在 PATH 中",
+    "ffmpegAddedToPath": "FFmpeg 已成功添加到 PATH",
+    "ffmpegAddToPathFailed": "添加 FFmpeg 到 PATH 失败：{e}",
     "youtubeAdvanced": "YouTube 高级选项",
     "youtubeAdvancedDesc": "PO Token 与 visitor_data 用于绕过部分 YouTube 视频的 403 错误和速率限制，不需要时留空，详见 yt-dlp wiki: Extractors > YouTube > PO Token Guide",
     "youtubePoToken": "PO Token",
@@ -69,6 +77,9 @@
     "proxyApplied": "代理设置已应用",
     "proxyInvalid": "请填写代理地址",
     "concurrentFragments": "并发分片数",
+    "tempDir": "临时目录",
+    "tempDirDefault": "使用系统临时目录",
+    "selectTempDir": "选择临时目录",
     "disabled": "不启用",
     "maxConcurrentDownloads": "最大同时下载数",
     "unlimited": "不限制",
@@ -99,6 +110,7 @@
     "updatedToLatest": "已更新到最新版本",
     "updateFailed": "更新失败: {e}",
     "denoDownloadComplete": "Deno 下载完成",
+    "bunDownloadComplete": "Bun 下载完成",
     "checkAppUpdate": "检查更新",
     "appNewVersionFound": "发现新版本",
     "appUpdateNotes": "更新内容",
@@ -131,6 +143,9 @@
   "downloadDir": {
     "title": "下载目录",
     "notSet": "未设置下载目录",
-    "selectDir": "选择下载目录"
+    "selectDir": "选择下载目录",
+    "autoDetect": "自动检测",
+    "autoDetectSuccess": "已成功检测默认下载目录",
+    "autoDetectFailed": "检测默认下载目录失败：{e}"
   }
 }

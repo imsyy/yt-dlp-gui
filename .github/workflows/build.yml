@@ -65,6 +65,27 @@ jobs:
         with:
           args: --target ${{ matrix.target }}
 
+      - name: Remove bundled Wayland libraries from AppImage
+        if: matrix.platform == 'ubuntu-22.04'
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle_dir="src-tauri/target/${{ matrix.target }}/release/bundle/appimage"
+          curl -fsSL https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -o "$RUNNER_TEMP/appimagetool"
+          chmod +x "$RUNNER_TEMP/appimagetool"
+          shopt -s nullglob
+          for image in "$bundle_dir"/*.AppImage; do
+            image_name="$(basename "$image")"
+            (
+              cd "$bundle_dir"
+              "./$image_name" --appimage-extract
+            )
+            find "$bundle_dir/squashfs-root" -name 'libwayland-*.so*' -delete
+            APPIMAGE_EXTRACT_AND_RUN=1 "$RUNNER_TEMP/appimagetool" "$bundle_dir/squashfs-root" "$RUNNER_TEMP/$image_name"
+            mv "$RUNNER_TEMP/$image_name" "$image"
+            rm -rf "$bundle_dir/squashfs-root"
+          done
+
       - name: Upload artifacts (Windows)
         if: matrix.platform == 'windows-latest'
         uses: actions/upload-artifact@v4
@@ -81,6 +102,19 @@ jobs:
           name: build-${{ matrix.target }}
           path: |
             src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+
+      - name: Fix AppImage Wayland compatibility
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          find src-tauri/target/${{ matrix.target }}/release/bundle/appimage -name "*.AppImage" -exec sh -c '
+            appimage="$1"
+            chmod +x "$appimage"
+            extract_dir=$(mktemp -d)
+            "$appimage" --appimage-extract --dest "$extract_dir"
+            rm -f "$extract_dir"/squashfs-root/usr/lib/libwayland-*.so*
+            "$extract_dir"/squashfs-root/AppRun --appimage-pack --appimage-output "$appimage"
+            rm -rf "$extract_dir"
+          ' sh {} \;
 
       - name: Upload artifacts (Linux)
         if: matrix.platform == 'ubuntu-22.04'

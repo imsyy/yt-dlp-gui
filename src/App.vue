@@ -54,23 +54,23 @@ const navItems: { key: string; icon: Component; labelKey: string }[] = [
   { key: "toolbox", icon: IconMdiToolbox, labelKey: "nav.toolbox" },
 ];
 
-const currentAppWindow = getCurrentWindow();
-
 /** 当前应用版本号 */
 const appVersion = ref("");
 
-// 窗口关闭事件拦截
-currentAppWindow.onCloseRequested(async (closeEvent) => {
-  if (settingStore.showTrayIcon && settingStore.closeToTray) {
-    closeEvent.preventDefault();
-    await currentAppWindow.hide();
-  } else {
-    closeEvent.preventDefault();
-    handleQuitRequest();
-  }
-});
-
 onMounted(async () => {
+  const currentAppWindow = getCurrentWindow();
+
+  // 窗口关闭事件拦截
+  currentAppWindow.onCloseRequested(async (closeEvent) => {
+    if (settingStore.showTrayIcon && settingStore.closeToTray) {
+      closeEvent.preventDefault();
+      await currentAppWindow.hide();
+    } else {
+      closeEvent.preventDefault();
+      handleQuitRequest();
+    }
+  });
+
   appVersion.value = await getVersion().catch(() => "");
   try {
     await bootstrap();

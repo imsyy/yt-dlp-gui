@@ -160,24 +160,28 @@ export const useDownloadStore = defineStore("download", () => {
   /**
    * 刷新系统任务栏整体下载进度条状态
    */
-  const updateTaskbarProgress = (): void => {
+  const updateTaskbarProgress = async (): Promise<void> => {
     const settingStore = useSettingStore();
-    const appWindow = getCurrentWindow();
+    try {
+      const appWindow = getCurrentWindow();
 
-    if (!settingStore.showTaskbarProgress) {
-      appWindow.setProgressBar({ status: ProgressBarStatus.None });
-      return;
-    }
+      if (!settingStore.showTaskbarProgress) {
+        await appWindow.setProgressBar({ status: ProgressBarStatus.None });
+        return;
+      }
 
-    const downloading = tasks.value.filter((t) => t.status === "downloading");
+      const downloading = tasks.value.filter((t) => t.status === "downloading");
 
-    if (downloading.length > 0) {
-      const avg = Math.round(
-        downloading.reduce((sum, t) => sum + (t.percent || 0), 0) / downloading.length,
-      );
-      appWindow.setProgressBar({ status: ProgressBarStatus.Normal, progress: avg });
-    } else {
-      appWindow.setProgressBar({ status: ProgressBarStatus.None });
+      if (downloading.length > 0) {
+        const avg = Math.round(
+          downloading.reduce((sum, t) => sum + (t.percent || 0), 0) / downloading.length,
+        );
+        await appWindow.setProgressBar({ status: ProgressBarStatus.Normal, progress: avg });
+      } else {
+        await appWindow.setProgressBar({ status: ProgressBarStatus.None });
+      }
+    } catch {
+      // 静默失败，可能在 Tauri 未完全初始化时调用
     }
   };
 
@@ -210,7 +214,7 @@ export const useDownloadStore = defineStore("download", () => {
           if (event.payload.total) task.total = event.payload.total;
         }
       }
-      updateTaskbarProgress();
+      void updateTaskbarProgress();
     });
 
     await listen<{ id: string; line: string }>("download-log", (event) => {
@@ -243,7 +247,7 @@ export const useDownloadStore = defineStore("download", () => {
           // 后端只落了状态/产物，内存里的 total/清空后的 logs 需要同步回库
           void updateTask(task);
         }
-        updateTaskbarProgress();
+        void updateTaskbarProgress();
         tryStartNext();
       },
     );
@@ -258,13 +262,10 @@ export const useDownloadStore = defineStore("download", () => {
         // 错误诊断依赖日志，保留裁剪后的 logs 并落库
         void updateTask(task);
       }
-      updateTaskbarProgress();
+      void updateTaskbarProgress();
       tryStartNext();
     });
   };
-
-  loadTasks();
-  setupListeners();
 
   /**
    * 添加新的下载任务到列表顶部，并同步写入 SQLite 持久化
@@ -324,7 +325,7 @@ export const useDownloadStore = defineStore("download", () => {
     // 无论后端是否成功标记，都以内存态为准落库，避免 cancelled 回退为 error
     await updateTask(task);
 
-    updateTaskbarProgress();
+    await updateTaskbarProgress();
     tryStartNext();
   };
 
@@ -527,6 +528,7 @@ export const useDownloadStore = defineStore("download", () => {
     activeCount,
     canStartNow,
     loadTasks,
+    setupListeners,
     addTask,
     updateTask,
     cancelTask,

@@ -14,10 +14,15 @@ pub fn get_platform() -> String {
     }
 }
 
-/// 设置三个外部工具各自的来源；选择是严格的，不再隐式回退到另一来源。
+/// 设置四个外部工具各自的来源；选择是严格的，不再隐式回退到另一来源。
 #[tauri::command]
-pub fn set_tool_sources(ytdlp: String, deno: String, ffmpeg: String) -> Result<(), String> {
-    utils::set_tool_sources(&ytdlp, &deno, &ffmpeg)
+pub fn set_tool_sources(ytdlp: String, deno: String, bun: String, ffmpeg: String) -> Result<(), String> {
+    utils::set_tool_sources(&ytdlp, &deno, &bun, &ffmpeg)
+}
+
+#[tauri::command]
+pub fn set_js_runtime(runtime: String) -> Result<(), String> {
+    utils::set_js_runtime(&runtime)
 }
 
 /// 设置 YouTube 提取器参数（PO Token / visitor_data），用于绕过 YouTube 403 / 限流

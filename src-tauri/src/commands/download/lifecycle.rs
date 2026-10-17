@@ -24,7 +24,8 @@ pub async fn start_download(
         return Err("err_ytdlp_not_installed".to_string());
     }
     if requires_ffmpeg_merge(&params)
-        && (!utils::get_ffmpeg_path(&app)?.exists() || !utils::get_ffprobe_path(&app)?.exists())
+        && (!utils::is_ffmpeg_available(&app)
+            || !utils::get_ffprobe_path(&app)?.is_file())
     {
         return Err("err_ffmpeg_required_for_merge".to_string());
     }

@@ -57,12 +57,34 @@ fn resolve_executable_path(
 }
 
 /// 获取应用管理的 yt-dlp 路径（应用数据目录）
+/// 如果启用了 prebuilt-ytdlp feature，则使用构建时下载的预构建版本
 pub fn get_managed_ytdlp_path(app: &AppHandle) -> Result<PathBuf, String> {
-    if cfg!(target_os = "windows") {
-        get_managed_executable_path(app, "yt-dlp.exe")
+    let managed_path = if cfg!(target_os = "windows") {
+        get_managed_executable_path(app, "yt-dlp.exe")?
     } else {
-        get_managed_executable_path(app, "yt-dlp")
+        get_managed_executable_path(app, "yt-dlp")?
+    };
+
+    #[cfg(feature = "prebuilt-ytdlp")]
+    {
+        if !managed_path.is_file() {
+            let temporary_path = managed_path.with_extension("prebuilt.tmp");
+            std::fs::write(&temporary_path, include_bytes!(env!("PREBUILT_YTDLP_PATH")))
+                .map_err(|e| format!("err_write_prebuilt_ytdlp:{}", e))?;
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                std::fs::set_permissions(&temporary_path, std::fs::Permissions::from_mode(0o755))
+                    .map_err(|e| format!("err_set_permissions:{}", e))?;
+            }
+            std::fs::rename(&temporary_path, &managed_path)
+                .map_err(|e| format!("err_install_prebuilt_ytdlp:{}", e))?;
+        }
+        return Ok(managed_path);
     }
+
+    #[cfg(not(feature = "prebuilt-ytdlp"))]
+    Ok(managed_path)
 }
 
 /// 获取 yt-dlp 可执行文件路径
@@ -97,6 +119,28 @@ pub fn get_deno_path(app: &AppHandle) -> Result<PathBuf, String> {
         managed_path,
         "deno",
         get_tool_source("deno")?,
+    ))
+}
+
+/// 获取应用管理的 Bun 路径（应用数据目录）
+pub fn get_managed_bun_path(app: &AppHandle) -> Result<PathBuf, String> {
+    if cfg!(target_os = "windows") {
+        get_managed_executable_path(app, "bun.exe")
+    } else {
+        get_managed_executable_path(app, "bun")
+    }
+}
+
+/// 获取 Bun 可执行文件路径
+pub fn get_bun_path(app: &AppHandle) -> Result<PathBuf, String> {
+    if let Some(path) = get_cli_tool_path("bun") {
+        return Ok(path);
+    }
+    let managed_path = get_managed_bun_path(app)?;
+    Ok(resolve_executable_path(
+        managed_path,
+        "bun",
+        get_tool_source("bun")?,
     ))
 }
 

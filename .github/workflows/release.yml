@@ -85,6 +85,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "${{ github.ref_name }}"
@@ -94,6 +100,45 @@ jobs:
           generateReleaseNotes: false
           includeUpdaterJson: true
           args: --target ${{ matrix.target }}
+
+      - name: Remove bundled Wayland libraries from AppImage
+        if: matrix.platform == 'ubuntu-22.04'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle_dir="src-tauri/target/${{ matrix.target }}/release/bundle/appimage"
+          curl -fsSL https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -o "$RUNNER_TEMP/appimagetool"
+          chmod +x "$RUNNER_TEMP/appimagetool"
+          shopt -s nullglob
+          for image in "$bundle_dir"/*.AppImage; do
+            image_name="$(basename "$image")"
+            (
+              cd "$bundle_dir"
+              "./$image_name" --appimage-extract
+            )
+            find "$bundle_dir/squashfs-root" -name 'libwayland-*.so*' -delete
+            APPIMAGE_EXTRACT_AND_RUN=1 "$RUNNER_TEMP/appimagetool" "$bundle_dir/squashfs-root" "$RUNNER_TEMP/$image_name"
+            mv "$RUNNER_TEMP/$image_name" "$image"
+            rm -rf "$bundle_dir/squashfs-root"
+            gh release upload "${{ github.ref_name }}" "$image" --clobber
+          done
+
+      - name: Verify macOS code signature
+        if: matrix.platform == 'macos-latest'
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${APPLE_CERTIFICATE:-}" ]]; then
+            echo "Apple certificate not configured; skipping signature verification"
+            exit 0
+          fi
+          app_path="$(find "src-tauri/target/${{ matrix.target }}/release/bundle/macos" -maxdepth 1 -type d -name '*.app' -print -quit)"
+          test -n "$app_path"
+          codesign --verify --deep --strict --verbose=2 "$app_path"
 
       - name: Upload artifacts (Windows)
         if: matrix.platform == 'windows-latest'
@@ -111,6 +156,19 @@ jobs:
           name: release-${{ matrix.target }}
           path: |
             src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+
+      - name: Fix AppImage Wayland compatibility
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          find src-tauri/target/${{ matrix.target }}/release/bundle/appimage -name "*.AppImage" -exec sh -c '
+            appimage="$1"
+            chmod +x "$appimage"
+            extract_dir=$(mktemp -d)
+            "$appimage" --appimage-extract --dest "$extract_dir"
+            rm -f "$extract_dir"/squashfs-root/usr/lib/libwayland-*.so*
+            "$extract_dir"/squashfs-root/AppRun --appimage-pack --appimage-output "$appimage"
+            rm -rf "$extract_dir"
+          ' sh {} \;
 
       - name: Upload artifacts (Linux)
         if: matrix.platform == 'ubuntu-22.04'

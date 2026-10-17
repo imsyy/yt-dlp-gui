@@ -21,6 +21,9 @@ const selectedVideoFormat = defineModel<string>("selectedVideoFormat", {
 const selectedAudioFormat = defineModel<string>("selectedAudioFormat", {
   required: true,
 });
+const selectedAudioFormats = defineModel<string[]>("selectedAudioFormats", {
+  default: () => [],
+});
 
 const selectedVideoCodec = ref("all");
 const selectedAudioCodec = ref("all");
@@ -118,10 +121,16 @@ const handleVideoCodecChange = (value: string) => {
 
 const handleAudioCodecChange = (value: string) => {
   selectedAudioCodec.value = value;
-  const currentIsVisible = filteredAudioFormats.value.some(
-    (format) => format.format_id === selectedAudioFormat.value,
-  );
-  if (!currentIsVisible) selectedAudioFormat.value = filteredAudioFormats.value[0]?.format_id || "";
+  const visibleIds = new Set(filteredAudioFormats.value.map((format) => format.format_id));
+  selectedAudioFormats.value = selectedAudioFormats.value.filter((id) => visibleIds.has(id));
+  if (!selectedAudioFormats.value.length && selectedAudioFormat.value) {
+    selectedAudioFormats.value = [selectedAudioFormat.value];
+  }
+};
+
+const handleAudioFormatsChange = (formats: string[]) => {
+  selectedAudioFormats.value = formats;
+  selectedAudioFormat.value = formats[0] || "";
 };
 
 watch(
@@ -139,7 +148,14 @@ watch(
     if (!audioCodecOptions.value.some((option) => option.value === selectedAudioCodec.value)) {
       selectedAudioCodec.value = "all";
     }
+    if (
+      selectedAudioFormats.value.length === 0 &&
+      props.audioFormats.some((format) => format.format_id === selectedAudioFormat.value)
+    ) {
+      selectedAudioFormats.value = [selectedAudioFormat.value];
+    }
   },
+  { immediate: true },
 );
 </script>
 
@@ -193,10 +209,13 @@ watch(
           @update:value="handleAudioCodecChange"
         />
         <n-select
-          v-model:value="selectedAudioFormat"
+          :value="selectedAudioFormats"
           :options="audioFormatOptions"
           size="small"
           style="min-width: 0"
+          multiple
+          :placeholder="$t('detail.selectAudioFormats')"
+          @update:value="handleAudioFormatsChange"
         />
       </n-flex>
     </n-flex>

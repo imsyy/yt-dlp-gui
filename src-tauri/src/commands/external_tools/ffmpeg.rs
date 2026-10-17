@@ -3,6 +3,9 @@
 use crate::utils;
 use tauri::AppHandle;
 
+#[cfg(target_os = "windows")]
+use winreg::{enums::*, RegKey, RegValue};
+
 use super::support::{
     build_tool_status, download_to_file_with_progress, emit_tool_progress, executable_temp_path,
     replace_executable, verify_executable,
@@ -98,4 +101,113 @@ pub async fn update_ffmpeg(app: AppHandle) -> Result<(), String> {
         return Err("err_system_ffmpeg_update_managed_externally".to_string());
     }
     download_ffmpeg_impl(app, "update").await
+}
+
+#[tauri::command]
+pub fn add_ffmpeg_to_path(app: AppHandle) -> Result<String, String> {
+    #[cfg(target_os = "windows")]
+    {
+        use windows_sys::Win32::UI::WindowsAndMessaging::{
+            SendMessageTimeoutW, HWND_BROADCAST, SMTO_ABORTIFHUNG, WM_SETTINGCHANGE,
+        };
+
+        let ffmpeg_path = utils::get_ffmpeg_path(&app)?;
+        if !ffmpeg_path.is_file() {
+            return Err("err_ffmpeg_not_found".to_string());
+        }
+        let ffmpeg_dir = ffmpeg_path
+            .parent()
+            .ok_or_else(|| "err_ffmpeg_path_invalid".to_string())?
+            .to_path_buf();
+        let normalized_dir = ffmpeg_dir
+            .to_string_lossy()
+            .trim_end_matches(|character| character == '\\' || character == '/')
+            .to_string();
+        let environment = RegKey::predef(HKEY_CURRENT_USER)
+            .open_subkey_with_flags("Environment", KEY_READ | KEY_WRITE)
+            .or_else(|_| {
+                RegKey::predef(HKEY_CURRENT_USER)
+                    .create_subkey("Environment")
+                    .map(|(key, _)| key)
+            })
+            .map_err(|e| format!("err_open_user_environment:{}", e))?;
+        let current_user_path: String = environment.get_value("Path").unwrap_or_default();
+        let path_value_type = environment
+            .get_raw_value("Path")
+            .map(|value| value.vtype)
+            .unwrap_or(REG_EXPAND_SZ);
+        let already_registered = std::env::split_paths(std::ffi::OsStr::new(&current_user_path))
+            .any(|entry| {
+                entry
+                    .to_string_lossy()
+                    .trim_end_matches(|character| character == '\\' || character == '/')
+                    .eq_ignore_ascii_case(&normalized_dir)
+            });
+
+        if !already_registered {
+            let mut entries: Vec<_> =
+                std::env::split_paths(std::ffi::OsStr::new(&current_user_path)).collect();
+            entries.push(ffmpeg_dir.clone());
+            let updated_path = std::env::join_paths(entries)
+                .map_err(|e| format!("err_join_user_path:{}", e))?;
+            let path_value = updated_path.to_string_lossy().to_string();
+            let bytes = path_value
+                .encode_utf16()
+                .chain(std::iter::once(0))
+                .flat_map(u16::to_le_bytes)
+                .collect();
+            environment
+                .set_raw_value(
+                    "Path",
+                    &RegValue {
+                        vtype: if path_value_type == REG_EXPAND_SZ {
+                            REG_EXPAND_SZ
+                        } else {
+                            REG_SZ
+                        },
+                        bytes,
+                    },
+                )
+                .map_err(|e| format!("err_update_user_path:{}", e))?;
+        }
+
+        let current_process_path = std::env::var_os("PATH").unwrap_or_default();
+        let mut process_entries: Vec<_> = std::env::split_paths(&current_process_path).collect();
+        let process_has_dir = process_entries.iter().any(|entry| {
+            entry
+                .to_string_lossy()
+                .trim_end_matches(|character| character == '\\' || character == '/')
+                .eq_ignore_ascii_case(&normalized_dir)
+        });
+        if !process_has_dir {
+            process_entries.push(ffmpeg_dir);
+            let updated_process_path = std::env::join_paths(process_entries)
+                .map_err(|e| format!("err_join_process_path:{}", e))?;
+            std::env::set_var("PATH", updated_process_path);
+        }
+
+        let environment_name: Vec<u16> = "Environment\0".encode_utf16().collect();
+        unsafe {
+            SendMessageTimeoutW(
+                HWND_BROADCAST,
+                WM_SETTINGCHANGE,
+                0,
+                environment_name.as_ptr() as isize,
+                SMTO_ABORTIFHUNG,
+                5000,
+                std::ptr::null_mut(),
+            );
+        }
+
+        Ok(if already_registered {
+            "already-present".to_string()
+        } else {
+            "added".to_string()
+        })
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = app;
+        Err("err_windows_only".to_string())
+    }
 }

@@ -36,6 +36,14 @@
     "path": "Path",
     "denoTitle": "Deno JS Runtime",
     "denoDesc": "YouTube requires a JavaScript runtime to parse video information",
+    "bunTitle": "Bun JS Runtime",
+    "bunDesc": "Alternative JavaScript runtime for YouTube video parsing with bun install and bun build support",
+    "jsRuntime": "JavaScript Runtime",
+    "jsRuntimeUpdateFailed": "Failed to update JavaScript runtime: {e}",
+    "addFfmpegToPath": "Add FFmpeg to PATH",
+    "ffmpegAlreadyInPath": "FFmpeg is already in PATH",
+    "ffmpegAddedToPath": "FFmpeg added to PATH successfully",
+    "ffmpegAddToPathFailed": "Failed to add FFmpeg to PATH: {e}",
     "youtubeAdvanced": "YouTube Advanced",
     "youtubeAdvancedDesc": "PO Token and visitor_data help bypass YouTube 403 errors and rate-limiting on certain videos. Leave blank if not needed. See yt-dlp wiki: Extractors > YouTube > PO Token Guide.",
     "youtubePoToken": "PO Token",
@@ -69,6 +77,9 @@
     "proxyApplied": "Proxy settings applied",
     "proxyInvalid": "Please fill in the proxy address",
     "concurrentFragments": "Concurrent Fragments",
+    "tempDir": "Temporary Directory",
+    "tempDirDefault": "Use the system temporary directory",
+    "selectTempDir": "Select Temporary Directory",
     "disabled": "Disabled",
     "maxConcurrentDownloads": "Max Concurrent Downloads",
     "unlimited": "Unlimited",
@@ -99,6 +110,7 @@
     "updatedToLatest": "Updated to latest version",
     "updateFailed": "Update failed: {e}",
     "denoDownloadComplete": "Deno download complete",
+    "bunDownloadComplete": "Bun download complete",
     "checkAppUpdate": "Check for updates",
     "appNewVersionFound": "New version found",
     "appUpdateNotes": "Release notes",
@@ -131,6 +143,9 @@
   "downloadDir": {
     "title": "Download Directory",
     "notSet": "Download directory not set",
-    "selectDir": "Select Download Directory"
+    "selectDir": "Select Download Directory",
+    "autoDetect": "Auto-detect",
+    "autoDetectSuccess": "Default download directory detected successfully",
+    "autoDetectFailed": "Failed to detect default download directory: {e}"
   }
 }

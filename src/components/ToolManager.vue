@@ -13,7 +13,7 @@ import type {
   YtdlpChannel,
 } from "@/types";
 
-type ToolKey = "yt-dlp" | "deno" | "ffmpeg";
+type ToolKey = "yt-dlp" | "deno" | "bun" | "ffmpeg";
 type SelectableToolSource = Exclude<ToolSource, "custom">;
 
 interface ToolDefinition {
@@ -35,6 +35,7 @@ interface OperationState {
 const { t } = useI18n();
 const settingStore = useSettingStore();
 const statusStore = useStatusStore();
+const platform = ref("");
 
 const tools = computed<ToolDefinition[]>(() => [
   {
@@ -54,6 +55,14 @@ const tools = computed<ToolDefinition[]>(() => [
     updateCommand: "update_deno",
   },
   {
+    key: "bun",
+    title: t("settings.bunTitle"),
+    description: t("settings.bunDesc"),
+    statusCommand: "get_bun_status",
+    installCommand: "download_bun",
+    updateCommand: "update_bun",
+  },
+  {
     key: "ffmpeg",
     title: "FFmpeg + FFprobe",
     description: t("settings.ffmpegDesc"),
@@ -66,22 +75,26 @@ const tools = computed<ToolDefinition[]>(() => [
 const statuses = reactive<Record<ToolKey, ToolStatus | null>>({
   "yt-dlp": null,
   deno: null,
+  bun: null,
   ffmpeg: null,
 });
 const checking = reactive<Record<ToolKey, boolean>>({
   "yt-dlp": true,
   deno: true,
+  bun: true,
   ffmpeg: true,
 });
 const refreshing = ref(false);
 const checkingUpdates = reactive<Record<ToolKey, boolean>>({
   "yt-dlp": false,
   deno: false,
+  bun: false,
   ffmpeg: false,
 });
 const operations = reactive<Record<ToolKey, OperationState>>({
   "yt-dlp": { active: false, operation: "install", stage: "downloading", percent: null },
   deno: { active: false, operation: "install", stage: "downloading", percent: null },
+  bun: { active: false, operation: "install", stage: "downloading", percent: null },
   ffmpeg: { active: false, operation: "install", stage: "downloading", percent: null },
 });
 
@@ -97,15 +110,50 @@ const ytdlpChannelOptions: { label: string; value: YtdlpChannel }[] = [
   { label: "Master", value: "master" },
 ];
 
+type JsRuntimeOptionValue = "deno" | "node" | "bun" | "quickjs";
+
+const jsRuntimeOptions: { label: string; value: JsRuntimeOptionValue }[] = [
+  { label: "Deno", value: "deno" },
+  { label: "Node.js", value: "node" },
+  { label: "Bun", value: "bun" },
+  { label: "QuickJS", value: "quickjs" },
+];
+
+const handleJsRuntimeChange = async (value: (typeof jsRuntimeOptions)[number]["value"]) => {
+  const previous = settingStore.jsRuntime;
+  settingStore.jsRuntime = value;
+  try {
+    await invoke("set_js_runtime", { runtime: value });
+  } catch (e: unknown) {
+    settingStore.jsRuntime = previous;
+    window.$message.error(t("settings.jsRuntimeUpdateFailed", { e }));
+  }
+};
+
+const handleAddFfmpegToPath = async () => {
+  try {
+    const result = await invoke<string>("add_ffmpeg_to_path");
+    if (result === "already-present") {
+      window.$message.info(t("settings.ffmpegAlreadyInPath"));
+    } else if (result === "added") {
+      window.$message.success(t("settings.ffmpegAddedToPath"));
+    }
+  } catch (e: unknown) {
+    window.$message.error(t("settings.ffmpegAddToPathFailed", { e }));
+  }
+};
+
 const getSource = (tool: ToolKey): SelectableToolSource => {
   if (tool === "yt-dlp") return settingStore.ytdlpSource;
   if (tool === "deno") return settingStore.denoSource;
+  if (tool === "bun") return settingStore.bunSource;
   return settingStore.ffmpegSource;
 };
 
 const setSource = (tool: ToolKey, value: SelectableToolSource) => {
   if (tool === "yt-dlp") settingStore.ytdlpSource = value;
   else if (tool === "deno") settingStore.denoSource = value;
+  else if (tool === "bun") settingStore.bunSource = value;
   else settingStore.ffmpegSource = value;
 };
 
@@ -113,6 +161,7 @@ const applySources = () =>
   invoke("set_tool_sources", {
     ytdlp: settingStore.ytdlpSource,
     deno: settingStore.denoSource,
+    bun: settingStore.bunSource,
     ffmpeg: settingStore.ffmpegSource,
   });
 
@@ -324,6 +373,7 @@ const copyToolValue = async (label: string, value: string) => {
 let unlistenProgress: (() => void) | null = null;
 
 onMounted(async () => {
+  platform.value = await invoke<string>("get_platform");
   unlistenProgress = await listen<ToolOperationProgress>("tool-operation-progress", (event) => {
     const payload = event.payload;
     const state = operations[payload.tool];
@@ -348,6 +398,17 @@ onUnmounted(() => unlistenProgress?.());
         {{ $t("common.refresh") }}
       </n-button>
     </template>
+
+    <div class="runtime-row">
+      <n-text depth="3">{{ $t("settings.jsRuntime") }}</n-text>
+      <n-select
+        :value="settingStore.jsRuntime"
+        :options="jsRuntimeOptions"
+        size="small"
+        class="runtime-select"
+        @update:value="handleJsRuntimeChange"
+      />
+    </div>
 
     <div class="tool-list">
       <n-spin
@@ -440,6 +501,17 @@ onUnmounted(() => unlistenProgress?.());
               class="channel-select"
               @update:value="(value: YtdlpChannel) => handleChannelChange(value)"
             />
+          </div>
+
+          <div v-if="tool.key === 'ffmpeg' && platform === 'windows'" class="channel-row">
+            <n-button
+              size="small"
+              secondary
+              :disabled="!statuses[tool.key]?.installed || operations.ffmpeg.active"
+              @click="handleAddFfmpegToPath"
+            >
+              {{ $t("settings.addFfmpegToPath") }}
+            </n-button>
           </div>
 
           <dl class="tool-meta">
@@ -543,6 +615,18 @@ onUnmounted(() => unlistenProgress?.());
 .tool-list {
   display: flex;
   flex-direction: column;
+}
+
+.runtime-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+}
+
+.runtime-select {
+  width: 180px;
 }
 
 .tool-row {

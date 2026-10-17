@@ -54,6 +54,7 @@ declare module 'vue' {
     IconMdiFileOutline: typeof import('~icons/mdi/file-outline')['default']
     IconMdiFileSearchOutline: typeof import('~icons/mdi/file-search-outline')['default']
     IconMdiFilterOutline: typeof import('~icons/mdi/filter-outline')['default']
+    IconMdiFolderHeartOutline: typeof import('~icons/mdi/folder-heart-outline')['default']
     IconMdiFolderOpenOutline: typeof import('~icons/mdi/folder-open-outline')['default']
     IconMdiFolderOutline: typeof import('~icons/mdi/folder-outline')['default']
     IconMdiFormatListNumbered: typeof import('~icons/mdi/format-list-numbered')['default']
