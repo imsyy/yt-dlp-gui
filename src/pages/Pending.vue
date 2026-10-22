@@ -212,7 +212,9 @@ const handleDownload = async () => {
                 size="tiny"
                 secondary
                 @click="
-                  activeItem.selectedPlaylistItems = activeItem.playlistEntries.map((_, i) => i + 1)
+                  activeItem.selectedPlaylistItems = activeItem.playlistEntries.map(
+                    (entry, i) => entry.playlist_index ?? i + 1,
+                  )
                 "
               >
                 {{ $t("common.selectAll") }}
@@ -227,8 +229,8 @@ const handleDownload = async () => {
               <n-checkbox
                 v-for="(entry, index) in activeItem.playlistEntries"
                 :key="entry.id"
-                :value="index + 1"
-                :label="`P${index + 1} ${entry.title}`"
+                :value="entry.playlist_index ?? index + 1"
+                :label="`P${entry.playlist_index ?? index + 1} ${entry.title}`"
               />
             </n-flex>
           </n-checkbox-group>
@@ -276,7 +278,11 @@ const handleDownload = async () => {
           <DownloadDirCard />
         </div>
 
-        <DownloadBar :estimated-size-text="estimatedSizeText" @download="handleDownload" />
+        <DownloadBar
+          :estimated-size-text="estimatedSizeText"
+          :disabled="activeItem.isPlaylist && !activeItem.selectedPlaylistItems.length"
+          @download="handleDownload"
+        />
       </div>
     </template>
 

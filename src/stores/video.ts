@@ -93,6 +93,7 @@ export const useVideoStore = defineStore("video", () => {
           title: e.title || `第 ${i + 1} P`,
           duration: e.duration ?? null,
           url: e.url || "",
+          playlist_index: e.playlist_index,
         }));
         const firstEntry = entries[0];
         const formats: VideoFormat[] = firstEntry?.formats || info.formats || [];

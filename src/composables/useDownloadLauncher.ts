@@ -9,6 +9,7 @@ import { useDownloadStore } from "@/stores/download";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import { useVideoStore } from "@/stores/video";
+import { getPlaylistDownloadOptions } from "@/utils/playlist";
 import type { DownloadTask, FfmpegStatus, PendingItem } from "@/types";
 
 export type DownloadLaunchResult =
@@ -130,6 +131,8 @@ export const useDownloadLauncher = () => {
     item: PendingItem,
     preparingTaskId?: string,
   ): Promise<DownloadLaunchResult> => {
+    const playlistOptions = getPlaylistDownloadOptions(item.isPlaylist, item.selectedPlaylistItems);
+    if (!playlistOptions) return "failed";
     if (!settingStore.downloadDir) {
       window.$message.warning(t("detail.setDownloadDirFirst"));
       return "missing-directory";
@@ -202,14 +205,7 @@ export const useDownloadLauncher = () => {
       startTime: item.startTime != null ? timeToSeconds(item.startTime) : null,
       endTime: item.endTime != null ? timeToSeconds(item.endTime) : null,
       liveFromStart: item.liveFromStart,
-      noPlaylist: item.isPlaylist && item.selectedPlaylistItems.length === 1,
-      playlistItems:
-        item.isPlaylist && item.selectedPlaylistItems.length > 0
-          ? item.selectedPlaylistItems
-              .slice()
-              .sort((a, b) => a - b)
-              .join(",")
-          : null,
+      ...playlistOptions,
     };
     const shouldQueue = !downloadStore.canStartNow();
 

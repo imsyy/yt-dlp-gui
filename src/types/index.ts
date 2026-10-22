@@ -249,6 +249,7 @@ export interface PendingItem extends FetchedVideoData {
 }
 
 export interface PlaylistEntry {
+  playlist_index?: number | null;
   id: string;
   title: string;
   duration: number | null;
@@ -285,7 +286,7 @@ export interface VideoInfo {
   is_live?: boolean;
   /** Playlist fields — present when the URL is a playlist */
   _type?: string;
-  entries?: PlaylistEntry[];
+  entries?: Array<PlaylistEntry | null>;
   playlist_count?: number;
 }
 
@@ -410,4 +411,3 @@ export interface ChannelEnrichProgressPayload {
   fixed: number;
   message?: string | null;
 }
-

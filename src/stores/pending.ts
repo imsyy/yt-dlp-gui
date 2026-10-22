@@ -27,7 +27,9 @@ export const createPendingItem = (data: FetchedVideoData, quick = false): Pendin
     ...data,
     id: generateId(),
     createdAt: Date.now(),
-    selectedPlaylistItems: data.isPlaylist ? data.playlistEntries.map((_, i) => i + 1) : [],
+    selectedPlaylistItems: data.isPlaylist
+      ? data.playlistEntries.map((entry, i) => entry.playlist_index ?? i + 1)
+      : [],
     downloadMode: quick ? settingStore.quickDownloadMode : "default",
     selectedVideoFormat: selectVideoFormat(data.videoFormats, maxHeight),
     selectedAudioFormat: data.audioFormats[0]?.format_id ?? "",
@@ -113,7 +115,9 @@ export const usePendingStore = defineStore("pending", () => {
     item.audioFormats = data.audioFormats;
     item.isPlaylist = data.isPlaylist;
     item.playlistEntries = data.playlistEntries;
-    item.selectedPlaylistItems = data.isPlaylist ? data.playlistEntries.map((_, i) => i + 1) : [];
+    item.selectedPlaylistItems = data.isPlaylist
+      ? data.playlistEntries.map((entry, i) => entry.playlist_index ?? i + 1)
+      : [];
     item.selectedVideoFormat = data.videoFormats[0]?.format_id ?? "";
     item.selectedAudioFormat = data.audioFormats[0]?.format_id ?? "";
   };
