@@ -249,9 +249,7 @@ pub(super) fn spawn_completion_handler(
         let status = child.wait().await;
         // The child can exit before buffered stderr/stdout has been consumed.
         // Drain both pipes before reading its final error or removing the task.
-        for reader in output_readers {
-            let _ = reader.await;
-        }
+        drain_output_readers(output_readers, std::time::Duration::from_secs(5)).await;
 
         let was_cancelled = processes
             .lock()
@@ -329,6 +327,100 @@ pub(super) fn spawn_completion_handler(
             map.remove(&task_id);
         }
     });
+}
+
+/// A descendant can inherit a pipe after yt-dlp exits. Bound the shared drain
+/// period so those inherited handles cannot hold a finished task's slot forever.
+async fn drain_output_readers(
+    mut readers: [tokio::task::JoinHandle<()>; 2],
+    limit: std::time::Duration,
+) {
+    let mut drained = [false; 2];
+    let _ = tokio::time::timeout(limit, async {
+        for (index, reader) in readers.iter_mut().enumerate() {
+            let _ = reader.await;
+            drained[index] = true;
+        }
+    })
+    .await;
+    for (index, reader) in readers.iter().enumerate() {
+        if !drained[index] {
+            reader.abort();
+        }
+    }
+    for (index, reader) in readers.into_iter().enumerate() {
+        if !drained[index] {
+            let _ = reader.await;
+        }
+    }
+}
+
+#[cfg(test)]
+mod drain_tests {
+    use super::{drain_output_readers, read_output_lines};
+    use std::sync::{Arc, Mutex};
+    use std::time::Duration;
+    use tokio::io::AsyncWriteExt;
+
+    #[test]
+    fn inherited_pipe_does_not_block_completion_or_leave_a_reader_running() {
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        runtime.block_on(async {
+            let (reader, mut inherited_writer) = tokio::io::duplex(256);
+            inherited_writer
+                .write_all(b"ERROR: buffered error\n")
+                .await
+                .unwrap();
+            let lines = Arc::new(Mutex::new(Vec::new()));
+            let recorded = Arc::clone(&lines);
+            let stuck = tokio::spawn(async move {
+                read_output_lines(reader, |line| {
+                    recorded.lock().unwrap().push(line.to_string())
+                })
+                .await;
+            });
+            let abort_stuck = stuck.abort_handle();
+            let finished = tokio::spawn(async {});
+            tokio::time::timeout(
+                Duration::from_secs(2),
+                drain_output_readers([stuck, finished], Duration::from_millis(30)),
+            )
+            .await
+            .unwrap();
+            assert!(abort_stuck.is_finished());
+            assert_eq!(*lines.lock().unwrap(), ["ERROR: buffered error"]);
+            // The inherited writer is deliberately kept alive past completion.
+            assert!(inherited_writer.write_all(b"late output\n").await.is_err());
+        });
+    }
+
+    #[test]
+    fn normal_readers_are_fully_drained_before_returning() {
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        runtime.block_on(async {
+            let lines = Arc::new(Mutex::new(Vec::new()));
+            let readers = ["stdout tail", "ERROR: stderr tail"].map(|text| {
+                let recorded = Arc::clone(&lines);
+                tokio::spawn(async move {
+                    tokio::task::yield_now().await;
+                    read_output_lines(text.as_bytes(), |line| {
+                        recorded.lock().unwrap().push(line.to_string())
+                    })
+                    .await;
+                })
+            });
+            drain_output_readers(readers, Duration::from_secs(2)).await;
+            let mut result = lines.lock().unwrap().clone();
+            result.sort();
+            assert_eq!(result, ["ERROR: stderr tail", "stdout tail"]);
+        });
+    }
 }
 
 /// 解析最终输出文件路径
