@@ -110,7 +110,8 @@
     "defaultFfmpegArgsHint": "Tự động áp dụng cho các video mới được phân tích sau này; mỗi tác vụ tải về vẫn có thể chỉnh riêng",
     "showTrayIcon": "Hiển thị biểu tượng khay hệ thống",
     "showHomeTips": "Hiển thị mẹo trên màn hình chính",
-    "playlistSubfolders": "Tải mỗi danh sách phát vào thư mục riêng"
+    "playlistSubfolders": "Tải mỗi danh sách phát vào thư mục riêng",
+    "startMaximized": "Khởi động với cửa sổ phóng to"
   },
   "cookie": {
     "settings": "Cài đặt cookie",

@@ -78,6 +78,7 @@ onMounted(async () => {
     await setupTray();
   } finally {
     // 引导失败也要显示窗口，否则应用只剩托盘图标、看不到界面
+    if (settingStore.startMaximized) await currentAppWindow.maximize().catch(() => {});
     await currentAppWindow.show();
   }
 });

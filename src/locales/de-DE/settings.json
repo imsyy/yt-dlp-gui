@@ -110,7 +110,8 @@
     "defaultFfmpegArgsHint": "Werden automatisch auf alle neu analysierten Videos angewendet und lassen sich pro Aufgabe einzeln überschreiben",
     "showTrayIcon": "Symbol im Systemtray anzeigen",
     "showHomeTips": "Tipps auf der Startseite anzeigen",
-    "playlistSubfolders": "Jede Wiedergabeliste in einen eigenen Ordner laden"
+    "playlistSubfolders": "Jede Wiedergabeliste in einen eigenen Ordner laden",
+    "startMaximized": "Mit maximiertem Fenster starten"
   },
   "cookie": {
     "settings": "Cookie-Einstellungen",

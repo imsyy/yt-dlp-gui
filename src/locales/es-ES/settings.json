@@ -110,7 +110,8 @@
     "defaultFfmpegArgsHint": "Se aplican a cada vídeo nuevo que se analice; puedes cambiarlos en cada tarea",
     "showTrayIcon": "Mostrar icono en la bandeja del sistema",
     "showHomeTips": "Mostrar consejos en la pantalla de inicio",
-    "playlistSubfolders": "Descargar cada lista en su propia carpeta"
+    "playlistSubfolders": "Descargar cada lista en su propia carpeta",
+    "startMaximized": "Iniciar con la ventana maximizada"
   },
   "cookie": {
     "settings": "Configuración de cookies",

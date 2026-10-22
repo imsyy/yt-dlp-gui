@@ -110,7 +110,8 @@
     "defaultFfmpegArgsHint": "Appliqués à chaque nouvelle vidéo analysée ; la valeur reste modifiable pour chaque tâche",
     "showTrayIcon": "Afficher l'icône dans la zone de notification",
     "showHomeTips": "Afficher les conseils sur l’accueil",
-    "playlistSubfolders": "Télécharger chaque playlist dans son propre dossier"
+    "playlistSubfolders": "Télécharger chaque playlist dans son propre dossier",
+    "startMaximized": "Démarrer avec la fenêtre agrandie"
   },
   "cookie": {
     "settings": "Paramètres des cookies",

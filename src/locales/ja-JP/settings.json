@@ -110,7 +110,8 @@
     "defaultFfmpegArgsHint": "以降に新しく解析した動画へ自動的に適用されます。個々のタスクで個別に上書きできます",
     "showTrayIcon": "システムトレイアイコンを表示",
     "showHomeTips": "ホーム画面のヒントを表示",
-    "playlistSubfolders": "プレイリストごとに専用フォルダーに保存"
+    "playlistSubfolders": "プレイリストごとに専用フォルダーに保存",
+    "startMaximized": "ウィンドウを最大化して起動"
   },
   "cookie": {
     "settings": "Cookie 設定",

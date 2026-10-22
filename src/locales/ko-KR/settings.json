@@ -110,7 +110,8 @@
     "defaultFfmpegArgsHint": "이후 새로 분석되는 영상에 자동으로 적용되며, 개별 작업에서 따로 변경할 수 있습니다",
     "showTrayIcon": "시스템 트레이 아이콘 표시",
     "showHomeTips": "홈 화면 도움말 표시",
-    "playlistSubfolders": "재생목록별로 별도 폴더에 다운로드"
+    "playlistSubfolders": "재생목록별로 별도 폴더에 다운로드",
+    "startMaximized": "최대화된 창으로 시작"
   },
   "cookie": {
     "settings": "Cookie 설정",
