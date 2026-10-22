@@ -49,6 +49,12 @@ const notifyModeOptions = computed(() => [
   { label: t("settings.all"), value: "all" },
 ]);
 
+const downloadModeOptions = computed(() => [
+  { label: t("common.default"), value: "default" },
+  { label: t("detail.videoOnly"), value: "video" },
+  { label: t("detail.audioOnly"), value: "audio" },
+]);
+
 const applyYoutubeExtractorArgs = async () => {
   await invoke("set_youtube_extractor_args", {
     poToken: settingStore.youtubePoToken,
@@ -185,6 +191,17 @@ watch(
 
     <n-card :title="$t('settings.downloadOptions')" size="small" class="section-card">
       <n-flex vertical :size="12">
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">{{ $t("detail.downloadMethod") }}</span>
+            <n-select
+              v-model:value="settingStore.defaultDownloadMode"
+              :options="downloadModeOptions"
+              size="small"
+              style="width: 160px"
+            />
+          </div>
+        </div>
         <div class="info-list">
           <div class="info-row">
             <span class="info-label">{{ $t("settings.concurrentFragments") }}</span>

@@ -83,6 +83,7 @@ export const useSettingStore = defineStore(
 
     /** 新下载任务默认自定义 yt-dlp 附加参数（如 --sleep-requests 2） */
     const defaultCustomArgs = ref("");
+    const defaultDownloadMode = ref<"default" | "video" | "audio">("default");
 
     /** 标准流程新解析任务的默认额外选项 */
     const defaultEmbedSubs = ref(false);
@@ -183,6 +184,7 @@ export const useSettingStore = defineStore(
       noOverwrites,
       defaultFfmpegArgs,
       defaultCustomArgs,
+      defaultDownloadMode,
       defaultEmbedSubs,
       defaultEmbedThumbnail,
       defaultWriteThumbnail,

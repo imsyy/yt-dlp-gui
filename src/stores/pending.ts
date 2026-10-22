@@ -30,7 +30,7 @@ export const createPendingItem = (data: FetchedVideoData, quick = false): Pendin
     selectedPlaylistItems: data.isPlaylist
       ? data.playlistEntries.map((entry, i) => entry.playlist_index ?? i + 1)
       : [],
-    downloadMode: quick ? settingStore.quickDownloadMode : "default",
+    downloadMode: quick ? settingStore.quickDownloadMode : settingStore.defaultDownloadMode,
     selectedVideoFormat: selectVideoFormat(data.videoFormats, maxHeight),
     selectedAudioFormat: data.audioFormats[0]?.format_id ?? "",
     startTime: null,
