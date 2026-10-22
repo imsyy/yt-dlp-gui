@@ -136,7 +136,8 @@ export const useSettingStore = defineStore(
     const autoCheckUpdate = ref(true);
 
     /** 每个外部工具独立选择应用管理版本或系统 PATH 版本 */
-    const ytdlpSource = ref<"managed" | "system">("managed");
+    const ytdlpSource = ref<"managed" | "system" | "local">("managed");
+    const ytdlpLocalPath = ref("");
     const denoSource = ref<"managed" | "system">("managed");
     const jsRuntime = ref<"deno" | "node" | "bun" | "quickjs">("deno");
     const ffmpegSource = ref<"managed" | "system">("system");
@@ -212,6 +213,7 @@ export const useSettingStore = defineStore(
       startMaximized,
       autoCheckUpdate,
       ytdlpSource,
+      ytdlpLocalPath,
       denoSource,
       jsRuntime,
       ffmpegSource,

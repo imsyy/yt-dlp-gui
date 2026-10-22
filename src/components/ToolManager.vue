@@ -2,9 +2,11 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
+import { open } from "@tauri-apps/plugin-dialog";
 import { useI18n } from "vue-i18n";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
+import { formatError } from "@/utils/format";
 import type {
   ToolOperationProgress,
   ToolSource,
@@ -37,6 +39,9 @@ const settingStore = useSettingStore();
 const statusStore = useStatusStore();
 const runtimeLabels = { deno: "Deno", node: "Node.js", bun: "Bun", quickjs: "QuickJS" };
 const isSystemRuntime = (tool: ToolKey) => tool === "deno" && settingStore.jsRuntime !== "deno";
+const isLocalYtdlp = (tool: ToolKey) => tool === "yt-dlp" && settingStore.ytdlpSource === "local";
+const localPathInput = ref(settingStore.ytdlpLocalPath);
+const savingLocalPath = ref(false);
 
 const tools = computed<ToolDefinition[]>(() => [
   {
@@ -95,6 +100,10 @@ const sourceOptions = computed(() => [
   { label: t("settings.sourceManaged"), value: "managed" },
   { label: t("settings.sourceSystem"), value: "system" },
 ]);
+const getSourceOptions = (tool: ToolKey) =>
+  tool === "yt-dlp"
+    ? [...sourceOptions.value, { label: t("settings.sourceLocal"), value: "local" }]
+    : sourceOptions.value;
 
 /** yt-dlp 发行通道：专有名词，无需翻译 */
 const ytdlpChannelOptions: { label: string; value: YtdlpChannel }[] = [
@@ -112,8 +121,10 @@ const getSource = (tool: ToolKey): SelectableToolSource => {
 
 const setSource = (tool: ToolKey, value: SelectableToolSource) => {
   if (tool === "yt-dlp") settingStore.ytdlpSource = value;
-  else if (tool === "deno") settingStore.denoSource = value;
-  else settingStore.ffmpegSource = value;
+  else if (value !== "local") {
+    if (tool === "deno") settingStore.denoSource = value;
+    else settingStore.ffmpegSource = value;
+  }
 };
 
 const applySources = () =>
@@ -121,21 +132,34 @@ const applySources = () =>
     ytdlp: settingStore.ytdlpSource,
     deno: settingStore.denoSource,
     ffmpeg: settingStore.ffmpegSource,
+    ytdlpLocalPath: settingStore.ytdlpLocalPath,
   });
 
 /** 将前端持久化的 yt-dlp 通道同步到后端（后端通道状态随应用重启丢失，以前端为准） */
 const applyYtdlpChannel = () => invoke("set_ytdlp_channel", { channel: settingStore.ytdlpChannel });
 
+const refreshIds: Record<ToolKey, number> = { "yt-dlp": 0, deno: 0, ffmpeg: 0 };
 const refreshTool = async (tool: ToolDefinition) => {
+  const refreshId = ++refreshIds[tool.key];
   const runtime = settingStore.jsRuntime;
+  const source = getSource(tool.key);
+  const localPath = settingStore.ytdlpLocalPath;
+  const isCurrent = () =>
+    refreshId === refreshIds[tool.key] &&
+    source === getSource(tool.key) &&
+    (tool.key !== "deno" || runtime === settingStore.jsRuntime) &&
+    (tool.key !== "yt-dlp" || localPath === settingStore.ytdlpLocalPath);
   checking[tool.key] = true;
   try {
     const status = await invoke<ToolStatus>(tool.statusCommand);
-    if (tool.key !== "deno" || runtime === settingStore.jsRuntime) statuses[tool.key] = status;
+    if (isCurrent()) statuses[tool.key] = status;
   } catch (e: unknown) {
-    window.$message.error(t("settings.toolStatusFailed", { tool: tool.title, e }));
+    if (isCurrent()) {
+      statuses[tool.key] = null;
+      window.$message.error(t("settings.toolStatusFailed", { tool: tool.title, e }));
+    }
   } finally {
-    checking[tool.key] = false;
+    if (refreshId === refreshIds[tool.key]) checking[tool.key] = false;
   }
 };
 
@@ -163,12 +187,41 @@ const handleSourceChange = async (tool: ToolDefinition, value: SelectableToolSou
   checking[tool.key] = true;
   try {
     setSource(tool.key, value);
+    statuses[tool.key] = null;
+    statusStore.toolUpdates[tool.key] = null;
     await applySources();
     await refreshTool(tool);
   } catch (e: unknown) {
     window.$message.error(t("settings.toolStatusFailed", { tool: tool.title, e }));
   } finally {
     checking[tool.key] = false;
+  }
+};
+
+const handleLocalPathApply = async () => {
+  if (statuses["yt-dlp"]?.source === "custom") return;
+  savingLocalPath.value = true;
+  settingStore.ytdlpLocalPath = localPathInput.value;
+  statuses["yt-dlp"] = null;
+  statusStore.toolUpdates["yt-dlp"] = null;
+  try {
+    await applySources();
+    await refreshTool(tools.value[0]);
+  } catch (e: unknown) {
+    window.$message.error(t("settings.toolStatusFailed", { tool: "yt-dlp", e }));
+  } finally {
+    savingLocalPath.value = false;
+  }
+};
+
+const handleSelectLocalPath = async () => {
+  try {
+    const selected = await open({ multiple: false, title: t("settings.selectYtdlpExecutable") });
+    if (typeof selected !== "string") return;
+    localPathInput.value = selected;
+    await handleLocalPathApply();
+  } catch (e: unknown) {
+    window.$message.error(t("common.saveFailed", { e }));
   }
 };
 
@@ -206,6 +259,13 @@ const runOperation = async (
 };
 
 const handleInstall = async (tool: ToolDefinition) => {
+  if (
+    isLocalYtdlp(tool.key) ||
+    isSystemRuntime(tool.key) ||
+    statuses[tool.key]?.source === "custom"
+  ) {
+    return;
+  }
   if (getSource(tool.key) === "system") {
     setSource(tool.key, "managed");
     await applySources();
@@ -214,6 +274,13 @@ const handleInstall = async (tool: ToolDefinition) => {
 };
 
 const handleUpdate = (tool: ToolDefinition) => {
+  if (
+    isLocalYtdlp(tool.key) ||
+    isSystemRuntime(tool.key) ||
+    statuses[tool.key]?.source === "custom"
+  ) {
+    return;
+  }
   const command = tool.updateCommand || tool.installCommand;
   return runOperation(tool, "update", command);
 };
@@ -267,7 +334,7 @@ const handleChannelChange = async (value: YtdlpChannel) => {
     return;
   }
   const tool = tools.value.find((item) => item.key === "yt-dlp");
-  if (!tool || statuses["yt-dlp"]?.source === "custom") return;
+  if (!tool || isLocalYtdlp("yt-dlp") || statuses["yt-dlp"]?.source === "custom") return;
   if (!statuses["yt-dlp"]?.installed) return;
   // 仅内置版本需要跨通道切换处理（含降级）：版本比较会误判为"已是最新"，以通道切换为准。
   // 系统版本直接走常规检测，确认后用 yt-dlp --update-to 切换并更新。
@@ -298,7 +365,10 @@ const handleChannelSwitchDownload = async (tool: ToolDefinition) => {
 };
 
 /** 该工具是否有检测到的可用更新 */
-const hasToolUpdate = (tool: ToolKey) => statusStore.toolUpdates[tool]?.updateAvailable === true;
+const hasToolUpdate = (tool: ToolKey) =>
+  !isLocalYtdlp(tool) &&
+  statuses[tool]?.canUpdate === true &&
+  statusStore.toolUpdates[tool]?.updateAvailable === true;
 
 const toolTagType = (tool: ToolKey) => {
   if (statuses[tool]?.runnable === false) return "error";
@@ -335,6 +405,13 @@ const copyToolValue = async (label: string, value: string) => {
 };
 
 let unlistenProgress: (() => void) | null = null;
+
+watch(
+  () => settingStore.ytdlpLocalPath,
+  (path) => {
+    localPathInput.value = path;
+  },
+);
 
 watch(
   () => settingStore.jsRuntime,
@@ -389,7 +466,7 @@ onUnmounted(() => unlistenProgress?.());
             <n-flex align="center" :size="8" :wrap="false" class="tool-controls">
               <n-select
                 :value="getSource(tool.key)"
-                :options="sourceOptions"
+                :options="getSourceOptions(tool.key)"
                 size="small"
                 :disabled="
                   checking[tool.key] ||
@@ -403,6 +480,7 @@ onUnmounted(() => unlistenProgress?.());
               <n-button
                 v-if="
                   !isSystemRuntime(tool.key) &&
+                  !isLocalYtdlp(tool.key) &&
                   !statuses[tool.key]?.runnable &&
                   statuses[tool.key]?.source !== 'custom'
                 "
@@ -420,7 +498,11 @@ onUnmounted(() => unlistenProgress?.());
                 }}
               </n-button>
               <n-button
-                v-else-if="!isSystemRuntime(tool.key) && statuses[tool.key]?.canUpdate"
+                v-else-if="
+                  !isSystemRuntime(tool.key) &&
+                  !isLocalYtdlp(tool.key) &&
+                  statuses[tool.key]?.canUpdate
+                "
                 strong
                 secondary
                 size="small"
@@ -436,21 +518,58 @@ onUnmounted(() => unlistenProgress?.());
                     {{
                       statuses[tool.key]?.source === "custom"
                         ? $t("settings.cliManaged")
-                        : $t("settings.systemManaged")
+                        : isLocalYtdlp(tool.key)
+                          ? $t("settings.localManaged")
+                          : $t("settings.systemManaged")
                     }}
                   </n-button>
                 </template>
                 {{
                   statuses[tool.key]?.source === "custom"
                     ? $t("settings.cliManagedHint")
-                    : $t("settings.systemManagedHint")
+                    : isLocalYtdlp(tool.key)
+                      ? $t("settings.localManagedHint")
+                      : $t("settings.systemManagedHint")
                 }}
               </n-tooltip>
             </n-flex>
           </n-flex>
           <n-text depth="3" class="tool-description">{{ tool.description }}</n-text>
 
-          <div v-if="tool.key === 'yt-dlp'" class="channel-row">
+          <div v-if="isLocalYtdlp(tool.key)" class="local-path-settings">
+            <n-text depth="3">{{ $t("settings.ytdlpLocalPathHint") }}</n-text>
+            <n-flex :wrap="false" align="center">
+              <n-input
+                v-model:value="localPathInput"
+                :aria-label="$t('settings.ytdlpLocalPath')"
+                :placeholder="$t('settings.ytdlpLocalPath')"
+                :disabled="savingLocalPath || statuses[tool.key]?.source === 'custom'"
+                :status="statuses[tool.key]?.error ? 'error' : undefined"
+                @keydown.enter="handleLocalPathApply"
+              />
+              <n-button
+                secondary
+                :disabled="savingLocalPath || statuses[tool.key]?.source === 'custom'"
+                @click="handleSelectLocalPath"
+              >
+                {{ $t("common.select") }}
+              </n-button>
+              <n-button
+                secondary
+                strong
+                :loading="savingLocalPath"
+                :disabled="statuses[tool.key]?.source === 'custom'"
+                @click="handleLocalPathApply"
+              >
+                {{ $t("common.save") }}
+              </n-button>
+            </n-flex>
+          </div>
+          <n-text v-if="statuses[tool.key]?.error" type="error" class="tool-error" role="alert">
+            {{ formatError(statuses[tool.key]?.error || "") }}
+          </n-text>
+
+          <div v-if="tool.key === 'yt-dlp' && !isLocalYtdlp(tool.key)" class="channel-row">
             <n-text depth="3" class="channel-label">
               {{ $t("settings.ytdlpChannel") }}
             </n-text>
@@ -611,6 +730,22 @@ onUnmounted(() => unlistenProgress?.());
   margin-top: 2px;
   font-size: 13px;
   text-wrap: pretty;
+}
+
+.local-path-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.tool-error {
+  display: block;
+  margin-top: 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
 }
 
 .channel-row {

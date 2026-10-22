@@ -1,4 +1,4 @@
-export type ToolSource = "managed" | "system" | "custom";
+export type ToolSource = "managed" | "system" | "local" | "custom";
 export type YtdlpChannel = "stable" | "nightly" | "master";
 export type HomeMode = "standard" | "batch";
 export type HomeDownloadBehavior = "pending" | "quick";
@@ -26,6 +26,7 @@ export interface ToolStatus {
   source: ToolSource;
   isManaged: boolean;
   canUpdate: boolean;
+  error?: string | null;
 }
 
 export interface ToolUpdateCheck {

@@ -32,6 +32,7 @@ pub struct ToolStatus {
     pub source: String,
     pub is_managed: bool,
     pub can_update: bool,
+    pub error: Option<String>,
 }
 
 /// 工具安装或更新进度。

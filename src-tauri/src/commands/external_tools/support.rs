@@ -250,10 +250,20 @@ pub(super) async fn build_tool_status(
     } else {
         configured_source.as_str()
     };
-    let is_managed = !has_cli_override && path == managed_path;
-    let can_update =
-        !has_cli_override && (configured_source == utils::ToolSource::Managed || tool != "ffmpeg");
+    let is_managed = !has_cli_override
+        && configured_source == utils::ToolSource::Managed
+        && path == managed_path;
+    let can_update = can_update_tool(tool, configured_source, has_cli_override);
     Ok(probe_tool_status(tool, path, version_arg, source, is_managed, can_update).await)
+}
+
+fn can_update_tool(tool: &str, source: utils::ToolSource, has_cli_override: bool) -> bool {
+    !has_cli_override
+        && match source {
+            utils::ToolSource::Managed => true,
+            utils::ToolSource::System => tool != "ffmpeg",
+            utils::ToolSource::Local => false,
+        }
 }
 
 pub(super) async fn probe_tool_status(
@@ -265,22 +275,28 @@ pub(super) async fn probe_tool_status(
     can_update: bool,
 ) -> ToolStatus {
     let installed = path.is_file();
-    let version = if installed {
-        probe_version(&path, version_arg, tool).await.ok()
+    let probe = if installed {
+        probe_version(&path, version_arg, tool).await
+    } else {
+        Err(format!("err_tool_not_installed:{}", tool))
+    };
+    let runnable = probe.is_ok();
+    let error = if installed {
+        probe.as_ref().err().cloned()
     } else {
         None
     };
-    let runnable = version.is_some();
     ToolStatus {
         installed,
         runnable,
-        version: version
+        version: probe
             .map(|text| parse_version(tool, text.lines().next().unwrap_or_default()))
             .unwrap_or_default(),
         path: path.to_string_lossy().to_string(),
         source: source.to_string(),
         is_managed,
         can_update: runnable && can_update,
+        error,
     }
 }
 
@@ -323,7 +339,19 @@ fn quickjs_version(first_line: &str) -> Option<&str> {
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_version, probe_tool_status, version_probe_result, ProgressThrottle};
+    use super::{
+        can_update_tool, parse_version, probe_tool_status, version_probe_result, ProgressThrottle,
+    };
+
+    #[test]
+    fn local_and_cli_ytdlp_cannot_be_updated_by_the_app() {
+        use crate::utils::ToolSource;
+        assert!(!can_update_tool("yt-dlp", ToolSource::Local, false));
+        assert!(!can_update_tool("yt-dlp", ToolSource::Managed, true));
+        assert!(!can_update_tool("yt-dlp", ToolSource::System, true));
+        assert!(can_update_tool("yt-dlp", ToolSource::Managed, false));
+        assert!(can_update_tool("yt-dlp", ToolSource::System, false));
+    }
 
     fn probe_output(code: i32, text: &str) -> std::process::Output {
         #[cfg(unix)]
@@ -360,6 +388,7 @@ mod tests {
         assert!(!broken.runnable);
         assert!(broken.version.is_empty());
         assert!(!broken.can_update);
+        assert!(broken.error.is_some());
 
         let working = runtime.block_on(probe_tool_status(
             "node", executable, "--help", "system", false, false,
@@ -369,6 +398,7 @@ mod tests {
         assert_eq!(working.source, "system");
         assert!(!working.can_update);
         assert!(!working.is_managed);
+        assert!(working.error.is_none());
     }
 
     #[test]
@@ -391,6 +421,7 @@ mod tests {
         assert!(!status.runnable);
         assert!(status.version.is_empty());
         assert!(!status.can_update);
+        assert!(status.error.is_none());
     }
 
     #[test]

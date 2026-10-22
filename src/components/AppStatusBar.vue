@@ -83,11 +83,13 @@ const totalSpeed = computed(() =>
 let statusRefreshId = 0;
 const refreshStatuses = async () => {
   const refreshId = ++statusRefreshId;
+  statuses["yt-dlp"] = null;
   statuses.deno = null;
   await invoke("set_tool_sources", {
     ytdlp: settingStore.ytdlpSource,
     deno: settingStore.denoSource,
     ffmpeg: settingStore.ffmpegSource,
+    ytdlpLocalPath: settingStore.ytdlpLocalPath,
   });
   await invoke("set_ytdlp_channel", { channel: settingStore.ytdlpChannel }).catch(() => {});
   await invoke("set_js_runtime", { runtime: settingStore.jsRuntime });
@@ -108,11 +110,14 @@ const sourceText = (tool: ToolKey) => {
   if (!status) return "—";
   if (status.source === "managed") return t("settings.sourceManaged");
   if (status.source === "system") return t("settings.sourceSystem");
+  if (status.source === "local") return t("settings.sourceLocal");
   return t("settings.cliManaged");
 };
 
 /** 工具图标是否亮点：未安装，或检测到可用更新 */
 const hasToolUpdate = (tool: ToolKey) =>
+  (tool !== "yt-dlp" || settingStore.ytdlpSource !== "local") &&
+  statuses[tool]?.canUpdate === true &&
   (tool !== "deno" || settingStore.jsRuntime === "deno") &&
   statusStore.toolUpdates[tool]?.updateAvailable === true;
 const showToolDot = (tool: ToolKey) => statuses[tool]?.runnable === false || hasToolUpdate(tool);
@@ -203,6 +208,7 @@ let unlistenChannelEnrich: (() => void) | null = null;
 watch(
   () => [
     settingStore.ytdlpSource,
+    settingStore.ytdlpLocalPath,
     settingStore.denoSource,
     settingStore.jsRuntime,
     settingStore.ffmpegSource,
