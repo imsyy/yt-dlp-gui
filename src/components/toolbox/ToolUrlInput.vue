@@ -54,13 +54,7 @@ const handlePaste = async () => {
       style="flex: 1"
       @keyup.enter="emit('submit')"
     />
-    <n-button
-      :size="props.size"
-      :disabled="props.disabled"
-      strong
-      secondary
-      @click="handlePaste"
-    >
+    <n-button :size="props.size" :disabled="props.disabled" strong secondary @click="handlePaste">
       <template #icon>
         <n-icon><icon-mdi-content-paste /></n-icon>
       </template>

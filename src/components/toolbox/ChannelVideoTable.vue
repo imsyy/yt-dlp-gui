@@ -212,7 +212,8 @@ const columns = computed<DataTableColumns<ChannelVideoRecord>>(() => [
         <template #icon>
           <n-icon><icon-mdi-download /></n-icon>
         </template>
-        {{ $t("channelArchive.sendToDownload") }}{{ checkedVideos.length > 0 ? ` (${checkedVideos.length})` : "" }}
+        {{ $t("channelArchive.sendToDownload")
+        }}{{ checkedVideos.length > 0 ? ` (${checkedVideos.length})` : "" }}
       </n-button>
     </n-flex>
 
