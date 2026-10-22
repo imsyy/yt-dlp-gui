@@ -111,17 +111,32 @@ export const usePendingStore = defineStore("pending", () => {
   const refresh = (id: string, data: FetchedVideoData): void => {
     const item = items.value.find((i) => i.id === id);
     if (!item) return;
+    const wasPlaylist = item.isPlaylist;
+    const selectedVideo = item.selectedVideoFormat;
+    const selectedAudio = item.selectedAudioFormat.split("+");
     item.url = data.url;
     item.videoInfo = data.videoInfo;
     item.videoFormats = data.videoFormats;
     item.audioFormats = data.audioFormats;
     item.isPlaylist = data.isPlaylist;
     item.playlistEntries = data.playlistEntries;
+    const indices = data.playlistEntries.map((entry, i) => entry.playlist_index ?? i + 1);
     item.selectedPlaylistItems = data.isPlaylist
-      ? data.playlistEntries.map((entry, i) => entry.playlist_index ?? i + 1)
+      ? wasPlaylist
+        ? item.selectedPlaylistItems.filter((index) => indices.includes(index))
+        : indices
       : [];
-    item.selectedVideoFormat = data.videoFormats[0]?.format_id ?? "";
-    item.selectedAudioFormat = data.audioFormats[0]?.format_id ?? "";
+    item.selectedVideoFormat = data.videoFormats.some(
+      (format) => format.format_id === selectedVideo,
+    )
+      ? selectedVideo
+      : (data.videoFormats[0]?.format_id ?? "");
+    const retainedAudio = selectedAudio.filter((id) =>
+      data.audioFormats.some((format) => format.format_id === id),
+    );
+    item.selectedAudioFormat = retainedAudio.length
+      ? retainedAudio.join("+")
+      : (data.audioFormats[0]?.format_id ?? "");
   };
 
   /**
