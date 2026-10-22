@@ -109,18 +109,7 @@ pub(super) fn build_download_args(
         }
     }
 
-    // 输出路径模板
-    let template = params
-        .output_template
-        .as_deref()
-        .filter(|s| !s.is_empty())
-        .unwrap_or("%(title).200s.%(ext)s");
-    let output_template = std::path::PathBuf::from(&params.download_dir)
-        .join(template)
-        .to_string_lossy()
-        .to_string();
-    args.push("-o".to_string());
-    args.push(output_template);
+    append_output_args(&mut args, params);
     args.push("--windows-filenames".to_string());
 
     // 不覆盖已有文件
@@ -255,6 +244,63 @@ pub(super) fn build_download_args(
     args.push(params.url.clone());
 
     Ok(args)
+}
+
+/// Keep the template relative so yt-dlp can honor a separate `-P temp:...` path.
+fn append_output_args(args: &mut Vec<String>, params: &DownloadParams) {
+    let template = params
+        .output_template
+        .as_deref()
+        .filter(|s| !s.is_empty())
+        .unwrap_or("%(title).200s.%(ext)s");
+    args.extend([
+        "--paths".to_string(),
+        format!("home:{}", params.download_dir),
+        "-o".to_string(),
+        template.to_string(),
+    ]);
+}
+
+#[cfg(test)]
+mod output_arg_tests {
+    use super::{append_output_args, DownloadParams};
+
+    #[test]
+    fn keeps_home_directory_separate_from_relative_template() {
+        let params = DownloadParams {
+            download_dir: r"E:\Downloads".into(),
+            output_template: Some("%(playlist_title)s/%(title)s.%(ext)s".into()),
+            ..Default::default()
+        };
+        let mut args = Vec::new();
+        append_output_args(&mut args, &params);
+        assert_eq!(
+            args,
+            [
+                "--paths",
+                r"home:E:\Downloads",
+                "-o",
+                "%(playlist_title)s/%(title)s.%(ext)s"
+            ]
+        );
+    }
+
+    #[test]
+    fn empty_template_uses_relative_default() {
+        let mut args = Vec::new();
+        append_output_args(
+            &mut args,
+            &DownloadParams {
+                download_dir: "/downloads".into(),
+                output_template: Some(String::new()),
+                ..Default::default()
+            },
+        );
+        assert_eq!(
+            args,
+            ["--paths", "home:/downloads", "-o", "%(title).200s.%(ext)s"]
+        );
+    }
 }
 
 /// 将前端的 `sub:<lang>` / `auto:<lang>` 选择转换为 yt-dlp 参数。
