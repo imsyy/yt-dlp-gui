@@ -59,3 +59,56 @@ test("discards a stale response after the image URL changes", async () => {
   expect(thumbnail.src.value).toBe(secondUrl);
   scope.stop();
 });
+
+test("switching off the proxy restores the direct URL and releases the old object URL", async () => {
+  settings.proxy = "socks5://127.0.0.1:1080";
+  vi.mocked(invoke).mockResolvedValue(new Uint8Array([1]).buffer);
+  const revoke = vi.spyOn(URL, "revokeObjectURL");
+  const scope = effectScope();
+  const thumbnail = scope.run(() => useThumbnail("https://example.com/cover.jpg"))!;
+  await vi.waitFor(() => expect(thumbnail.src.value).toMatch(/^blob:/));
+  const proxiedUrl = thumbnail.src.value;
+  reactive(settings).proxy = "";
+  expect(thumbnail.src.value).toBe("https://example.com/cover.jpg");
+  await nextTick();
+  expect(revoke).toHaveBeenCalledWith(proxiedUrl);
+  scope.stop();
+  revoke.mockRestore();
+});
+
+test("a failed proxied request can recover when the proxy changes", async () => {
+  settings.proxy = "socks5://127.0.0.1:1080";
+  vi.mocked(invoke).mockRejectedValueOnce(new Error("proxy unavailable"));
+  const scope = effectScope();
+  const thumbnail = scope.run(() => useThumbnail("https://example.com/cover.jpg"))!;
+  await vi.waitFor(() => expect(thumbnail.failed.value).toBe(true));
+  vi.mocked(invoke).mockResolvedValueOnce(new Uint8Array([1]).buffer);
+  reactive(settings).proxy = "socks5://127.0.0.1:1081";
+  await vi.waitFor(() => expect(thumbnail.src.value).toMatch(/^blob:/));
+  expect(thumbnail.failed.value).toBe(false);
+  expect(invoke).toHaveBeenLastCalledWith("fetch_thumbnail", {
+    url: "https://example.com/cover.jpg",
+    proxy: "socks5://127.0.0.1:1081",
+  });
+  scope.stop();
+});
+
+test("does not allocate an object URL for a response arriving after disposal", async () => {
+  settings.proxy = "socks5://127.0.0.1:1080";
+  let resolveRequest!: (bytes: ArrayBuffer) => void;
+  vi.mocked(invoke).mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        resolveRequest = resolve;
+      }),
+  );
+  const createUrl = vi.spyOn(URL, "createObjectURL");
+  const scope = effectScope();
+  scope.run(() => useThumbnail("https://example.com/cover.jpg"));
+  scope.stop();
+  resolveRequest(new Uint8Array([1]).buffer);
+  await nextTick();
+  await nextTick();
+  expect(createUrl).not.toHaveBeenCalled();
+  createUrl.mockRestore();
+});
