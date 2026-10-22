@@ -1,5 +1,6 @@
 {
   "settings": {
+    "toolNotRunnable": "Cannot run",
     "title": "Settings",
     "installed": "Installed",
     "notInstalled": "Not Installed",

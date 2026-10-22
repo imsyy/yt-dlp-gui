@@ -92,6 +92,7 @@ pub fn run() {
             commands::get_platform,
             commands::set_tool_sources,
             commands::set_js_runtime,
+            commands::get_js_runtime_status,
             commands::set_youtube_extractor_args,
             commands::get_ytdlp_status,
             commands::get_ytdlp_channel,

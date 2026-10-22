@@ -1,5 +1,6 @@
 {
   "settings": {
+    "toolNotRunnable": "Không thể chạy",
     "title": "Cài đặt",
     "installed": "Đã cài",
     "notInstalled": "Chưa cài",

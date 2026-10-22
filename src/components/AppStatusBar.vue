@@ -32,16 +32,17 @@ const statuses = reactive<Record<ToolKey, ToolStatus | null>>({
   ffmpeg: null,
 });
 
-const tools: { key: ToolKey; label: string; command: string; icon: Component }[] = [
+const runtimeLabels = { deno: "Deno", node: "Node.js", bun: "Bun", quickjs: "QuickJS" };
+const tools = computed<{ key: ToolKey; label: string; command: string; icon: Component }[]>(() => [
   { key: "yt-dlp", label: "yt-dlp", command: "get_ytdlp_status", icon: IconMdiDownload },
   {
     key: "deno",
-    label: "Deno",
-    command: "get_deno_status",
+    label: runtimeLabels[settingStore.jsRuntime],
+    command: "get_js_runtime_status",
     icon: IconMdiLanguageJavascript,
   },
   { key: "ffmpeg", label: "FFmpeg", command: "get_ffmpeg_status", icon: IconMdiMovieOpenCog },
-];
+]);
 
 const speedUnits: Record<string, number> = {
   "b/s": 1,
@@ -79,19 +80,24 @@ const totalSpeed = computed(() =>
   ),
 );
 
+let statusRefreshId = 0;
 const refreshStatuses = async () => {
+  const refreshId = ++statusRefreshId;
+  statuses.deno = null;
   await invoke("set_tool_sources", {
     ytdlp: settingStore.ytdlpSource,
     deno: settingStore.denoSource,
     ffmpeg: settingStore.ffmpegSource,
   });
   await invoke("set_ytdlp_channel", { channel: settingStore.ytdlpChannel }).catch(() => {});
+  await invoke("set_js_runtime", { runtime: settingStore.jsRuntime });
   await Promise.all(
-    tools.map(async (tool) => {
+    tools.value.map(async (tool) => {
       try {
-        statuses[tool.key] = await invoke<ToolStatus>(tool.command);
+        const status = await invoke<ToolStatus>(tool.command);
+        if (refreshId === statusRefreshId) statuses[tool.key] = status;
       } catch {
-        statuses[tool.key] = null;
+        if (refreshId === statusRefreshId) statuses[tool.key] = null;
       }
     }),
   );
@@ -106,23 +112,28 @@ const sourceText = (tool: ToolKey) => {
 };
 
 /** 工具图标是否亮点：未安装，或检测到可用更新 */
-const showToolDot = (tool: ToolKey) =>
-  statuses[tool]?.installed === false || statusStore.toolUpdates[tool]?.updateAvailable === true;
+const hasToolUpdate = (tool: ToolKey) =>
+  (tool !== "deno" || settingStore.jsRuntime === "deno") &&
+  statusStore.toolUpdates[tool]?.updateAvailable === true;
+const showToolDot = (tool: ToolKey) => statuses[tool]?.runnable === false || hasToolUpdate(tool);
 
 /** 亮点类型：未安装用 error 红点，有可用更新用 warning 黄点 */
 const toolDotType = (tool: ToolKey): "error" | "warning" =>
-  statuses[tool]?.installed === false ? "error" : "warning";
+  statuses[tool]?.runnable === false ? "error" : "warning";
 
 /** 弹窗标签：与设置页一致，有更新时显示"有更新" */
 const toolTagType = (tool: ToolKey) => {
-  if (statusStore.toolUpdates[tool]?.updateAvailable === true) return "warning";
-  return statuses[tool]?.installed ? "success" : "error";
+  if (statuses[tool]?.runnable === false) return "error";
+  if (hasToolUpdate(tool)) return "warning";
+  return statuses[tool]?.runnable ? "success" : "error";
 };
 
 const toolTagText = (tool: ToolKey) => {
   if (!statuses[tool]) return t("statusBar.checking");
-  if (statusStore.toolUpdates[tool]?.updateAvailable === true) return t("settings.updateAvailable");
-  return statuses[tool]?.installed ? t("settings.installed") : t("settings.notInstalled");
+  if (!statuses[tool]?.installed) return t("settings.notInstalled");
+  if (!statuses[tool]?.runnable) return t("settings.toolNotRunnable");
+  if (hasToolUpdate(tool)) return t("settings.updateAvailable");
+  return t("settings.installed");
 };
 
 /** 正在运行的工具任务，用于底栏全局指示 */
@@ -193,6 +204,7 @@ watch(
   () => [
     settingStore.ytdlpSource,
     settingStore.denoSource,
+    settingStore.jsRuntime,
     settingStore.ffmpegSource,
     settingStore.ytdlpChannel,
   ],
@@ -391,7 +403,7 @@ onUnmounted(() => {
               <n-text depth="3">{{ $t("settings.version") }}</n-text>
               <n-text>{{ statuses[tool.key]?.version || "—" }}</n-text>
             </div>
-            <div v-if="statusStore.toolUpdates[tool.key]?.updateAvailable" class="tool-field">
+            <div v-if="hasToolUpdate(tool.key)" class="tool-field">
               <n-text depth="3">{{ $t("settings.latestVersion") }}</n-text>
               <n-text type="warning">{{ statusStore.toolUpdates[tool.key]?.latestVersion }}</n-text>
             </div>

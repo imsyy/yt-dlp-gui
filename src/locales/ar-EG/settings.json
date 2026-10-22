@@ -1,5 +1,6 @@
 {
   "settings": {
+    "toolNotRunnable": "تعذر التشغيل",
     "title": "الإعدادات",
     "installed": "مثبت",
     "notInstalled": "غير مثبت",

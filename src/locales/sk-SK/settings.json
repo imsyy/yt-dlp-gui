@@ -1,5 +1,6 @@
 {
   "settings": {
+    "toolNotRunnable": "Nedá sa spustiť",
     "title": "Nastavenia",
     "installed": "Nainštalované",
     "notInstalled": "Nie je nainštalované",

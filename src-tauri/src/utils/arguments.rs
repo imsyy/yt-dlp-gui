@@ -2,9 +2,7 @@
 
 use tauri::AppHandle;
 
-use super::paths::{
-    find_system_executable, get_deno_path, get_ffmpeg_path, get_managed_deno_path, get_plugin_dir,
-};
+use super::paths::{get_ffmpeg_path, get_js_runtime_path, get_plugin_dir};
 use super::source::get_js_runtime;
 
 /// 将当前选择的 FFmpeg 目录显式交给 yt-dlp，解决 GUI 进程 PATH 不完整的问题。
@@ -38,19 +36,8 @@ pub fn build_plugin_args(app: &AppHandle) -> Vec<String> {
 
 /// Explicitly select one runtime so yt-dlp's default Deno cannot override it.
 pub fn build_js_runtime_args(app: &AppHandle) -> Vec<String> {
-    // “系统 Deno”可能在 GUI 进程继承的 PATH 中不可见。此时如果应用管理版本
-    // 已存在，仍用它完成 YouTube 的 JS challenge，避免静默退化为仅 360p 合并流。
     let runtime = get_js_runtime();
-    let path = if runtime == "deno" {
-        get_deno_path(app)
-            .ok()
-            .filter(|path| path.exists())
-            .or_else(|| get_managed_deno_path(app).ok().filter(|path| path.exists()))
-    } else if runtime == "quickjs" {
-        find_system_executable("qjs").or_else(|| find_system_executable("quickjs"))
-    } else {
-        find_system_executable(runtime)
-    };
+    let path = get_js_runtime_path(app).ok();
     runtime_args(runtime, path.as_deref())
 }
 

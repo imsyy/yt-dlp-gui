@@ -3,7 +3,7 @@
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 
-use super::source::{get_cli_tool_path, get_tool_source, ToolSource};
+use super::source::{get_cli_tool_path, get_js_runtime, get_tool_source, ToolSource};
 
 /// 构建应用数据目录下的可执行文件路径。
 fn get_managed_executable_path(app: &AppHandle, file_name: &str) -> Result<PathBuf, String> {
@@ -98,6 +98,59 @@ pub fn get_deno_path(app: &AppHandle) -> Result<PathBuf, String> {
         "deno",
         get_tool_source("deno")?,
     ))
+}
+
+/// Resolve the selected runtime exactly as it will be passed to yt-dlp.
+/// Deno follows its selected source/CLI override; the other runtimes use PATH.
+pub fn get_js_runtime_path(app: &AppHandle) -> Result<PathBuf, String> {
+    let runtime = get_js_runtime();
+    if runtime == "deno" {
+        return get_deno_path(app);
+    }
+    Ok(resolve_system_runtime_path(runtime, find_system_executable))
+}
+
+fn resolve_system_runtime_path(runtime: &str, find: impl Fn(&str) -> Option<PathBuf>) -> PathBuf {
+    if runtime == "quickjs" {
+        find("qjs")
+            .or_else(|| find("quickjs"))
+            .unwrap_or_else(|| PathBuf::from("qjs"))
+    } else {
+        find(runtime).unwrap_or_else(|| PathBuf::from(runtime))
+    }
+}
+
+#[cfg(test)]
+mod runtime_tests {
+    use super::resolve_system_runtime_path;
+    use std::path::PathBuf;
+
+    #[test]
+    fn system_runtimes_do_not_fall_back_to_deno() {
+        let node = PathBuf::from("node-location");
+        assert_eq!(
+            resolve_system_runtime_path("node", |name| (name == "node").then(|| node.clone())),
+            node
+        );
+        assert_eq!(
+            resolve_system_runtime_path("bun", |_| None),
+            PathBuf::from("bun")
+        );
+    }
+
+    #[test]
+    fn quickjs_resolves_both_common_executable_names() {
+        assert_eq!(
+            resolve_system_runtime_path("quickjs", |name| (name == "qjs")
+                .then(|| PathBuf::from("qjs-location"))),
+            PathBuf::from("qjs-location")
+        );
+        assert_eq!(
+            resolve_system_runtime_path("quickjs", |name| (name == "quickjs")
+                .then(|| PathBuf::from("quickjs-location"))),
+            PathBuf::from("quickjs-location")
+        );
+    }
 }
 
 pub fn get_managed_ffmpeg_dir(app: &AppHandle) -> Result<PathBuf, String> {

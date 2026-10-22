@@ -35,6 +35,8 @@ interface OperationState {
 const { t } = useI18n();
 const settingStore = useSettingStore();
 const statusStore = useStatusStore();
+const runtimeLabels = { deno: "Deno", node: "Node.js", bun: "Bun", quickjs: "QuickJS" };
+const isSystemRuntime = (tool: ToolKey) => tool === "deno" && settingStore.jsRuntime !== "deno";
 
 const tools = computed<ToolDefinition[]>(() => [
   {
@@ -47,9 +49,13 @@ const tools = computed<ToolDefinition[]>(() => [
   },
   {
     key: "deno",
-    title: t("settings.denoTitle"),
-    description: t("settings.denoDesc"),
-    statusCommand: "get_deno_status",
+    title:
+      settingStore.jsRuntime === "deno"
+        ? t("settings.denoTitle")
+        : runtimeLabels[settingStore.jsRuntime],
+    description:
+      settingStore.jsRuntime === "deno" ? t("settings.denoDesc") : t("settings.jsRuntimeHint"),
+    statusCommand: "get_js_runtime_status",
     installCommand: "download_deno",
     updateCommand: "update_deno",
   },
@@ -98,6 +104,7 @@ const ytdlpChannelOptions: { label: string; value: YtdlpChannel }[] = [
 ];
 
 const getSource = (tool: ToolKey): SelectableToolSource => {
+  if (isSystemRuntime(tool)) return "system";
   if (tool === "yt-dlp") return settingStore.ytdlpSource;
   if (tool === "deno") return settingStore.denoSource;
   return settingStore.ffmpegSource;
@@ -120,9 +127,11 @@ const applySources = () =>
 const applyYtdlpChannel = () => invoke("set_ytdlp_channel", { channel: settingStore.ytdlpChannel });
 
 const refreshTool = async (tool: ToolDefinition) => {
+  const runtime = settingStore.jsRuntime;
   checking[tool.key] = true;
   try {
-    statuses[tool.key] = await invoke<ToolStatus>(tool.statusCommand);
+    const status = await invoke<ToolStatus>(tool.statusCommand);
+    if (tool.key !== "deno" || runtime === settingStore.jsRuntime) statuses[tool.key] = status;
   } catch (e: unknown) {
     window.$message.error(t("settings.toolStatusFailed", { tool: tool.title, e }));
   } finally {
@@ -138,6 +147,7 @@ const refreshAll = async () => {
   try {
     await applyYtdlpChannel();
     await applySources();
+    await invoke("set_js_runtime", { runtime: settingStore.jsRuntime });
     await Promise.all(tools.value.map(refreshTool));
   } catch (e: unknown) {
     window.$message.error(t("settings.toolStatusFailed", { tool: t("settings.toolManager"), e }));
@@ -291,13 +301,16 @@ const handleChannelSwitchDownload = async (tool: ToolDefinition) => {
 const hasToolUpdate = (tool: ToolKey) => statusStore.toolUpdates[tool]?.updateAvailable === true;
 
 const toolTagType = (tool: ToolKey) => {
-  if (hasToolUpdate(tool)) return "warning";
-  return statuses[tool]?.installed ? "success" : "error";
+  if (statuses[tool]?.runnable === false) return "error";
+  if (!isSystemRuntime(tool) && hasToolUpdate(tool)) return "warning";
+  return statuses[tool]?.runnable ? "success" : "error";
 };
 
 const toolTagText = (tool: ToolKey) => {
-  if (hasToolUpdate(tool)) return t("settings.updateAvailable");
-  return statuses[tool]?.installed ? t("settings.installed") : t("settings.notInstalled");
+  if (!statuses[tool]?.installed) return t("settings.notInstalled");
+  if (!statuses[tool]?.runnable) return t("settings.toolNotRunnable");
+  if (!isSystemRuntime(tool) && hasToolUpdate(tool)) return t("settings.updateAvailable");
+  return t("settings.installed");
 };
 
 const stageLabel = (state: OperationState) => {
@@ -322,6 +335,14 @@ const copyToolValue = async (label: string, value: string) => {
 };
 
 let unlistenProgress: (() => void) | null = null;
+
+watch(
+  () => settingStore.jsRuntime,
+  () => {
+    statuses.deno = null;
+    void refreshAll();
+  },
+);
 
 onMounted(async () => {
   unlistenProgress = await listen<ToolOperationProgress>("tool-operation-progress", (event) => {
@@ -373,13 +394,18 @@ onUnmounted(() => unlistenProgress?.());
                 :disabled="
                   checking[tool.key] ||
                   operations[tool.key].active ||
+                  isSystemRuntime(tool.key) ||
                   statuses[tool.key]?.source === 'custom'
                 "
                 class="source-select"
                 @update:value="(value: SelectableToolSource) => handleSourceChange(tool, value)"
               />
               <n-button
-                v-if="!statuses[tool.key]?.installed && statuses[tool.key]?.source !== 'custom'"
+                v-if="
+                  !isSystemRuntime(tool.key) &&
+                  !statuses[tool.key]?.runnable &&
+                  statuses[tool.key]?.source !== 'custom'
+                "
                 type="primary"
                 strong
                 secondary
@@ -394,7 +420,7 @@ onUnmounted(() => unlistenProgress?.());
                 }}
               </n-button>
               <n-button
-                v-else-if="statuses[tool.key]?.canUpdate"
+                v-else-if="!isSystemRuntime(tool.key) && statuses[tool.key]?.canUpdate"
                 strong
                 secondary
                 size="small"
@@ -471,7 +497,7 @@ onUnmounted(() => unlistenProgress?.());
                   {{ $t("common.copy") }}
                 </n-tooltip>
                 <n-text
-                  v-if="hasToolUpdate(tool.key)"
+                  v-if="!isSystemRuntime(tool.key) && hasToolUpdate(tool.key)"
                   type="warning"
                   class="latest-hint"
                   :title="$t('settings.latestVersion')"
@@ -509,7 +535,7 @@ onUnmounted(() => unlistenProgress?.());
             </div>
           </dl>
 
-          <n-collapse-transition :show="operations[tool.key].active">
+          <n-collapse-transition :show="!isSystemRuntime(tool.key) && operations[tool.key].active">
             <div class="operation-progress" aria-live="polite">
               <div class="progress-label">
                 <n-text depth="2">{{ stageLabel(operations[tool.key]) }}</n-text>

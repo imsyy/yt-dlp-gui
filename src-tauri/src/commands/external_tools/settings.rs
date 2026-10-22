@@ -25,6 +25,21 @@ pub fn set_js_runtime(runtime: String) -> Result<(), String> {
     utils::set_js_runtime(&runtime)
 }
 
+#[tauri::command]
+pub async fn get_js_runtime_status(app: tauri::AppHandle) -> Result<super::ToolStatus, String> {
+    let runtime = utils::get_js_runtime();
+    if runtime == "deno" {
+        return super::get_deno_status(app).await;
+    }
+    let path = utils::get_js_runtime_path(&app)?;
+    let version_arg = if runtime == "quickjs" {
+        "--help"
+    } else {
+        "--version"
+    };
+    Ok(super::support::probe_tool_status(runtime, path, version_arg, "system", false, false).await)
+}
+
 /// 设置 YouTube 提取器参数（PO Token / visitor_data），用于绕过 YouTube 403 / 限流
 #[tauri::command]
 pub fn set_youtube_extractor_args(po_token: String, visitor_data: String) -> Result<(), String> {

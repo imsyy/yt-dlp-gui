@@ -1,5 +1,6 @@
 {
   "settings": {
+    "toolNotRunnable": "无法运行",
     "title": "设置",
     "installed": "已安装",
     "notInstalled": "未安装",
