@@ -156,7 +156,7 @@ export const useDownloadLauncher = () => {
       item.extractAudio || (item.downloadMode === "audio" && !item.selectedAudioFormat);
     const requiresFfmpeg =
       (item.downloadMode === "default" &&
-        Boolean(item.selectedVideoFormat || item.selectedAudioFormat) &&
+        Boolean(item.selectedVideoFormat) &&
         (item.isPlaylist || !videoHasAudio || Boolean(item.selectedAudioFormat)) &&
         !item.noMerge) ||
       extractAudio ||

@@ -14,12 +14,10 @@ pub(super) fn requires_ffmpeg(params: &DownloadParams) -> bool {
                 .audio_format
                 .as_deref()
                 .is_some_and(|format| !format.is_empty()))
-        && [
-            params.video_format.as_deref(),
-            params.audio_format.as_deref(),
-        ]
-        .iter()
-        .any(|format| format.is_some_and(|value| !value.is_empty())))
+        && params
+            .video_format
+            .as_deref()
+            .is_some_and(|format| !format.is_empty()))
         || requires_audio_extraction(params)
         || params.embed_subs
         || params.embed_thumbnail
@@ -144,7 +142,7 @@ fn build_format_selector_args(params: &DownloadParams) -> Vec<String> {
                     if params.no_merge {
                         vec!["-f".to_string(), a.replace('+', ",")]
                     } else {
-                        vec!["-f".to_string(), format!("bestvideo+{0}/{0}", a)]
+                        vec!["-f".to_string(), a.to_string()]
                     }
                 }
                 _ => Vec::new(),
@@ -575,6 +573,14 @@ mod ffmpeg_requirement_tests {
         value.audio_format = None;
         assert!(!requires_ffmpeg(&value));
         assert_eq!(build_format_args(&value), ["-f", "137"]);
+    }
+
+    #[test]
+    fn audio_only_sources_download_without_merging_or_requiring_ffmpeg() {
+        let mut value = params();
+        value.video_format = None;
+        assert!(!requires_ffmpeg(&value));
+        assert_eq!(build_format_args(&value), ["-f", "140"]);
     }
 
     #[test]

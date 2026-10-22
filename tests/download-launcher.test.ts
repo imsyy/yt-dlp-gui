@@ -127,3 +127,14 @@ test("downloads an existing combined file without requiring FFmpeg", async () =>
     }),
   );
 });
+
+test("downloads audio-only sources in default mode without requiring FFmpeg", async () => {
+  const item = createItem({ selectedAudioFormat: "audio-only" });
+  expect(await useDownloadLauncher().launchDownload(item)).toBe("started");
+  expect(invoke).not.toHaveBeenCalledWith("get_ffmpeg_status");
+  expect(addTask).toHaveBeenCalledWith(
+    expect.objectContaining({
+      params: expect.objectContaining({ videoFormat: null, audioFormat: "audio-only" }),
+    }),
+  );
+});
