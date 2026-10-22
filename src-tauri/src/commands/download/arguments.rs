@@ -201,7 +201,7 @@ pub(super) fn build_download_args(
     // 用户自定义 yt-dlp 附加参数（如 --sleep-requests、--sleep-interval 等，解决 Issue #50）
     if let Some(ref custom) = params.custom_args {
         if !custom.trim().is_empty() {
-            let split_args = utils::split_command_line_args(custom);
+            let split_args = utils::split_command_line_args(custom)?;
             for arg in split_args {
                 args.push(arg);
             }

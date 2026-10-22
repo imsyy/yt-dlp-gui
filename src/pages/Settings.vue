@@ -244,6 +244,15 @@ watch(
       </n-flex>
     </n-card>
 
+    <n-card :title="$t('detail.customArgs')" size="small" class="section-card">
+      <n-input
+        v-model:value="settingStore.defaultCustomArgs"
+        :placeholder="$t('detail.customArgsPlaceholder')"
+        type="textarea"
+        :autosize="{ minRows: 2, maxRows: 5 }"
+      />
+    </n-card>
+
     <n-card :title="$t('settings.about')" size="small" class="section-card">
       <template #header-extra>
         <n-button

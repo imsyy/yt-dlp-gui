@@ -68,7 +68,7 @@ export const useVideoStore = defineStore("video", () => {
    */
   const fetchVideoInfo = async (
     targetUrl: string,
-    options: { silent?: boolean } = {},
+    options: { silent?: boolean; customArgs?: string } = {},
   ): Promise<FetchedVideoData | null> => {
     const settingStore = useSettingStore();
     fetching.value = true;
@@ -79,6 +79,7 @@ export const useVideoStore = defineStore("video", () => {
         cookieFile,
         cookieBrowser,
         proxy: settingStore.proxy || null,
+        customArgs: options.customArgs ?? settingStore.defaultCustomArgs,
       });
       let videoInfo: VideoInfo;
       let isPlaylist = false;

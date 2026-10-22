@@ -110,7 +110,7 @@ const handleBackToHome = () => {
 const handleRefresh = async () => {
   const item = activeItem.value;
   if (!item) return;
-  const data = await videoStore.fetchVideoInfo(item.url);
+  const data = await videoStore.fetchVideoInfo(item.url, { customArgs: item.customArgs });
   if (data) {
     pendingStore.refresh(item.id, data);
     window.$message.success(t("detail.refreshSuccess"));

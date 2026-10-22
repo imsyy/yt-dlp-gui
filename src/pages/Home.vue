@@ -283,7 +283,12 @@ const handleSearch = async (): Promise<void> => {
       ? await createPreparingTask(trimmedUrl)
       : undefined;
   if (preparingTaskId) await router.push({ name: "downloads" });
-  const fetchedData = await videoStore.fetchVideoInfo(trimmedUrl);
+  const fetchedData = await videoStore.fetchVideoInfo(trimmedUrl, {
+    customArgs:
+      settingStore.homeDownloadBehavior === "quick"
+        ? settingStore.quickCustomArgs || settingStore.defaultCustomArgs
+        : settingStore.defaultCustomArgs,
+  });
   if (fetchedData) {
     historyStore.add(trimmedUrl, fetchedData.videoInfo.title);
     const hasSubmitted = await handleParsedData(fetchedData, preparingTaskId);
@@ -324,7 +329,13 @@ const handleBatchSearch = async (): Promise<void> => {
 
   try {
     for (const targetUrl of targetUrls) {
-      const fetchedData = await videoStore.fetchVideoInfo(targetUrl, { silent: true });
+      const fetchedData = await videoStore.fetchVideoInfo(targetUrl, {
+        silent: true,
+        customArgs:
+          settingStore.homeDownloadBehavior === "quick"
+            ? settingStore.quickCustomArgs || settingStore.defaultCustomArgs
+            : settingStore.defaultCustomArgs,
+      });
       if (fetchedData) {
         historyStore.add(targetUrl, fetchedData.videoInfo.title);
         if (await handleParsedData(fetchedData, preparingTasks.get(targetUrl))) {

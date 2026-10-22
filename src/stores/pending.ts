@@ -53,7 +53,9 @@ export const createPendingItem = (data: FetchedVideoData, quick = false): Pendin
     remuxFormat: quick ? settingStore.quickRemuxFormat : settingStore.defaultRemuxFormat,
     limitRate: quick ? settingStore.quickLimitRate : settingStore.defaultLimitRate,
     ffmpegArgs: quick ? settingStore.quickFfmpegArgs : settingStore.defaultFfmpegArgs,
-    customArgs: quick ? settingStore.quickCustomArgs : settingStore.defaultCustomArgs,
+    customArgs: quick
+      ? settingStore.quickCustomArgs || settingStore.defaultCustomArgs
+      : settingStore.defaultCustomArgs,
     selectedSubtitles: [],
     liveFromStart: data.videoInfo.is_live === true || data.videoInfo.live_status === "is_live",
   };

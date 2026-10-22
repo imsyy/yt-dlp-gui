@@ -51,19 +51,22 @@ pub fn build_js_runtime_args(app: &AppHandle) -> Vec<String> {
 }
 
 /// 解析用户自定义命令行参数字符串为独立的参数列表（支持单双引号与转义）
-pub fn split_command_line_args(input: &str) -> Vec<String> {
+pub fn split_command_line_args(input: &str) -> Result<Vec<String>, String> {
     let mut args = Vec::new();
     let mut current = String::new();
     let mut in_single_quote = false;
     let mut in_double_quote = false;
+    let mut started = false;
     let mut chars = input.chars().peekable();
 
     while let Some(c) = chars.next() {
         match c {
             '\'' if !in_double_quote => {
+                started = true;
                 in_single_quote = !in_single_quote;
             }
             '"' if !in_single_quote => {
+                started = true;
                 in_double_quote = !in_double_quote;
             }
             '\\' if in_double_quote => {
@@ -76,19 +79,24 @@ pub fn split_command_line_args(input: &str) -> Vec<String> {
                 current.push('\\');
             }
             c if c.is_whitespace() && !in_single_quote && !in_double_quote => {
-                if !current.is_empty() {
+                if started {
                     args.push(std::mem::take(&mut current));
+                    started = false;
                 }
             }
             c => {
+                started = true;
                 current.push(c);
             }
         }
     }
-    if !current.is_empty() {
+    if in_single_quote || in_double_quote {
+        return Err("Unclosed quote in custom yt-dlp arguments".to_string());
+    }
+    if started {
         args.push(current);
     }
-    args
+    Ok(args)
 }
 
 #[cfg(test)]
@@ -98,7 +106,7 @@ mod tests {
     #[test]
     fn test_split_command_line_args() {
         let input = r#"--sleep-requests 2 --sleep-interval 10 --user-agent "Mozilla/5.0 (Windows NT 10.0)""#;
-        let args = split_command_line_args(input);
+        let args = split_command_line_args(input).unwrap();
         assert_eq!(
             args,
             vec![
@@ -110,5 +118,31 @@ mod tests {
                 "Mozilla/5.0 (Windows NT 10.0)"
             ]
         );
+    }
+
+    #[test]
+    fn preserves_empty_values_and_windows_paths() {
+        assert_eq!(
+            split_command_line_args(
+                r#"--proxy "" -P "temp:C:\My Downloads" --replace-in-metadata title 'ad' ''"#
+            )
+            .unwrap(),
+            [
+                "--proxy",
+                "",
+                "-P",
+                r"temp:C:\My Downloads",
+                "--replace-in-metadata",
+                "title",
+                "ad",
+                ""
+            ]
+        );
+    }
+
+    #[test]
+    fn rejects_unclosed_quotes_instead_of_silently_changing_arguments() {
+        assert!(split_command_line_args("--proxy \"unfinished").is_err());
+        assert!(split_command_line_args("--user-agent 'unfinished").is_err());
     }
 }

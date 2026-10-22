@@ -93,11 +93,14 @@ pub async fn fetch_video_info(
     cookie_file: Option<String>,
     cookie_browser: Option<String>,
     proxy: Option<String>,
+    custom_args: Option<String>,
 ) -> Result<Value, String> {
+    let custom_args = utils::split_command_line_args(custom_args.as_deref().unwrap_or_default())?;
+    let extra_args: Vec<&str> = custom_args.iter().map(String::as_str).collect();
     support::run_ytdlp_json(
         &app,
         &url,
-        &[],
+        &extra_args,
         cookie_file.as_deref(),
         cookie_browser.as_deref(),
         proxy.as_deref(),
