@@ -53,7 +53,8 @@
     "cancelDownload": "Zrušiť sťahovanie",
     "confirmCancelDownload": "Naozaj chcete zrušiť toto sťahovanie?",
     "alsoDeleteResidualFiles": "Vymazať aj zvyšné dočasné súbory (.part atď.)",
-    "confirmRetryAllFailed": "Naozaj chcete znova spustiť všetky neúspešné úlohy?"
+    "confirmRetryAllFailed": "Naozaj chcete znova spustiť všetky neúspešné úlohy?",
+    "downloadErrors": "yt-dlp ohlásil {count} chýb. Najnovšie podrobnosti:"
   },
   "pending": {
     "empty": "Žiadne čakajúce položky",

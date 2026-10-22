@@ -53,7 +53,8 @@
     "cancelDownload": "다운로드 취소",
     "confirmCancelDownload": "이 다운로드를 취소하시겠습니까?",
     "alsoDeleteResidualFiles": "남은 임시 파일(.part 등)도 함께 삭제",
-    "confirmRetryAllFailed": "실패한 모든 작업을 다시 시도하시겠습니까?"
+    "confirmRetryAllFailed": "실패한 모든 작업을 다시 시도하시겠습니까?",
+    "downloadErrors": "yt-dlp에서 오류 {count}개가 발생했습니다. 최근 세부 정보:"
   },
   "pending": {
     "empty": "대기 중인 항목이 없습니다",

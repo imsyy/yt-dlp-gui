@@ -53,7 +53,8 @@
     "confirmClearFailed": "失敗したタスクをすべて消去しますか？",
     "errorMessage": "エラー詳細",
     "confirmRetry": "このダウンロードタスクを再試行しますか？",
-    "confirmRetryAllFailed": "失敗したすべてのタスクを再試行しますか？"
+    "confirmRetryAllFailed": "失敗したすべてのタスクを再試行しますか？",
+    "downloadErrors": "yt-dlp が {count} 件のエラーを報告しました。最新の詳細："
   },
   "pending": {
     "empty": "保留中の項目はありません",

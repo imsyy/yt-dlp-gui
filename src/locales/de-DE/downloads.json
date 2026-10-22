@@ -53,7 +53,8 @@
     "cancelDownload": "Download abbrechen",
     "confirmCancelDownload": "Möchten Sie diesen Download wirklich abbrechen?",
     "alsoDeleteResidualFiles": "Verbleibende temporäre Dateien (.part usw.) ebenfalls löschen",
-    "confirmRetryAllFailed": "Möchten Sie wirklich alle fehlgeschlagenen Aufgaben erneut versuchen?"
+    "confirmRetryAllFailed": "Möchten Sie wirklich alle fehlgeschlagenen Aufgaben erneut versuchen?",
+    "downloadErrors": "yt-dlp hat {count} Fehler gemeldet. Letzte Details:"
   },
   "pending": {
     "empty": "Keine ausstehenden Elemente",

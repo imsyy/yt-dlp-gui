@@ -30,7 +30,7 @@ fn process_output_line(
     if line.starts_with("ERROR:") {
         if let Ok(mut map) = processes.lock() {
             if let Some(info) = map.get_mut(task_id) {
-                info.last_error = Some(line.to_string());
+                info.errors.record(line);
             }
         }
     }
@@ -145,7 +145,7 @@ pub(super) fn spawn_output_reader<R: tokio::io::AsyncRead + Unpin + Send + 'stat
     task_id: String,
     processes: Arc<Mutex<HashMap<String, DownloadProcessInfo>>>,
     reader: R,
-) {
+) -> tokio::task::JoinHandle<()> {
     tokio::spawn(async move {
         use tokio::io::AsyncReadExt;
         let mut buf_reader = tokio::io::BufReader::new(reader);
@@ -181,7 +181,7 @@ pub(super) fn spawn_output_reader<R: tokio::io::AsyncRead + Unpin + Send + 'stat
                 Err(_) => break,
             }
         }
-    });
+    })
 }
 
 /// 启动异步任务等待子进程完成并发送结果事件
@@ -190,9 +190,15 @@ pub(super) fn spawn_completion_handler(
     task_id: String,
     processes: Arc<Mutex<HashMap<String, DownloadProcessInfo>>>,
     mut child: tokio::process::Child,
+    output_readers: [tokio::task::JoinHandle<()>; 2],
 ) {
     tokio::spawn(async move {
         let status = child.wait().await;
+        // The child can exit before buffered stderr/stdout has been consumed.
+        // Drain both pipes before reading its final error or removing the task.
+        for reader in output_readers {
+            let _ = reader.await;
+        }
 
         let was_cancelled = processes
             .lock()
@@ -212,7 +218,9 @@ pub(super) fn spawn_completion_handler(
         } else if success {
             let (output_file, _) = resolve_output_file(&processes, &task_id);
             let file_size_bytes = if !output_file.is_empty() {
-                std::fs::metadata(&output_file).ok().map(|metadata| metadata.len())
+                std::fs::metadata(&output_file)
+                    .ok()
+                    .map(|metadata| metadata.len())
             } else {
                 None
             };
@@ -241,7 +249,7 @@ pub(super) fn spawn_completion_handler(
             let error_msg = processes
                 .lock()
                 .ok()
-                .and_then(|map| map.get(&task_id).and_then(|info| info.last_error.clone()))
+                .and_then(|map| map.get(&task_id).and_then(|info| info.errors.summary()))
                 .unwrap_or_else(|| {
                     status
                         .as_ref()

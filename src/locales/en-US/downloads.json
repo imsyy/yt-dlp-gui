@@ -53,7 +53,8 @@
     "clearFailed": "Clear Failed",
     "confirmClearFailed": "Are you sure you want to clear all failed tasks?",
     "errorMessage": "Error Details",
-    "confirmRetry": "Are you sure you want to retry this download task?"
+    "confirmRetry": "Are you sure you want to retry this download task?",
+    "downloadErrors": "yt-dlp reported {count} errors. Latest details:"
   },
   "pending": {
     "empty": "No pending items",

@@ -53,7 +53,8 @@
     "cancelDownload": "Отменить загрузку",
     "confirmCancelDownload": "Вы уверены, что хотите отменить эту загрузку?",
     "alsoDeleteResidualFiles": "Также удалить остаточные временные файлы (.part и т.д.)",
-    "confirmRetryAllFailed": "Повторить все неудачные задачи?"
+    "confirmRetryAllFailed": "Повторить все неудачные задачи?",
+    "downloadErrors": "yt-dlp сообщил об ошибках: {count}. Последние сведения:"
   },
   "pending": {
     "empty": "Нет ожидающих элементов",

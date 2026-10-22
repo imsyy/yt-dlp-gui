@@ -545,6 +545,7 @@ const handleRemove = () => {
 }
 
 .error-popover-body {
+  white-space: pre-wrap;
   font-size: 12px;
   line-height: 1.5;
   word-break: break-all;

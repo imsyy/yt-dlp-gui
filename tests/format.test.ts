@@ -5,7 +5,17 @@ vi.mock("@/locales", () => ({
   default: { global: { t: (key: string) => key, locale: { value: "en-US" } } },
 }));
 
-import { formatDateYMD, formatDuration } from "@/utils/format";
+import { formatDateYMD, formatDuration, formatError } from "@/utils/format";
+
+it("preserves per-entry details instead of replacing a playlist error summary with one generic error", () => {
+  expect(
+    formatError(
+      "err_download_errors:2\nERROR: first: Video unavailable\nERROR: second: HTTP Error 403",
+    ),
+  ).toBe(
+    "downloads.downloadErrors\nERROR: first: Video unavailable\nERROR: second: HTTP Error 403",
+  );
+});
 
 describe("formatDuration", () => {
   it("formats m:ss without hour padding", () => {

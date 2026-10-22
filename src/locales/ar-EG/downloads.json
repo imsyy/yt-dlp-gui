@@ -53,7 +53,8 @@
     "cancelDownload": "إلغاء التنزيل",
     "confirmCancelDownload": "هل أنت متأكد من إلغاء هذا التنزيل؟",
     "alsoDeleteResidualFiles": "حذف الملفات المؤقتة المتبقية أيضًا (.part إلخ)",
-    "confirmRetryAllFailed": "هل تريد إعادة محاولة جميع المهام الفاشلة؟"
+    "confirmRetryAllFailed": "هل تريد إعادة محاولة جميع المهام الفاشلة؟",
+    "downloadErrors": "أبلغ yt-dlp عن {count} أخطاء. أحدث التفاصيل:"
   },
   "pending": {
     "empty": "لا توجد عناصر معلقة",

@@ -53,7 +53,8 @@
     "clearFailed": "清空失败",
     "confirmClearFailed": "确定要清空所有下载失败的任务吗？",
     "errorMessage": "错误详情",
-    "confirmRetry": "确定要重新尝试下载该任务吗？"
+    "confirmRetry": "确定要重新尝试下载该任务吗？",
+    "downloadErrors": "yt-dlp 共报告 {count} 条错误，最近的错误详情："
   },
   "pending": {
     "empty": "暂无待下载项目",

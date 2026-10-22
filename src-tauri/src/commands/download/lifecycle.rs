@@ -89,7 +89,7 @@ pub async fn start_download(
                 download_dir: params.download_dir.clone(),
                 filepath_file: Some(filepath_file),
                 clip_duration,
-                last_error: None,
+                errors: Default::default(),
             },
         );
     }
@@ -102,12 +102,20 @@ pub async fn start_download(
     let stderr = child.stderr.take().ok_or("err_capture_stderr")?;
 
     // 读取 stdout（原始字节，lossy 解码以应对 Windows GBK 编码）
-    spawn_output_reader(app.clone(), task_id.clone(), processes.clone(), stdout);
+    let stdout_reader =
+        spawn_output_reader(app.clone(), task_id.clone(), processes.clone(), stdout);
     // 读取 stderr
-    spawn_output_reader(app.clone(), task_id.clone(), processes.clone(), stderr);
+    let stderr_reader =
+        spawn_output_reader(app.clone(), task_id.clone(), processes.clone(), stderr);
 
     // 等待进程完成并处理结果
-    spawn_completion_handler(app.clone(), task_id, processes.clone(), child);
+    spawn_completion_handler(
+        app.clone(),
+        task_id,
+        processes.clone(),
+        child,
+        [stdout_reader, stderr_reader],
+    );
 
     Ok(())
 }
