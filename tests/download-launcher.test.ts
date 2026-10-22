@@ -3,9 +3,10 @@ import { invoke } from "@tauri-apps/api/core";
 import { useDownloadLauncher } from "@/composables/useDownloadLauncher";
 import type { PendingItem } from "@/types";
 
-const { status, addTask } = vi.hoisted(() => ({
+const { status, addTask, tasks } = vi.hoisted(() => ({
   status: { showFfmpegSetupModal: false },
   addTask: vi.fn(),
+  tasks: [] as { id: string; status: string; error?: string }[],
 }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn() }));
 vi.mock("vue-i18n", () => ({ useI18n: () => ({ t: (key: string) => key }) }));
@@ -19,7 +20,7 @@ vi.mock("@/stores/setting", () => ({
 }));
 vi.mock("@/stores/status", () => ({ useStatusStore: () => status }));
 vi.mock("@/stores/download", () => ({
-  useDownloadStore: () => ({ addTask, canStartNow: () => true }),
+  useDownloadStore: () => ({ addTask, tasks }),
 }));
 vi.mock("@/stores/video", () => ({
   useVideoStore: () => ({ getCookieArgs: async () => ({ cookieFile: null, cookieBrowser: null }) }),
@@ -27,6 +28,9 @@ vi.mock("@/stores/video", () => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
+  addTask.mockReset();
+  addTask.mockResolvedValue("started");
+  tasks.splice(0);
   status.showFfmpegSetupModal = false;
   vi.mocked(invoke).mockResolvedValue({ installed: true, runnable: false });
 });
@@ -34,6 +38,7 @@ beforeEach(() => {
 const processingOptions: Partial<PendingItem>[] = [
   { downloadMode: "default", selectedVideoFormat: "137", selectedAudioFormat: "140" },
   { downloadMode: "default", selectedVideoFormat: "137" },
+  { downloadMode: "default", selectedAudioFormat: "en+es" },
   { downloadMode: "audio", extractAudio: true },
   { downloadMode: "video", startTime: new Date(2026, 0, 1, 0, 0, 10).getTime() },
   { downloadMode: "video", remuxFormat: "mkv" },
@@ -120,11 +125,12 @@ test("downloads an existing combined file without requiring FFmpeg", async () =>
   });
   expect(await useDownloadLauncher().launchDownload(item)).toBe("started");
   expect(invoke).not.toHaveBeenCalledWith("get_ffmpeg_status");
-  expect(invoke).toHaveBeenCalledWith(
-    "start_download",
+  expect(addTask).toHaveBeenCalledWith(
     expect.objectContaining({
+      status: "queued",
       params: expect.objectContaining({ videoHasAudio: true }),
     }),
+    undefined,
   );
 });
 
@@ -136,5 +142,49 @@ test("downloads audio-only sources in default mode without requiring FFmpeg", as
     expect.objectContaining({
       params: expect.objectContaining({ videoFormat: null, audioFormat: "audio-only" }),
     }),
+    undefined,
   );
+});
+
+test("separate audio tracks bypass FFmpeg when merging is disabled", async () => {
+  expect(
+    await useDownloadLauncher().launchDownload(
+      createItem({ selectedAudioFormat: "en+es", noMerge: true }),
+    ),
+  ).toBe("started");
+  expect(invoke).not.toHaveBeenCalledWith("get_ffmpeg_status");
+});
+
+test("the launcher delegates queued submissions and never starts a second process itself", async () => {
+  addTask.mockResolvedValue("queued");
+  const result = await useDownloadLauncher().launchDownload(createItem());
+  expect(result).toBe("queued");
+  expect(addTask).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({ status: "queued" }),
+    undefined,
+  );
+  expect(invoke).not.toHaveBeenCalledWith("start_download", expect.anything());
+});
+
+test("preparing task replacement uses the same persistence and scheduling entry", async () => {
+  expect(await useDownloadLauncher().launchDownload(createItem(), "preparing")).toBe("started");
+  expect(addTask).toHaveBeenCalledWith(expect.objectContaining({ status: "queued" }), "preparing");
+  expect(invoke).not.toHaveBeenCalledWith("db_delete_task", expect.anything());
+});
+
+test("a store startup failure remains available for diagnostics and is shown to the user", async () => {
+  const message = { error: vi.fn() };
+  vi.stubGlobal("window", { $message: message });
+  addTask.mockImplementation(async (task: { id: string }) => {
+    tasks.push({ id: task.id, status: "error", error: "cannot start download" });
+    return "failed";
+  });
+  try {
+    expect(await useDownloadLauncher().launchDownload(createItem())).toBe("failed");
+    expect(message.error).toHaveBeenCalledWith("cannot start download");
+    expect(tasks).toHaveLength(1);
+    expect(invoke).not.toHaveBeenCalledWith("db_delete_task", expect.anything());
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });

@@ -147,7 +147,6 @@ pub fn run() {
             db::tasks::db_upsert_tasks_batch,
             db::tasks::db_delete_task,
             db::tasks::db_delete_tasks,
-            db::tasks::db_clear_completed_tasks,
             db::history::db_get_history,
             db::history::db_add_history,
             db::history::db_add_history_batch,

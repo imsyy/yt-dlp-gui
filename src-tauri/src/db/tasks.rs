@@ -274,15 +274,6 @@ pub fn db_delete_tasks(state: State<'_, DatabaseState>, ids: Vec<String>) -> Res
     Ok(())
 }
 
-/// 清除所有已完成的任务
-#[tauri::command]
-pub fn db_clear_completed_tasks(state: State<'_, DatabaseState>) -> Result<(), String> {
-    let conn = state.conn.lock().map_err(|e| e.to_string())?;
-    conn.execute("DELETE FROM tasks WHERE status = 'completed'", [])
-        .map_err(|e| e.to_string())?;
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

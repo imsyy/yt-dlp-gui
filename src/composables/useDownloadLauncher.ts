@@ -156,7 +156,7 @@ export const useDownloadLauncher = () => {
       item.extractAudio || (item.downloadMode === "audio" && !item.selectedAudioFormat);
     const requiresFfmpeg =
       (item.downloadMode === "default" &&
-        Boolean(item.selectedVideoFormat) &&
+        (Boolean(item.selectedVideoFormat) || item.selectedAudioFormat.includes("+")) &&
         (item.isPlaylist || !videoHasAudio || Boolean(item.selectedAudioFormat)) &&
         !item.noMerge) ||
       extractAudio ||
@@ -235,15 +235,13 @@ export const useDownloadLauncher = () => {
       liveFromStart: item.liveFromStart,
       ...playlistOptions,
     };
-    const shouldQueue = !downloadStore.canStartNow();
-
     const task: DownloadTask = {
       id: taskId,
       url: item.url,
       title: item.videoInfo.title || t("detail.unknownVideo"),
       thumbnail: item.videoInfo.thumbnail || "",
       formatLabel: buildFormatLabel(item),
-      status: shouldQueue ? "queued" : "downloading",
+      status: "queued",
       percent: 0,
       speed: "",
       eta: "",
@@ -254,49 +252,14 @@ export const useDownloadLauncher = () => {
       params,
     };
 
-    if (preparingTaskId) {
-      const preparingTask = downloadStore.tasks.find(
-        (candidate) => candidate.id === preparingTaskId,
-      );
-      if (!preparingTask || preparingTask.status !== "preparing") return "failed";
-      // preparing 行占位用的 prepare_xxx id 即将被 dl_xxx 覆盖，先删旧行避免孤儿记录
-      const stalePreparingId = preparingTask.id;
-      Object.assign(preparingTask, task);
-      try {
-        await invoke("db_delete_task", { id: stalePreparingId });
-      } catch {
-        // 旧行可能已不存在，继续
+    const result = await downloadStore.addTask(task, preparingTaskId);
+    if (result === "failed") {
+      const failedTask = downloadStore.tasks.find((candidate) => candidate.id === taskId);
+      if (failedTask?.status === "error") {
+        window.$message.error(failedTask.error || t("detail.startDownloadFailed"));
       }
-      // 先落库再起进程，保证后端的状态更新写到已存在的行上
-      await downloadStore.updateTask(preparingTask);
-    } else {
-      await downloadStore.addTask(task);
     }
-
-    if (shouldQueue) return "queued";
-
-    try {
-      await invoke("start_download", { params: { id: taskId, ...params } });
-      return "started";
-    } catch (error: unknown) {
-      window.$message.error(
-        error instanceof Error ? error.message : String(error) || t("detail.startDownloadFailed"),
-      );
-      if (preparingTaskId) {
-        const failedTask = downloadStore.tasks.find((candidate) => candidate.id === taskId);
-        if (failedTask) {
-          failedTask.status = "error";
-          failedTask.error =
-            error instanceof Error
-              ? error.message
-              : String(error) || t("detail.startDownloadFailed");
-          await downloadStore.updateTask(failedTask);
-        }
-      } else {
-        await downloadStore.removeTask(taskId);
-      }
-      return "failed";
-    }
+    return result === "preparing" ? "failed" : result;
   };
 
   return { createPreparingTask, markPreparationError, launchDownload };
