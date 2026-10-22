@@ -14,10 +14,14 @@ pub(super) fn requires_ffmpeg(params: &DownloadParams) -> bool {
                 .audio_format
                 .as_deref()
                 .is_some_and(|format| !format.is_empty()))
-        && params
+        && (params
             .video_format
             .as_deref()
-            .is_some_and(|format| !format.is_empty()))
+            .is_some_and(|format| !format.is_empty())
+            || params
+                .audio_format
+                .as_deref()
+                .is_some_and(|format| format.contains('+'))))
         || requires_audio_extraction(params)
         || params.embed_subs
         || params.embed_thumbnail
@@ -53,11 +57,10 @@ fn build_format_args(params: &DownloadParams) -> Vec<String> {
     // or playlist may not provide the first entry's chosen format IDs.
     if !params.no_playlist && params.playlist_items.is_some() && args.len() == 2 {
         let fallback = match params.download_mode.as_str() {
+            _ if params.extract_audio => "bestaudio/best",
             "audio" => "bestaudio",
             "video" => "bestvideo/best",
-            _ if params.no_merge && params.video_format.as_deref().is_none_or(str::is_empty) => {
-                "bestaudio/best"
-            }
+            _ if params.video_format.as_deref().is_none_or(str::is_empty) => "bestaudio/best",
             _ if params.no_merge => "bestvideo/best",
             _ => "bestvideo*+bestaudio/best",
         };
@@ -84,8 +87,9 @@ fn build_format_args(params: &DownloadParams) -> Vec<String> {
             args[1] = format!("{}/{}", args[1], fallback);
         }
     }
-    if params.download_mode != "video"
+    if params.download_mode == "default"
         && !params.no_merge
+        && !params.extract_audio
         && params.audio_format.as_deref().is_some_and(|value| {
             !value.is_empty() && (value.contains('+') || params.video_has_audio)
         })
@@ -96,6 +100,17 @@ fn build_format_args(params: &DownloadParams) -> Vec<String> {
 }
 
 fn build_format_selector_args(params: &DownloadParams) -> Vec<String> {
+    // Audio extraction should fetch the chosen audio directly when available.
+    // Downloading and merging video first wastes bandwidth and can make FFmpeg
+    // extract the video's embedded soundtrack instead of the selected language.
+    if params.extract_audio {
+        let audio = params
+            .audio_format
+            .as_deref()
+            .and_then(|value| value.split('+').find(|format| !format.is_empty()))
+            .unwrap_or("bestaudio/best");
+        return vec!["-f".to_string(), audio.to_string()];
+    }
     match params.download_mode.as_str() {
         "video" => {
             if let Some(ref vf) = params.video_format {
@@ -108,7 +123,10 @@ fn build_format_selector_args(params: &DownloadParams) -> Vec<String> {
         "audio" => {
             if let Some(ref af) = params.audio_format {
                 if !af.is_empty() {
-                    return vec!["-f".to_string(), af.clone()];
+                    return vec![
+                        "-f".to_string(),
+                        af.split('+').next().unwrap_or(af).to_string(),
+                    ];
                 }
             }
             vec!["-f".to_string(), "bestaudio/best".to_string()]
@@ -580,6 +598,33 @@ mod ffmpeg_requirement_tests {
         value.video_format = None;
         assert!(!requires_ffmpeg(&value));
         assert_eq!(build_format_args(&value), ["-f", "140"]);
+        value.playlist_items = Some("1,2".into());
+        assert_eq!(build_format_args(&value), ["-f", "140/bestaudio/best"]);
+        value.playlist_items = None;
+        value.audio_format = Some("140-en+140-es".into());
+        assert!(requires_ffmpeg(&value));
+        assert_eq!(
+            build_format_args(&value),
+            ["-f", "140-en+140-es", "--audio-multistreams"]
+        );
+        value.download_mode = "audio".into();
+        assert!(!requires_ffmpeg(&value));
+        assert_eq!(build_format_args(&value), ["-f", "140-en"]);
+    }
+
+    #[test]
+    fn extraction_downloads_the_selected_audio_without_fetching_video() {
+        let mut value = params();
+        value.video_has_audio = true;
+        value.extract_audio = true;
+        assert_eq!(build_format_args(&value), ["-f", "140"]);
+        value.audio_format = Some("140-en+140-es".into());
+        assert_eq!(build_format_args(&value), ["-f", "140-en"]);
+        value.audio_format = None;
+        assert_eq!(build_format_args(&value), ["-f", "bestaudio/best"]);
+        assert!(requires_ffmpeg(&value));
+        value.download_mode = "video".into();
+        assert_eq!(build_format_args(&value), ["-f", "bestaudio/best"]);
     }
 
     #[test]
