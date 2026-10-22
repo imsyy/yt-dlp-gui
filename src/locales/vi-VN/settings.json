@@ -111,7 +111,9 @@
     "showTrayIcon": "Hiển thị biểu tượng khay hệ thống",
     "showHomeTips": "Hiển thị mẹo trên màn hình chính",
     "playlistSubfolders": "Tải mỗi danh sách phát vào thư mục riêng",
-    "startMaximized": "Khởi động với cửa sổ phóng to"
+    "startMaximized": "Khởi động với cửa sổ phóng to",
+    "jsRuntime": "Môi trường JavaScript",
+    "jsRuntimeHint": "Có thể cài Deno trong ứng dụng. Các môi trường khác dùng PATH hệ thống."
   },
   "cookie": {
     "settings": "Cài đặt cookie",

@@ -111,7 +111,9 @@
     "showTrayIcon": "Zobraziť ikonu v systémovej lište",
     "showHomeTips": "Zobraziť tipy na úvodnej obrazovke",
     "playlistSubfolders": "Stiahnuť každý zoznam do vlastného priečinka",
-    "startMaximized": "Spustiť s maximalizovaným oknom"
+    "startMaximized": "Spustiť s maximalizovaným oknom",
+    "jsRuntime": "Prostredie JavaScript",
+    "jsRuntimeHint": "Deno možno nainštalovať v aplikácii. Ostatné prostredia používajú systémový PATH."
   },
   "cookie": {
     "settings": "Nastavenia súborov cookie",

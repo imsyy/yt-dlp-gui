@@ -108,6 +108,23 @@ watch(
 
     <n-card :title="$t('settings.youtubeAdvanced')" size="small" class="section-card">
       <n-flex vertical :size="12">
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">{{ $t("settings.jsRuntime") }}</span>
+            <n-select
+              v-model:value="settingStore.jsRuntime"
+              :options="[
+                { label: 'Deno', value: 'deno' },
+                { label: 'Node.js', value: 'node' },
+                { label: 'Bun', value: 'bun' },
+                { label: 'QuickJS', value: 'quickjs' },
+              ]"
+              size="small"
+              style="width: 160px"
+            />
+          </div>
+        </div>
+        <n-text depth="3" style="font-size: 13px">{{ $t("settings.jsRuntimeHint") }}</n-text>
         <n-text depth="3" style="font-size: 13px">
           {{ $t("settings.youtubeAdvancedDesc") }}
         </n-text>

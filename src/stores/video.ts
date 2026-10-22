@@ -128,7 +128,7 @@ export const useVideoStore = defineStore("video", () => {
         .sort(compareAudioFormats);
 
       // YouTube URL 且 Deno 未安装时提示
-      if (/youtube\.com|youtu\.be/i.test(targetUrl)) {
+      if (settingStore.jsRuntime === "deno" && /youtube\.com|youtu\.be/i.test(targetUrl)) {
         try {
           const denoStatus = await invoke<DenoStatus>("get_deno_status");
           if (!denoStatus.installed) {

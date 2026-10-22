@@ -9,6 +9,7 @@ vi.mock("@/stores/setting", () => ({
     cookieMode: "none",
     proxy: "",
     defaultCustomArgs: "--compat-opt no-certifi --sleep-requests 2",
+    jsRuntime: "node",
   }),
 }));
 vi.mock("@/locales", () => ({ default: { global: { t: (key: string) => key } } }));
@@ -18,6 +19,12 @@ beforeEach(() => {
   setActivePinia(createPinia());
   vi.mocked(invoke).mockReset();
   vi.mocked(invoke).mockResolvedValue({ title: "Video", formats: [] });
+});
+
+test("does not request Deno installation when an alternate runtime is selected", async () => {
+  await useVideoStore().fetchVideoInfo("https://www.youtube.com/watch?v=test");
+  expect(invoke).toHaveBeenCalledTimes(1);
+  expect(invoke).not.toHaveBeenCalledWith("get_deno_status");
 });
 
 test("applies global custom arguments when fetching metadata", async () => {

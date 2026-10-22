@@ -108,7 +108,16 @@ pub async fn run_ytdlp_json(
     cookie_browser: Option<&str>,
     proxy: Option<&str>,
 ) -> Result<Value, String> {
-    run_ytdlp_json_tracked(app, None, url, extra_args, cookie_file, cookie_browser, proxy).await
+    run_ytdlp_json_tracked(
+        app,
+        None,
+        url,
+        extra_args,
+        cookie_file,
+        cookie_browser,
+        proxy,
+    )
+    .await
 }
 
 /// 同 `run_ytdlp_json`，额外把子进程 pid 登记到 `run_id` 名下，供工具任务取消时终止。
@@ -135,13 +144,13 @@ pub async fn run_ytdlp_json_tracked(
         "--extractor-retries".to_string(),
         "2".to_string(),
     ];
-    for a in extra_args {
-        args.push(a.to_string());
-    }
     args.extend(utils::build_js_runtime_args(app));
     args.extend(utils::build_ffmpeg_location_args(app));
     args.extend(utils::build_plugin_args(app));
     args.extend(utils::build_youtube_extractor_args());
+    for a in extra_args {
+        args.push(a.to_string());
+    }
     append_cookie_proxy_args(&mut args, cookie_file, cookie_browser, proxy);
     args.push(url.to_string());
 
@@ -246,4 +255,3 @@ WARNING: [youtube] Some warning occurred
         assert!(parse_json_from_stdout(stdout).is_none());
     }
 }
-

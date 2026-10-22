@@ -44,7 +44,49 @@ impl Default for ToolSources {
 }
 
 static TOOL_SOURCES: OnceLock<RwLock<ToolSources>> = OnceLock::new();
+static JS_RUNTIME: OnceLock<RwLock<&'static str>> = OnceLock::new();
 static CLI_TOOL_PATHS: OnceLock<RwLock<(Option<PathBuf>, Option<PathBuf>)>> = OnceLock::new();
+
+fn parse_js_runtime(runtime: &str) -> Result<&'static str, String> {
+    match runtime.trim() {
+        "deno" => Ok("deno"),
+        "node" => Ok("node"),
+        "bun" => Ok("bun"),
+        "quickjs" => Ok("quickjs"),
+        _ => Err(format!("err_invalid_js_runtime:{}", runtime)),
+    }
+}
+
+pub fn set_js_runtime(runtime: &str) -> Result<(), String> {
+    let runtime = parse_js_runtime(runtime)?;
+    *JS_RUNTIME
+        .get_or_init(|| RwLock::new("deno"))
+        .write()
+        .map_err(|e| e.to_string())? = runtime;
+    Ok(())
+}
+
+pub fn get_js_runtime() -> &'static str {
+    JS_RUNTIME
+        .get_or_init(|| RwLock::new("deno"))
+        .read()
+        .map(|runtime| *runtime)
+        .unwrap_or("deno")
+}
+
+#[cfg(test)]
+mod runtime_tests {
+    use super::parse_js_runtime;
+
+    #[test]
+    fn accepts_only_runtimes_supported_by_ytdlp() {
+        for runtime in ["deno", "node", "bun", "quickjs"] {
+            assert_eq!(parse_js_runtime(runtime).unwrap(), runtime);
+        }
+        assert!(parse_js_runtime("python").is_err());
+        assert!(parse_js_runtime("").is_err());
+    }
+}
 
 fn tool_sources_lock() -> &'static RwLock<ToolSources> {
     TOOL_SOURCES.get_or_init(|| RwLock::new(ToolSources::default()))

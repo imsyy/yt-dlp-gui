@@ -111,7 +111,9 @@
     "showTrayIcon": "Mostrar icono en la bandeja del sistema",
     "showHomeTips": "Mostrar consejos en la pantalla de inicio",
     "playlistSubfolders": "Descargar cada lista en su propia carpeta",
-    "startMaximized": "Iniciar con la ventana maximizada"
+    "startMaximized": "Iniciar con la ventana maximizada",
+    "jsRuntime": "Entorno de JavaScript",
+    "jsRuntimeHint": "Deno se puede instalar desde la aplicación. Los demás entornos usan el PATH del sistema."
   },
   "cookie": {
     "settings": "Configuración de cookies",

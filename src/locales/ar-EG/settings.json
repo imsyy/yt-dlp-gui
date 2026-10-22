@@ -111,7 +111,9 @@
     "showTrayIcon": "إظهار أيقونة منطقة الإعلام",
     "showHomeTips": "إظهار نصائح الصفحة الرئيسية",
     "playlistSubfolders": "تنزيل كل قائمة تشغيل في مجلد منفصل",
-    "startMaximized": "بدء التشغيل بنافذة مكبرة"
+    "startMaximized": "بدء التشغيل بنافذة مكبرة",
+    "jsRuntime": "وقت تشغيل JavaScript",
+    "jsRuntimeHint": "يمكن تثبيت Deno من التطبيق. تستخدم أوقات التشغيل الأخرى PATH للنظام."
   },
   "cookie": {
     "settings": "إعدادات ملفات تعريف الارتباط",

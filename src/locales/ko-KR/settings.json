@@ -111,7 +111,9 @@
     "showTrayIcon": "시스템 트레이 아이콘 표시",
     "showHomeTips": "홈 화면 도움말 표시",
     "playlistSubfolders": "재생목록별로 별도 폴더에 다운로드",
-    "startMaximized": "최대화된 창으로 시작"
+    "startMaximized": "최대화된 창으로 시작",
+    "jsRuntime": "JavaScript 런타임",
+    "jsRuntimeHint": "Deno는 앱에서 설치할 수 있습니다. 다른 런타임은 시스템 PATH를 사용합니다."
   },
   "cookie": {
     "settings": "Cookie 설정",

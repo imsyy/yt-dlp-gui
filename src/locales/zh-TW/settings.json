@@ -111,7 +111,9 @@
     "showTrayIcon": "顯示系統匣圖示",
     "showHomeTips": "顯示首頁提示",
     "playlistSubfolders": "將每個播放清單下載到獨立子目錄",
-    "startMaximized": "啟動時最大化視窗"
+    "startMaximized": "啟動時最大化視窗",
+    "jsRuntime": "JavaScript 執行環境",
+    "jsRuntimeHint": "Deno 可在應用程式內安裝，其他執行環境使用系統 PATH 中的執行檔。"
   },
   "cookie": {
     "settings": "Cookie 設定",

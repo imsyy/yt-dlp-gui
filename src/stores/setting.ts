@@ -138,6 +138,7 @@ export const useSettingStore = defineStore(
     /** 每个外部工具独立选择应用管理版本或系统 PATH 版本 */
     const ytdlpSource = ref<"managed" | "system">("managed");
     const denoSource = ref<"managed" | "system">("managed");
+    const jsRuntime = ref<"deno" | "node" | "bun" | "quickjs">("deno");
     const ffmpegSource = ref<"managed" | "system">("system");
 
     /** 内置 yt-dlp 的发行通道：stable（稳定版）/ nightly（每日构建）/ master（最新提交构建） */
@@ -212,6 +213,7 @@ export const useSettingStore = defineStore(
       autoCheckUpdate,
       ytdlpSource,
       denoSource,
+      jsRuntime,
       ffmpegSource,
       ytdlpChannel,
       ytdlpInstalledChannel,

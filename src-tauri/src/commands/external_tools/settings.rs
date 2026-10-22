@@ -20,6 +20,11 @@ pub fn set_tool_sources(ytdlp: String, deno: String, ffmpeg: String) -> Result<(
     utils::set_tool_sources(&ytdlp, &deno, &ffmpeg)
 }
 
+#[tauri::command]
+pub fn set_js_runtime(runtime: String) -> Result<(), String> {
+    utils::set_js_runtime(&runtime)
+}
+
 /// 设置 YouTube 提取器参数（PO Token / visitor_data），用于绕过 YouTube 403 / 限流
 #[tauri::command]
 pub fn set_youtube_extractor_args(po_token: String, visitor_data: String) -> Result<(), String> {

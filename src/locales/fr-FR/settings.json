@@ -111,7 +111,9 @@
     "showTrayIcon": "Afficher l'icône dans la zone de notification",
     "showHomeTips": "Afficher les conseils sur l’accueil",
     "playlistSubfolders": "Télécharger chaque playlist dans son propre dossier",
-    "startMaximized": "Démarrer avec la fenêtre agrandie"
+    "startMaximized": "Démarrer avec la fenêtre agrandie",
+    "jsRuntime": "Moteur JavaScript",
+    "jsRuntimeHint": "Deno peut être installé dans l’application. Les autres moteurs utilisent le PATH système."
   },
   "cookie": {
     "settings": "Paramètres des cookies",

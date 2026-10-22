@@ -111,7 +111,9 @@
     "showTrayIcon": "Symbol im Systemtray anzeigen",
     "showHomeTips": "Tipps auf der Startseite anzeigen",
     "playlistSubfolders": "Jede Wiedergabeliste in einen eigenen Ordner laden",
-    "startMaximized": "Mit maximiertem Fenster starten"
+    "startMaximized": "Mit maximiertem Fenster starten",
+    "jsRuntime": "JavaScript-Laufzeit",
+    "jsRuntimeHint": "Deno kann in der App installiert werden. Andere Laufzeiten verwenden den System-PATH."
   },
   "cookie": {
     "settings": "Cookie-Einstellungen",

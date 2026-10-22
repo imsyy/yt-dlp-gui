@@ -111,7 +111,9 @@
     "showTrayIcon": "Rendszertálca ikon megjelenítése",
     "showHomeTips": "Tippek megjelenítése a kezdőlapon",
     "playlistSubfolders": "Lejátszási listák letöltése külön mappákba",
-    "startMaximized": "Indítás teljes méretű ablakkal"
+    "startMaximized": "Indítás teljes méretű ablakkal",
+    "jsRuntime": "JavaScript-futtatókörnyezet",
+    "jsRuntimeHint": "A Deno az alkalmazásból telepíthető. A többi futtatókörnyezet a rendszer PATH változóját használja."
   },
   "cookie": {
     "settings": "Cookie-beállítások",

@@ -18,7 +18,7 @@ fn get_managed_executable_path(app: &AppHandle, file_name: &str) -> Result<PathB
 /// 在系统 PATH 中查找可执行文件
 /// 使用 `which` crate 而非派生子进程，避免 Windows 控制台代码页（GBK 等）
 /// 输出非 UTF-8 时解析失败；同时自动处理 PATHEXT 等平台细节。
-fn find_system_executable(name: &str) -> Option<PathBuf> {
+pub(super) fn find_system_executable(name: &str) -> Option<PathBuf> {
     if let Some(path) = which::which(name).ok().filter(|path| path.exists()) {
         return Some(path);
     }

@@ -111,7 +111,9 @@
     "systemBinaryNotice": "Currently using the system-installed yt-dlp. \"Check Update\" only updates the app-managed copy. Switch the path mode to \"App Only\" for updates to take effect.",
     "showHomeTips": "Show home screen tips",
     "playlistSubfolders": "Download each playlist into its own folder",
-    "startMaximized": "Start with a maximized window"
+    "startMaximized": "Start with a maximized window",
+    "jsRuntime": "JavaScript runtime",
+    "jsRuntimeHint": "Deno can be installed in the app. Other runtimes use your system PATH."
   },
   "cookie": {
     "settings": "Cookie Settings",

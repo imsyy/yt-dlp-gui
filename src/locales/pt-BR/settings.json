@@ -111,7 +111,9 @@
     "showTrayIcon": "Mostrar ícone na bandeja do sistema",
     "showHomeTips": "Mostrar dicas na tela inicial",
     "playlistSubfolders": "Baixar cada playlist em sua própria pasta",
-    "startMaximized": "Iniciar com a janela maximizada"
+    "startMaximized": "Iniciar com a janela maximizada",
+    "jsRuntime": "Runtime JavaScript",
+    "jsRuntimeHint": "O Deno pode ser instalado no aplicativo. Os outros runtimes usam o PATH do sistema."
   },
   "cookie": {
     "settings": "Configurações de cookies",

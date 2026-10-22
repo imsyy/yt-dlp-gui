@@ -70,6 +70,11 @@ export const useAppBootstrap = () => {
     );
 
     await applyToolSources();
+    watch(
+      () => settingStore.jsRuntime,
+      (runtime) => invoke("set_js_runtime", { runtime }),
+    );
+    await invoke("set_js_runtime", { runtime: settingStore.jsRuntime });
     await applyYtdlpChannel();
 
     if (settingStore.autoCheckUpdate) {

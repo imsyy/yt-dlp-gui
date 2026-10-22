@@ -111,7 +111,9 @@
     "showTrayIcon": "Показывать значок в системном трее",
     "showHomeTips": "Показывать подсказки на главной",
     "playlistSubfolders": "Скачивать каждый плейлист в отдельную папку",
-    "startMaximized": "Запускать с развёрнутым окном"
+    "startMaximized": "Запускать с развёрнутым окном",
+    "jsRuntime": "Среда JavaScript",
+    "jsRuntimeHint": "Deno можно установить в приложении. Другие среды используют системный PATH."
   },
   "cookie": {
     "settings": "Настройки cookies",

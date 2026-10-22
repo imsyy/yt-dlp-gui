@@ -111,7 +111,9 @@
     "showTrayIcon": "システムトレイアイコンを表示",
     "showHomeTips": "ホーム画面のヒントを表示",
     "playlistSubfolders": "プレイリストごとに専用フォルダーに保存",
-    "startMaximized": "ウィンドウを最大化して起動"
+    "startMaximized": "ウィンドウを最大化して起動",
+    "jsRuntime": "JavaScript ランタイム",
+    "jsRuntimeHint": "Deno はアプリ内でインストールできます。他のランタイムはシステムの PATH を使用します。"
   },
   "cookie": {
     "settings": "Cookie 設定",
