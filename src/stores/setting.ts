@@ -67,6 +67,7 @@ export const useSettingStore = defineStore(
 
     /** 文件名输出模板 */
     const outputTemplate = ref(DEFAULT_OUTPUT_TEMPLATE);
+    const playlistSubfolders = ref(false);
 
     /** 文件名静态前缀/后缀（后缀插入扩展名前） */
     const filenamePrefix = ref("");
@@ -179,6 +180,7 @@ export const useSettingStore = defineStore(
       cookieBrowser,
       proxy,
       outputTemplate,
+      playlistSubfolders,
       filenamePrefix,
       filenameSuffix,
       concurrentFragments,

@@ -70,8 +70,25 @@ export const normalizeOutputTemplate = (template: string): string => {
 };
 
 /** 将持久化的静态前后缀组合到 yt-dlp 模板中，后缀始终位于扩展名前。 */
-export const composeOutputTemplate = (template: string, prefix: string, suffix: string): string => {
+export const composeOutputTemplate = (
+  template: string,
+  prefix: string,
+  suffix: string,
+  playlistSubfolder = false,
+): string => {
   const normalized = normalizeOutputTemplate(template);
   const base = normalized.slice(0, -EXT_SUFFIX.length);
-  return `${prefix}${base}${suffix}${EXT_SUFFIX}`;
+  let separator = -1;
+  for (let index = 0; index < base.length; index += 1) {
+    if (base[index] === "%" && base[index + 1] === "(") {
+      const close = base.indexOf(")", index + 2);
+      if (close !== -1) index = close;
+    } else if (base[index] === "/" || base[index] === "\\") {
+      separator = index;
+    }
+  }
+  const directory = base.slice(0, separator + 1);
+  const filename = base.slice(separator + 1);
+  const playlistDirectory = playlistSubfolder ? "%(playlist_title,playlist_id|Playlist)s/" : "";
+  return `${directory}${playlistDirectory}${prefix}${filename}${suffix}${EXT_SUFFIX}`;
 };

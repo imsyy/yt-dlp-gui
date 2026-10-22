@@ -173,6 +173,7 @@ export const useDownloadLauncher = () => {
       settingStore.outputTemplate,
       settingStore.filenamePrefix,
       settingStore.filenameSuffix,
+      item.isPlaylist && settingStore.playlistSubfolders,
     );
     // 非法文件名模板直接拦截，避免发给 yt-dlp 后报晦涩的格式错误
     const templateError = validateOutputTemplate(outputTemplate);

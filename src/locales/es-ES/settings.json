@@ -109,7 +109,8 @@
     "defaultFfmpegArgs": "Argumentos de FFmpeg predeterminados",
     "defaultFfmpegArgsHint": "Se aplican a cada vídeo nuevo que se analice; puedes cambiarlos en cada tarea",
     "showTrayIcon": "Mostrar icono en la bandeja del sistema",
-    "showHomeTips": "Mostrar consejos en la pantalla de inicio"
+    "showHomeTips": "Mostrar consejos en la pantalla de inicio",
+    "playlistSubfolders": "Descargar cada lista en su propia carpeta"
   },
   "cookie": {
     "settings": "Configuración de cookies",

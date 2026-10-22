@@ -109,7 +109,8 @@
     "defaultFfmpegArgs": "Arguments FFmpeg par défaut",
     "defaultFfmpegArgsHint": "Appliqués à chaque nouvelle vidéo analysée ; la valeur reste modifiable pour chaque tâche",
     "showTrayIcon": "Afficher l'icône dans la zone de notification",
-    "showHomeTips": "Afficher les conseils sur l’accueil"
+    "showHomeTips": "Afficher les conseils sur l’accueil",
+    "playlistSubfolders": "Télécharger chaque playlist dans son propre dossier"
   },
   "cookie": {
     "settings": "Paramètres des cookies",

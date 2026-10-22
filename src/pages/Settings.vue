@@ -197,6 +197,12 @@ watch(
       <n-flex vertical :size="12">
         <div class="info-list">
           <div class="info-row">
+            <span class="info-label">{{ $t("settings.playlistSubfolders") }}</span>
+            <n-switch v-model:value="settingStore.playlistSubfolders" />
+          </div>
+        </div>
+        <div class="info-list">
+          <div class="info-row">
             <span class="info-label">{{ $t("detail.downloadMethod") }}</span>
             <n-select
               v-model:value="settingStore.defaultDownloadMode"

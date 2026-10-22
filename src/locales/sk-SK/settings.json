@@ -109,7 +109,8 @@
     "appIsLatest": "Používate najnovšiu verziu",
     "systemBinaryNotice": "V súčasnosti sa používa yt-dlp nainštalovaný v systéme. „Skontrolovať aktualizácie“ aktualizuje iba kópiu spravovanú aplikáciou. Aby sa aktualizácie uplatnili, prepnite režim cesty na „Iba aplikácia“.",
     "showTrayIcon": "Zobraziť ikonu v systémovej lište",
-    "showHomeTips": "Zobraziť tipy na úvodnej obrazovke"
+    "showHomeTips": "Zobraziť tipy na úvodnej obrazovke",
+    "playlistSubfolders": "Stiahnuť každý zoznam do vlastného priečinka"
   },
   "cookie": {
     "settings": "Nastavenia súborov cookie",

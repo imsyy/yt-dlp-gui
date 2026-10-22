@@ -109,7 +109,8 @@
     "defaultFfmpegArgs": "Alapértelmezett FFmpeg-argumentumok",
     "defaultFfmpegArgsHint": "Automatikusan alkalmazza minden újonnan elemzett videóra; feladatonként külön módosítható",
     "showTrayIcon": "Rendszertálca ikon megjelenítése",
-    "showHomeTips": "Tippek megjelenítése a kezdőlapon"
+    "showHomeTips": "Tippek megjelenítése a kezdőlapon",
+    "playlistSubfolders": "Lejátszási listák letöltése külön mappákba"
   },
   "cookie": {
     "settings": "Cookie-beállítások",
