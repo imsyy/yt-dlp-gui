@@ -43,6 +43,7 @@ pub fn init_database(app: &AppHandle) -> Result<DatabaseState, Box<dyn std::erro
 
     // 执行迁移建表
     schema::run_migrations(&conn)?;
+    tasks::recover_interrupted_tasks(&conn)?;
 
     Ok(DatabaseState {
         conn: Mutex::new(conn),

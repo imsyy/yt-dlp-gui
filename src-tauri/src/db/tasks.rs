@@ -30,14 +30,17 @@ pub struct DownloadTaskRecord {
 
 // 内部数据库读写辅助函数
 
-pub fn get_all_tasks(conn: &Connection) -> Result<Vec<DownloadTaskRecord>, rusqlite::Error> {
-    // 状态归一化：将非正常退出前处于进行中或暂停态的任务自动置为错误中断态
-    let _ = conn.execute(
+/// 仅在应用启动时恢复被上次退出中断的任务，读取列表不应修改正在运行的任务。
+pub fn recover_interrupted_tasks(conn: &Connection) -> Result<(), rusqlite::Error> {
+    conn.execute(
         "UPDATE tasks SET status = 'error', error = '应用已重启，任务已中断', speed = '', eta = '' \
          WHERE status IN ('preparing', 'queued', 'downloading', 'postprocessing', 'paused')",
         [],
-    );
+    )?;
+    Ok(())
+}
 
+pub fn get_all_tasks(conn: &Connection) -> Result<Vec<DownloadTaskRecord>, rusqlite::Error> {
     let mut stmt = conn.prepare(
         "SELECT id, url, title, thumbnail, format_label, status, percent, speed, eta, \
          downloaded, total, file_size_bytes, logs, error, output_file, created_at, params_json \
@@ -95,7 +98,10 @@ pub fn get_all_tasks(conn: &Connection) -> Result<Vec<DownloadTaskRecord>, rusql
     Ok(tasks)
 }
 
-pub fn upsert_task_internal(conn: &Connection, task: &DownloadTaskRecord) -> Result<(), rusqlite::Error> {
+pub fn upsert_task_internal(
+    conn: &Connection,
+    task: &DownloadTaskRecord,
+) -> Result<(), rusqlite::Error> {
     let logs_json = serde_json::to_string(&task.logs).unwrap_or_else(|_| "[]".to_string());
     let params_json = serde_json::to_string(&task.params).unwrap_or_else(|_| "{}".to_string());
 
@@ -275,4 +281,70 @@ pub fn db_clear_completed_tasks(state: State<'_, DatabaseState>) -> Result<(), S
     conn.execute("DELETE FROM tasks WHERE status = 'completed'", [])
         .map_err(|e| e.to_string())?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn database_with_tasks() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        crate::db::schema::run_migrations(&conn).unwrap();
+        for status in [
+            "preparing",
+            "queued",
+            "downloading",
+            "postprocessing",
+            "paused",
+            "completed",
+            "error",
+            "cancelled",
+        ] {
+            upsert_task_internal(
+                &conn,
+                &DownloadTaskRecord {
+                    id: status.to_string(),
+                    status: status.to_string(),
+                    speed: "1 MiB/s".to_string(),
+                    eta: "00:10".to_string(),
+                    error: Some("original error".to_string()),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+        }
+        conn
+    }
+
+    #[test]
+    fn reading_task_list_never_interrupts_active_downloads() {
+        let conn = database_with_tasks();
+        for _ in 0..2 {
+            for task in get_all_tasks(&conn).unwrap() {
+                assert_eq!(task.status, task.id);
+                assert_eq!(task.speed, "1 MiB/s");
+                assert_eq!(task.eta, "00:10");
+                assert_eq!(task.error.as_deref(), Some("original error"));
+            }
+        }
+    }
+
+    #[test]
+    fn startup_recovery_only_interrupts_unfinished_tasks() {
+        let conn = database_with_tasks();
+        recover_interrupted_tasks(&conn).unwrap();
+        // Running recovery again is harmless, including for existing error details.
+        recover_interrupted_tasks(&conn).unwrap();
+        for task in get_all_tasks(&conn).unwrap() {
+            if matches!(task.id.as_str(), "completed" | "error" | "cancelled") {
+                assert_eq!(task.status, task.id);
+                assert_eq!(task.error.as_deref(), Some("original error"));
+            } else {
+                assert_eq!(task.status, "error");
+                assert_eq!(task.error.as_deref(), Some("应用已重启，任务已中断"));
+                assert!(task.speed.is_empty());
+                assert!(task.eta.is_empty());
+            }
+        }
+    }
 }
