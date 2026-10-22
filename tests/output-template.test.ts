@@ -1,5 +1,9 @@
 import { test, expect } from "vitest";
-import { composeOutputTemplate, DEFAULT_OUTPUT_TEMPLATE } from "@/utils/output-template";
+import {
+  composeOutputTemplate,
+  DEFAULT_OUTPUT_TEMPLATE,
+  validateOutputTemplate,
+} from "@/utils/output-template";
 
 test("places static prefix and suffix around the filename before its extension", () => {
   expect(composeOutputTemplate("%(upload_date)s - %(title)s.%(ext)s", "[Archive] ", " [4K]")).toBe(
@@ -35,5 +39,17 @@ test("keeps separators inside yt-dlp date expressions intact", () => {
 test("preserves absolute custom template directories when grouping playlists", () => {
   expect(composeOutputTemplate("C:\\Videos\\%(title)s.%(ext)s", "", "", true)).toBe(
     "C:\\Videos\\%(playlist_title,playlist_id|Playlist)s/%(title)s.%(ext)s",
+  );
+});
+
+test("treats percentage signs in static affixes as literal filename text", () => {
+  const template = composeOutputTemplate("%(title)s.%(ext)s", "100% ", " [50%]");
+  expect(template).toBe("100%% %(title)s [50%%].%(ext)s");
+  expect(validateOutputTemplate(template)).toBeNull();
+});
+
+test("does not expand template-looking text entered as a static affix", () => {
+  expect(composeOutputTemplate("%(uploader)s/%(title)s.%(ext)s", "%(title)s ", " %%", true)).toBe(
+    "%(uploader)s/%(playlist_title,playlist_id|Playlist)s/%%(title)s %(title)s %%%%.%(ext)s",
   );
 });

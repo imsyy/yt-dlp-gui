@@ -90,5 +90,8 @@ export const composeOutputTemplate = (
   const directory = base.slice(0, separator + 1);
   const filename = base.slice(separator + 1);
   const playlistDirectory = playlistSubfolder ? "%(playlist_title,playlist_id|Playlist)s/" : "";
-  return `${directory}${playlistDirectory}${prefix}${filename}${suffix}${EXT_SUFFIX}`;
+  // Affixes are literal text, while yt-dlp interprets every percent as template syntax.
+  const literalPrefix = prefix.replace(/%/g, "%%");
+  const literalSuffix = suffix.replace(/%/g, "%%");
+  return `${directory}${playlistDirectory}${literalPrefix}${filename}${literalSuffix}${EXT_SUFFIX}`;
 };
