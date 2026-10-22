@@ -86,10 +86,9 @@ fn build_format_args(params: &DownloadParams) -> Vec<String> {
     }
     if params.download_mode != "video"
         && !params.no_merge
-        && params
-            .audio_format
-            .as_deref()
-            .is_some_and(|value| value.contains('+'))
+        && params.audio_format.as_deref().is_some_and(|value| {
+            !value.is_empty() && (value.contains('+') || params.video_has_audio)
+        })
     {
         args.push("--audio-multistreams".to_string());
     }
@@ -627,6 +626,18 @@ mod ffmpeg_requirement_tests {
         value.download_mode = "default".into();
         value.no_merge = true;
         assert_eq!(build_format_args(&value), ["-f", "137,140-en,140-es"]);
+    }
+
+    #[test]
+    fn selected_audio_is_not_dropped_when_video_already_has_a_soundtrack() {
+        let mut value = params();
+        value.video_has_audio = true;
+        assert_eq!(
+            build_format_args(&value),
+            ["-f", "137+140", "--audio-multistreams"]
+        );
+        value.no_merge = true;
+        assert_eq!(build_format_args(&value), ["-f", "137,140"]);
     }
 
     #[test]
