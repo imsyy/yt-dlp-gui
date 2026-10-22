@@ -48,8 +48,7 @@ fn requires_audio_extraction(params: &DownloadParams) -> bool {
 }
 
 /// 根据下载模式与格式选择，构建 `-f` 格式参数。
-/// `no_merge` 为 true 时不使用 `+` 拼接，避免触发 ffmpeg 合并
-/// （yt-dlp 无 --no-merge-output 选项，用单独格式替代）。
+/// `no_merge` 为 true 时用逗号分别下载各格式，不丢弃已选音轨。
 fn build_format_args(params: &DownloadParams) -> Vec<String> {
     let mut args = build_format_selector_args(params);
     // Format IDs belong to individual videos. A different entry in the same post
@@ -58,10 +57,34 @@ fn build_format_args(params: &DownloadParams) -> Vec<String> {
         let fallback = match params.download_mode.as_str() {
             "audio" => "bestaudio",
             "video" => "bestvideo/best",
-            _ if params.no_merge => "best/bestvideo",
+            _ if params.no_merge && params.video_format.as_deref().is_none_or(str::is_empty) => {
+                "bestaudio/best"
+            }
+            _ if params.no_merge => "bestvideo/best",
             _ => "bestvideo*+bestaudio/best",
         };
-        args[1] = format!("{}/{}", args[1], fallback);
+        if params.download_mode == "default" && params.no_merge && args[1].contains(',') {
+            args[1] = args[1]
+                .split(',')
+                .enumerate()
+                .map(|(index, format)| {
+                    let fallback = if index == 0
+                        && params
+                            .video_format
+                            .as_deref()
+                            .is_some_and(|format| !format.is_empty())
+                    {
+                        "bestvideo/best"
+                    } else {
+                        "bestaudio/best"
+                    };
+                    format!("{format}/{fallback}")
+                })
+                .collect::<Vec<_>>()
+                .join(",");
+        } else {
+            args[1] = format!("{}/{}", args[1], fallback);
+        }
     }
     if params.download_mode != "video"
         && !params.no_merge
@@ -99,7 +122,7 @@ fn build_format_selector_args(params: &DownloadParams) -> Vec<String> {
             match (vf, af) {
                 (Some(v), Some(a)) => {
                     if params.no_merge {
-                        vec!["-f".to_string(), v.to_string()]
+                        vec!["-f".to_string(), format!("{},{}", v, a.replace('+', ","))]
                     } else {
                         vec!["-f".to_string(), format!("{}+{}", v, a)]
                     }
@@ -119,7 +142,7 @@ fn build_format_selector_args(params: &DownloadParams) -> Vec<String> {
                 }
                 (None, Some(a)) => {
                     if params.no_merge {
-                        vec!["-f".to_string(), a.to_string()]
+                        vec!["-f".to_string(), a.replace('+', ",")]
                     } else {
                         vec!["-f".to_string(), format!("bestvideo+{0}/{0}", a)]
                     }
@@ -338,11 +361,19 @@ fn append_output_args(args: &mut Vec<String>, params: &DownloadParams) {
         .as_deref()
         .filter(|s| !s.is_empty())
         .unwrap_or("%(title).200s.%(ext)s");
+    // Different selected streams can share an extension. A format suffix keeps
+    // separate files from overwriting or being mistaken for an existing download.
+    let template = if params.no_merge && params.download_mode == "default" {
+        let base = template.strip_suffix(".%(ext)s").unwrap_or(template);
+        format!("{base}.f%(format_id)s.%(ext)s")
+    } else {
+        template.to_string()
+    };
     args.extend([
         "--paths".to_string(),
         format!("home:{}", params.download_dir),
         "-o".to_string(),
-        template.to_string(),
+        template,
     ]);
 }
 
@@ -384,6 +415,30 @@ mod output_arg_tests {
         assert_eq!(
             args,
             ["--paths", "home:/downloads", "-o", "%(title).200s.%(ext)s"]
+        );
+    }
+
+    #[test]
+    fn separate_streams_get_distinct_names_inside_the_selected_directory() {
+        let mut args = Vec::new();
+        append_output_args(
+            &mut args,
+            &DownloadParams {
+                download_dir: "/downloads".into(),
+                download_mode: "default".into(),
+                no_merge: true,
+                output_template: Some("%(playlist_title)s/%(title)s.%(ext)s".into()),
+                ..Default::default()
+            },
+        );
+        assert_eq!(
+            args,
+            [
+                "--paths",
+                "home:/downloads",
+                "-o",
+                "%(playlist_title)s/%(title)s.f%(format_id)s.%(ext)s"
+            ]
         );
     }
 }
@@ -540,11 +595,11 @@ mod ffmpeg_requirement_tests {
     }
 
     #[test]
-    fn no_merge_uses_single_format_without_plus_concatenation() {
+    fn no_merge_downloads_video_and_audio_separately() {
         let mut value = params();
         value.no_merge = true;
         let args = build_format_args(&value);
-        assert_eq!(args, ["-f", "137"]);
+        assert_eq!(args, ["-f", "137,140"]);
     }
 
     #[test]
@@ -565,7 +620,27 @@ mod ffmpeg_requirement_tests {
         assert_eq!(build_format_args(&value), ["-f", "137"]);
         value.download_mode = "default".into();
         value.no_merge = true;
-        assert_eq!(build_format_args(&value), ["-f", "137"]);
+        assert_eq!(build_format_args(&value), ["-f", "137,140-en,140-es"]);
+    }
+
+    #[test]
+    fn separate_playlist_formats_each_have_their_own_fallback() {
+        let mut value = params();
+        value.no_merge = true;
+        value.playlist_items = Some("1,2".into());
+        value.audio_format = Some("140-en+140-es".into());
+        assert_eq!(
+            build_format_args(&value),
+            [
+                "-f",
+                "137/bestvideo/best,140-en/bestaudio/best,140-es/bestaudio/best"
+            ]
+        );
+        value.video_format = None;
+        assert_eq!(
+            build_format_args(&value),
+            ["-f", "140-en/bestaudio/best,140-es/bestaudio/best"]
+        );
     }
 
     #[test]

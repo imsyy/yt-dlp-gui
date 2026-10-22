@@ -242,7 +242,6 @@ const handleDownload = async () => {
           v-model:selected-audio-format="activeItem.selectedAudioFormat"
           :video-formats="activeItem.videoFormats"
           :extract-audio="activeItem.extractAudio"
-          :no-merge="activeItem.noMerge"
           :audio-formats="activeItem.audioFormats"
           :video-info="activeItem.videoInfo as VideoInfo"
           class="section-card"

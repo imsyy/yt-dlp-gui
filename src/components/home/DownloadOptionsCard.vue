@@ -11,7 +11,6 @@ const props = defineProps<{
   audioFormats: VideoFormat[];
   videoInfo: VideoInfo;
   extractAudio?: boolean;
-  noMerge?: boolean;
 }>();
 
 const downloadMode = defineModel<"default" | "video" | "audio">("downloadMode", {
@@ -26,17 +25,21 @@ const selectedAudioFormat = defineModel<string>("selectedAudioFormat", {
 
 const selectedVideoCodec = ref("all");
 const selectedAudioCodec = ref("all");
-const multipleAudio = computed(
-  () => downloadMode.value === "default" && !props.extractAudio && !props.noMerge,
-);
+const multipleAudio = computed(() => downloadMode.value === "default" && !props.extractAudio);
 
 const handleAudioFormatChange = (value: string | string[] | null) => {
   selectedAudioFormat.value = Array.isArray(value) ? value.join("+") : value || "";
 };
 
-watch(multipleAudio, (multiple) => {
-  if (!multiple) selectedAudioFormat.value = selectedAudioFormat.value.split("+")[0] || "";
-});
+watch(
+  [downloadMode, () => props.extractAudio],
+  ([mode, extractAudio]) => {
+    if (mode === "audio" || extractAudio) {
+      selectedAudioFormat.value = selectedAudioFormat.value.split("+")[0] || "";
+    }
+  },
+  { immediate: true },
+);
 
 const createCodecOptions = (formats: VideoFormat[]) => {
   const codecs = new Map<string, string>();
