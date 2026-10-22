@@ -177,7 +177,7 @@ const handleSave = async (thumb: ThumbnailInfo) => {
       <n-list hoverable clickable bordered>
         <n-list-item v-for="thumb in thumbnails" :key="thumb.id || thumb.url">
           <n-flex align="center" :size="12" :wrap="false">
-            <n-image
+            <ThumbnailPreview
               :src="thumb.url"
               lazy
               preview-disabled

@@ -7,6 +7,7 @@ import { useDownloadStore } from "@/stores/download";
 import { useI18n } from "vue-i18n";
 import { formatError } from "@/utils/format";
 import { cleanTaskResiduals } from "@/utils/taskFiles";
+import { useThumbnail } from "@/composables/useThumbnail";
 import type { DownloadTask } from "@/types";
 
 interface Props {
@@ -19,6 +20,10 @@ const { t } = useI18n();
 const downloadStore = useDownloadStore();
 
 const coverError = ref(false);
+const { src: thumbnailSrc } = useThumbnail(() => props.task.thumbnail);
+watch(thumbnailSrc, () => {
+  coverError.value = false;
+});
 const isLogExpanded = ref(false);
 const logRef = ref<LogInst | null>(null);
 
@@ -298,11 +303,7 @@ const handleRemove = () => {
     <n-flex :size="14">
       <!-- 视频缩略图 -->
       <div class="task-thumbnail">
-        <img
-          v-if="task.thumbnail && !coverError"
-          :src="task.thumbnail"
-          @error="coverError = true"
-        />
+        <img v-if="thumbnailSrc && !coverError" :src="thumbnailSrc" @error="coverError = true" />
         <div v-else class="thumbnail-placeholder">
           <icon-mdi-video-outline />
         </div>
