@@ -54,7 +54,15 @@
     "confirmCancelDownload": "Naozaj chcete zrušiť toto sťahovanie?",
     "alsoDeleteResidualFiles": "Vymazať aj zvyšné dočasné súbory (.part atď.)",
     "confirmRetryAllFailed": "Naozaj chcete znova spustiť všetky neúspešné úlohy?",
-    "downloadErrors": "yt-dlp ohlásil {count} chýb. Najnovšie podrobnosti:"
+    "downloadErrors": "yt-dlp ohlásil {count} chýb. Najnovšie podrobnosti:",
+    "editAndRetry": "Upraviť a skúsiť znova",
+    "editTaskHint": "Zmeny sa použijú iba pre túto úlohu. Ostatné možnosti si ponechajú pôvodné hodnoty.",
+    "editTimeHint": "Časy orezania sú v sekundách. Prázdne polia označujú začiatok alebo koniec.",
+    "invalidEditTimeRange": "Začiatok nesmie byť záporný; koniec musí byť neskôr ako začiatok.",
+    "videoFormatId": "ID formátu videa",
+    "audioFormatIds": "ID formátov zvuku (+ oddeľuje stopy)",
+    "retainedOptions": "Zachované pôvodné možnosti",
+    "editSingleAudio": "Režim iba zvuk a extrakcia zvuku vyžadujú jedno ID zvukového formátu."
   },
   "pending": {
     "empty": "Žiadne čakajúce položky",
@@ -138,6 +146,8 @@
     "remuxFormat": "Formát kontajnera",
     "customArgs": "Ďalšie parametre",
     "customArgsPlaceholder": "Dodatočné parametre yt-dlp, napr. --sleep-requests 2 --sleep-interval 10",
-    "invalidTimeRange": "Vyberte rozsah v rámci dĺžky videa s koncom po začiatku."
+    "invalidTimeRange": "Vyberte rozsah v rámci dĺžky videa s koncom po začiatku.",
+    "forceKeyframesAtCuts": "Vytvoriť kľúčové snímky v bodoch orezania",
+    "forceKeyframesAtCutsHint": "Pomalšie opätovné kódovanie znižuje obrazové chyby pri bodoch orezania. Vypnite pre rýchle orezanie."
   }
 }

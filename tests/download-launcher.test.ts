@@ -166,6 +166,29 @@ test("the launcher delegates queued submissions and never starts a second proces
   expect(invoke).not.toHaveBeenCalledWith("start_download", expect.anything());
 });
 
+test.each([undefined, false, true])(
+  "the launcher preserves the optional keyframe-cut choice: %s",
+  async (forceKeyframesAtCuts) => {
+    vi.mocked(invoke).mockResolvedValue({ installed: true, runnable: true });
+    const item = createItem({
+      startTime: new Date(2026, 0, 1, 0, 0, 10).getTime(),
+      endTime: new Date(2026, 0, 1, 0, 0, 20).getTime(),
+      forceKeyframesAtCuts,
+    });
+    expect(await useDownloadLauncher().launchDownload(item)).toBe("started");
+    expect(addTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        params: expect.objectContaining({
+          startTime: 10,
+          endTime: 20,
+          forceKeyframesAtCuts: Boolean(forceKeyframesAtCuts),
+        }),
+      }),
+      undefined,
+    );
+  },
+);
+
 test("preparing task replacement uses the same persistence and scheduling entry", async () => {
   expect(await useDownloadLauncher().launchDownload(createItem(), "preparing")).toBe("started");
   expect(addTask).toHaveBeenCalledWith(expect.objectContaining({ status: "queued" }), "preparing");

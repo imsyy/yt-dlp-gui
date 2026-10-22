@@ -44,6 +44,8 @@ describe("normalizeTaskParams", () => {
     expect(normalized.embedSubs).toBe(false);
     expect(normalized.subtitles).toEqual([]);
     expect(normalized.liveFromStart).toBe(false);
+    expect(normalized.forceKeyframesAtCuts).toBe(false);
+    expect(normalizeTaskParams({ forceKeyframesAtCuts: true }).forceKeyframesAtCuts).toBe(true);
   });
 
   it("handles undefined or empty params gracefully", () => {

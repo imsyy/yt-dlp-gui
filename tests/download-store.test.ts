@@ -360,3 +360,77 @@ test("clearing completed history waits for the final state to be persisted", asy
   await clearing;
   expect(invoke).toHaveBeenLastCalledWith("db_delete_tasks", { ids: ["done"] });
 });
+
+test("edited retries persist the complete task configuration before starting", async () => {
+  const store = await readyStore();
+  const original = createTask("edit", "error");
+  original.params = normalizeTaskParams({
+    downloadDir: "D:/original",
+    cookieFile: "D:/cookies.txt",
+    cookieBrowser: "firefox",
+    proxy: "http://old-proxy:8080",
+    subtitles: ["sub:en", "auto:zh"],
+    playlistItems: "2,5",
+    noPlaylist: false,
+    noOverwrites: true,
+    embedMetadata: true,
+  });
+  store.tasks.push(original);
+  const edited = {
+    ...original.params,
+    subtitles: [...original.params.subtitles],
+    downloadMode: "audio",
+    downloadDir: "D:/fixed",
+    outputTemplate: "literal%% %(title)s.%(ext)s",
+    startTime: 90000,
+    endTime: 90100,
+    customArgs: "--sleep-requests 2",
+    noMerge: true,
+  };
+  const saving = deferred();
+  vi.mocked(invoke).mockImplementation(async (command) => {
+    if (command === "db_upsert_task") await saving.promise;
+  });
+  const retrying = store.retryTask("edit", edited);
+  await vi.waitFor(() =>
+    expect(invoke).toHaveBeenCalledWith(
+      "db_upsert_task",
+      expect.objectContaining({ task: expect.objectContaining({ params: edited }) }),
+    ),
+  );
+  expect(starts()).toHaveLength(0);
+  edited.subtitles.push("sub:fr");
+  edited.downloadDir = "D:/changed-after-submit";
+  saving.resolve();
+  expect(await retrying).toBe(true);
+  expect(store.tasks[0].formatLabel).toBe("detail.audioOnly");
+  expect(invoke).toHaveBeenCalledWith("start_download", {
+    params: expect.objectContaining({
+      downloadDir: "D:/fixed",
+      outputTemplate: "literal%% %(title)s.%(ext)s",
+      cookieFile: "D:/cookies.txt",
+      cookieBrowser: "firefox",
+      proxy: "http://old-proxy:8080",
+      subtitles: ["sub:en", "auto:zh"],
+      playlistItems: "2,5",
+      noPlaylist: false,
+      noOverwrites: true,
+      embedMetadata: true,
+      startTime: 90000,
+      endTime: 90100,
+      customArgs: "--sleep-requests 2",
+    }),
+  });
+});
+
+test("edited retries cannot replace parameters of an active task", async () => {
+  const store = await readyStore();
+  store.tasks.push(createTask("active", "downloading"));
+  const originalParams = { ...store.tasks[0].params };
+  expect(await store.retryTask("active", normalizeTaskParams({ downloadMode: "audio" }))).toBe(
+    false,
+  );
+  expect(store.tasks[0].params).toEqual(originalParams);
+  expect(starts()).toHaveLength(0);
+  expect(invoke).not.toHaveBeenCalledWith("db_delete_task", expect.anything());
+});

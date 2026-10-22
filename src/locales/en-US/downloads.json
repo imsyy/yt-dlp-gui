@@ -54,7 +54,15 @@
     "confirmClearFailed": "Are you sure you want to clear all failed tasks?",
     "errorMessage": "Error Details",
     "confirmRetry": "Are you sure you want to retry this download task?",
-    "downloadErrors": "yt-dlp reported {count} errors. Latest details:"
+    "downloadErrors": "yt-dlp reported {count} errors. Latest details:",
+    "editAndRetry": "Edit and Retry",
+    "editTaskHint": "Changes apply to this task only. Other options keep their original values.",
+    "editTimeHint": "Trim times are in seconds. Leave start blank for the beginning and end blank for the end.",
+    "invalidEditTimeRange": "Start must be non-negative; end must be later than start.",
+    "videoFormatId": "Video format ID",
+    "audioFormatIds": "Audio format IDs (+ separates tracks)",
+    "retainedOptions": "Retained original options",
+    "editSingleAudio": "Audio-only mode and audio extraction require a single audio format ID."
   },
   "pending": {
     "empty": "No pending items",
@@ -138,6 +146,8 @@
     "views": " views",
     "viewWan": "K",
     "viewYi": "M",
-    "invalidTimeRange": "Choose a range within the video duration, with the end after the start."
+    "invalidTimeRange": "Choose a range within the video duration, with the end after the start.",
+    "forceKeyframesAtCuts": "Generate keyframes at trim points",
+    "forceKeyframesAtCutsHint": "Re-encodes more slowly to reduce visual artifacts around cut points. Turn off to use fast trimming."
   }
 }

@@ -145,6 +145,8 @@ pub struct DownloadParams {
     pub subtitles: Vec<String>,
     pub start_time: Option<f64>,
     pub end_time: Option<f64>,
+    /// Re-encode around cut points for precise sections; default false keeps fast cuts.
+    pub force_keyframes_at_cuts: bool,
     pub no_playlist: bool,
     pub playlist_items: Option<String>,
     /// 从开始下载直播流（--live-from-start）

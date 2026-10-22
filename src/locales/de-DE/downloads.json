@@ -54,7 +54,15 @@
     "confirmCancelDownload": "Möchten Sie diesen Download wirklich abbrechen?",
     "alsoDeleteResidualFiles": "Verbleibende temporäre Dateien (.part usw.) ebenfalls löschen",
     "confirmRetryAllFailed": "Möchten Sie wirklich alle fehlgeschlagenen Aufgaben erneut versuchen?",
-    "downloadErrors": "yt-dlp hat {count} Fehler gemeldet. Letzte Details:"
+    "downloadErrors": "yt-dlp hat {count} Fehler gemeldet. Letzte Details:",
+    "editAndRetry": "Bearbeiten und erneut versuchen",
+    "editTaskHint": "Änderungen gelten nur für diese Aufgabe. Andere Optionen behalten ihre ursprünglichen Werte.",
+    "editTimeHint": "Schnittzeiten werden in Sekunden angegeben. Leere Felder stehen für den Anfang bzw. das Ende.",
+    "invalidEditTimeRange": "Die Startzeit muss nichtnegativ sein; die Endzeit muss danach liegen.",
+    "videoFormatId": "Videoformat-ID",
+    "audioFormatIds": "Audioformat-IDs (+ trennt Tonspuren)",
+    "retainedOptions": "Beibehaltene ursprüngliche Optionen",
+    "editSingleAudio": "Der reine Audiomodus und die Audioextraktion benötigen eine einzelne Audioformat-ID."
   },
   "pending": {
     "empty": "Keine ausstehenden Elemente",
@@ -138,6 +146,8 @@
     "remuxFormat": "Container-Format",
     "customArgs": "Zusätzliche Parameter",
     "customArgsPlaceholder": "Zusätzliche yt-dlp-Parameter, z. B. --sleep-requests 2 --sleep-interval 10",
-    "invalidTimeRange": "Wähle einen Bereich innerhalb der Videodauer mit dem Ende nach dem Start."
+    "invalidTimeRange": "Wähle einen Bereich innerhalb der Videodauer mit dem Ende nach dem Start.",
+    "forceKeyframesAtCuts": "Schlüsselbilder an Schnittpunkten erzeugen",
+    "forceKeyframesAtCutsHint": "Die langsamere Neukodierung reduziert Bildfehler an Schnittpunkten. Für schnelles Schneiden deaktivieren."
   }
 }

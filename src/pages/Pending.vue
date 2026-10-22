@@ -256,6 +256,7 @@ const handleDownload = async () => {
         <ExtraOptionsCard
           v-model:start-time="activeItem.startTime"
           v-model:end-time="activeItem.endTime"
+          v-model:force-keyframes-at-cuts="activeItem.forceKeyframesAtCuts"
           v-model:embed-subs="activeItem.embedSubs"
           v-model:embed-thumbnail="activeItem.embedThumbnail"
           v-model:write-thumbnail="activeItem.writeThumbnail"

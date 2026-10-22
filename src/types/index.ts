@@ -180,6 +180,7 @@ export interface DownloadTaskParams {
   subtitles: string[];
   startTime: number | null;
   endTime: number | null;
+  forceKeyframesAtCuts?: boolean;
   noPlaylist: boolean;
   playlistItems: string | null;
   /** 从开始下载直播流 */
@@ -231,6 +232,7 @@ export interface PendingItem extends FetchedVideoData {
   selectedAudioFormat: string;
   startTime: number | null;
   endTime: number | null;
+  forceKeyframesAtCuts?: boolean;
   embedSubs: boolean;
   embedThumbnail: boolean;
   writeThumbnail: boolean;

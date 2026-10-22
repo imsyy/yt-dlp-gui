@@ -32,6 +32,7 @@ beforeEach(() => setActivePinia(createPinia()));
 test("new standard tasks use the configured default mode and can reset to default", () => {
   const settings = useSettingStore();
   expect(createPendingItem(data).downloadMode).toBe("default");
+  expect(createPendingItem(data).forceKeyframesAtCuts).toBe(false);
   settings.defaultDownloadMode = "audio";
   const existing = createPendingItem(data);
   expect(existing.downloadMode).toBe("audio");

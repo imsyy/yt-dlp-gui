@@ -54,7 +54,15 @@
     "confirmCancelDownload": "Bạn có chắc chắn muốn hủy tải xuống này không?",
     "alsoDeleteResidualFiles": "Xóa cả các tệp tạm thời còn lại (.part, v.v.)",
     "confirmRetryAllFailed": "Bạn có muốn thử lại tất cả các tác vụ thất bại không?",
-    "downloadErrors": "yt-dlp báo cáo {count} lỗi. Chi tiết gần nhất:"
+    "downloadErrors": "yt-dlp báo cáo {count} lỗi. Chi tiết gần nhất:",
+    "editAndRetry": "Chỉnh sửa và thử lại",
+    "editTaskHint": "Thay đổi chỉ áp dụng cho tác vụ này. Các tùy chọn khác giữ nguyên giá trị ban đầu.",
+    "editTimeHint": "Thời gian cắt tính bằng giây. Để trống thời gian bắt đầu hoặc kết thúc để dùng đầu hoặc cuối nội dung.",
+    "invalidEditTimeRange": "Thời gian bắt đầu không được âm; thời gian kết thúc phải sau thời gian bắt đầu.",
+    "videoFormatId": "ID định dạng video",
+    "audioFormatIds": "ID định dạng âm thanh (+ ngăn cách các bản âm thanh)",
+    "retainedOptions": "Tùy chọn gốc được giữ lại",
+    "editSingleAudio": "Chế độ chỉ âm thanh và trích xuất âm thanh yêu cầu một ID định dạng âm thanh."
   },
   "pending": {
     "empty": "Chưa có mục nào chờ tải",
@@ -138,6 +146,8 @@
     "remuxFormat": "Định dạng vùng chứa",
     "customArgs": "Tham số bổ sung",
     "customArgsPlaceholder": "Tham số yt-dlp bổ sung, vd: --sleep-requests 2 --sleep-interval 10",
-    "invalidTimeRange": "Chọn khoảng trong thời lượng video, với thời điểm kết thúc sau bắt đầu."
+    "invalidTimeRange": "Chọn khoảng trong thời lượng video, với thời điểm kết thúc sau bắt đầu.",
+    "forceKeyframesAtCuts": "Tạo khung hình chính tại điểm cắt",
+    "forceKeyframesAtCutsHint": "Mã hóa lại chậm hơn để giảm lỗi hình ảnh gần điểm cắt. Tắt để dùng chế độ cắt nhanh."
   }
 }

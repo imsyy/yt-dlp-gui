@@ -25,6 +25,7 @@ watch(thumbnailSrc, () => {
   coverError.value = false;
 });
 const isLogExpanded = ref(false);
+const showTaskEditor = ref(false);
 const logRef = ref<LogInst | null>(null);
 
 const isCompleted = computed(() => props.task.status === "completed");
@@ -436,6 +437,27 @@ const handleRemove = () => {
               {{ $t("downloads.reDownload") }}
             </n-tooltip>
 
+            <!-- 编辑失败或取消任务的本次下载参数 -->
+            <n-tooltip
+              v-if="task.status === 'error' || task.status === 'cancelled'"
+              trigger="hover"
+            >
+              <template #trigger>
+                <n-button
+                  size="tiny"
+                  strong
+                  secondary
+                  :aria-label="$t('downloads.editAndRetry')"
+                  @click="showTaskEditor = true"
+                >
+                  <template #icon>
+                    <n-icon size="16"><icon-mdi-pencil /></n-icon>
+                  </template>
+                </n-button>
+              </template>
+              {{ $t("downloads.editAndRetry") }}
+            </n-tooltip>
+
             <!-- 定位打开所在文件夹（仅已完成） -->
             <n-tooltip v-if="isCompleted" trigger="hover">
               <template #trigger>
@@ -495,6 +517,7 @@ const handleRemove = () => {
       </n-flex>
     </n-flex>
   </n-card>
+  <TaskEditModal v-if="showTaskEditor" v-model:show="showTaskEditor" :task="task" />
 </template>
 
 <style scoped lang="scss">

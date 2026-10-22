@@ -54,7 +54,15 @@
     "confirmCancelDownload": "이 다운로드를 취소하시겠습니까?",
     "alsoDeleteResidualFiles": "남은 임시 파일(.part 등)도 함께 삭제",
     "confirmRetryAllFailed": "실패한 모든 작업을 다시 시도하시겠습니까?",
-    "downloadErrors": "yt-dlp에서 오류 {count}개가 발생했습니다. 최근 세부 정보:"
+    "downloadErrors": "yt-dlp에서 오류 {count}개가 발생했습니다. 최근 세부 정보:",
+    "editAndRetry": "수정 후 재시도",
+    "editTaskHint": "변경 사항은 이 작업에만 적용됩니다. 다른 옵션은 원래 값을 유지합니다.",
+    "editTimeHint": "자르기 시간의 단위는 초입니다. 시작이나 끝을 비워 두면 처음 또는 마지막까지 적용됩니다.",
+    "invalidEditTimeRange": "시작은 0 이상이어야 하며 끝은 시작보다 나중이어야 합니다.",
+    "videoFormatId": "동영상 형식 ID",
+    "audioFormatIds": "오디오 형식 ID (+로 트랙 구분)",
+    "retainedOptions": "유지되는 원래 옵션",
+    "editSingleAudio": "오디오 전용 모드와 오디오 추출에는 하나의 오디오 형식 ID가 필요합니다."
   },
   "pending": {
     "empty": "대기 중인 항목이 없습니다",
@@ -138,6 +146,8 @@
     "remuxFormat": "컨테이너 형식",
     "customArgs": "추가 인수",
     "customArgsPlaceholder": "추가 yt-dlp 인수 (예: --sleep-requests 2 --sleep-interval 10)",
-    "invalidTimeRange": "동영상 길이 내에서 종료가 시작보다 뒤인 구간을 선택하세요."
+    "invalidTimeRange": "동영상 길이 내에서 종료가 시작보다 뒤인 구간을 선택하세요.",
+    "forceKeyframesAtCuts": "자르기 지점에 키프레임 생성",
+    "forceKeyframesAtCutsHint": "다시 인코딩하므로 느리지만 자르기 지점 근처의 화면 깨짐을 줄일 수 있습니다. 끄면 빠른 자르기를 사용합니다."
   }
 }

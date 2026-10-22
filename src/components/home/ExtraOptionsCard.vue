@@ -23,6 +23,7 @@ const startTime = defineModel<number | null>("startTime", {
 const endTime = defineModel<number | null>("endTime", {
   required: true,
 });
+const forceKeyframesAtCuts = defineModel<boolean>("forceKeyframesAtCuts", { default: false });
 const embedSubs = defineModel<boolean>("embedSubs", { required: true });
 const embedThumbnail = defineModel<boolean>("embedThumbnail", {
   required: true,
@@ -286,6 +287,15 @@ watch(endTime, (val) => {
             {{ $t("detail.liveTimeTrimDisabled") }}
           </n-text>
         </n-flex>
+      </n-flex>
+
+      <n-flex vertical :size="4" style="padding-left: 64px">
+        <n-checkbox v-model:checked="forceKeyframesAtCuts" size="small" :disabled="isLive">
+          {{ $t("detail.forceKeyframesAtCuts") }}
+        </n-checkbox>
+        <n-text depth="3" style="font-size: 12px">
+          {{ $t("detail.forceKeyframesAtCutsHint") }}
+        </n-text>
       </n-flex>
 
       <n-flex :size="16" wrap>

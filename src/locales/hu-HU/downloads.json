@@ -54,7 +54,15 @@
     "confirmCancelDownload": "Biztosan meg akarja szakítani ezt a letöltést?",
     "alsoDeleteResidualFiles": "A maradék ideiglenes fájlok (.part stb.) törlése is",
     "confirmRetryAllFailed": "Újrapróbálja az összes sikertelen feladatot?",
-    "downloadErrors": "A yt-dlp {count} hibát jelzett. Legutóbbi részletek:"
+    "downloadErrors": "A yt-dlp {count} hibát jelzett. Legutóbbi részletek:",
+    "editAndRetry": "Szerkesztés és újrapróbálás",
+    "editTaskHint": "A módosítások csak erre a feladatra vonatkoznak. A többi beállítás megtartja eredeti értékét.",
+    "editTimeHint": "A vágási idő másodpercben értendő. Az üres mezők az elejét, illetve a végét jelentik.",
+    "invalidEditTimeRange": "A kezdés nem lehet negatív; a befejezésnek később kell lennie.",
+    "videoFormatId": "Videóformátum azonosítója",
+    "audioFormatIds": "Hangformátum-azonosítók (+ választja el a sávokat)",
+    "retainedOptions": "Megtartott eredeti beállítások",
+    "editSingleAudio": "A csak hang mód és a hang kinyerése egyetlen hangformátum-azonosítót igényel."
   },
   "pending": {
     "empty": "Nincsenek sorban álló videók",
@@ -138,6 +146,8 @@
     "remuxFormat": "Konténer formátum",
     "customArgs": "További argumentumok",
     "customArgsPlaceholder": "További yt-dlp argumentumok, pl. --sleep-requests 2 --sleep-interval 10",
-    "invalidTimeRange": "Válasszon a videó hosszán belüli tartományt, ahol a végpont a kezdőpont után van."
+    "invalidTimeRange": "Válasszon a videó hosszán belüli tartományt, ahol a végpont a kezdőpont után van.",
+    "forceKeyframesAtCuts": "Kulcsképkockák létrehozása a vágási pontoknál",
+    "forceKeyframesAtCutsHint": "A lassabb újrakódolás csökkentheti a vágási pontok körüli képhibákat. Kikapcsolva gyors vágást használ."
   }
 }

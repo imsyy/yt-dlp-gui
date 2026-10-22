@@ -39,6 +39,7 @@ export const normalizeTaskParams = (params?: Partial<DownloadTaskParams>): Downl
   subtitles: Array.isArray(params?.subtitles) ? params.subtitles : [],
   startTime: params?.startTime ?? null,
   endTime: params?.endTime ?? null,
+  forceKeyframesAtCuts: Boolean(params?.forceKeyframesAtCuts),
   noPlaylist: Boolean(params?.noPlaylist),
   playlistItems: params?.playlistItems ?? null,
   liveFromStart: Boolean(params?.liveFromStart),

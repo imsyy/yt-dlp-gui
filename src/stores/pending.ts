@@ -52,6 +52,7 @@ export const createPendingItem = (data: FetchedVideoData, quick = false): Pendin
       "",
     startTime: null,
     endTime: null,
+    forceKeyframesAtCuts: false,
     embedSubs: quick ? false : settingStore.defaultEmbedSubs,
     embedThumbnail: quick ? settingStore.quickEmbedThumbnail : settingStore.defaultEmbedThumbnail,
     writeThumbnail: quick ? settingStore.quickWriteThumbnail : settingStore.defaultWriteThumbnail,

@@ -7,7 +7,7 @@ import {
   requestPermission,
   sendNotification,
 } from "@tauri-apps/plugin-notification";
-import type { DownloadTask } from "@/types";
+import type { DownloadTask, DownloadTaskParams } from "@/types";
 import { useSettingStore } from "@/stores/setting";
 import { formatFileSize } from "@/utils/format";
 import { cleanMultipleTasksResiduals } from "@/utils/taskFiles";
@@ -438,9 +438,10 @@ export const useDownloadStore = defineStore("download", () => {
    * 重新下载失败或已取消的任务（原位重试，更新原有槽位）
    *
    * @param id 待重试的任务 ID
+   * @param editedParams 本次重试的完整参数快照，不修改全局偏好
    * @returns 重试流程 Promise
    */
-  const retryTask = async (id: string): Promise<void> => {
+  const retryTask = async (id: string, editedParams?: DownloadTaskParams): Promise<boolean> => {
     const task = tasks.value.find((taskItem) => taskItem.id === id);
     if (
       !task ||
@@ -449,7 +450,7 @@ export const useDownloadStore = defineStore("download", () => {
       pendingTaskIds.has(id) ||
       cancellations.has(id)
     ) {
-      return;
+      return false;
     }
     retryingTasks.add(task);
 
@@ -457,7 +458,17 @@ export const useDownloadStore = defineStore("download", () => {
     const oldId = task.id;
     pendingTaskIds.add(newId);
     task.id = newId;
-    task.params = normalizeTaskParams(task.params);
+    const params = normalizeTaskParams(editedParams ?? task.params);
+    task.params = { ...params, subtitles: [...params.subtitles] };
+    if (editedParams) {
+      task.formatLabel = i18n.global.t(
+        params.downloadMode === "audio"
+          ? "detail.audioOnly"
+          : params.downloadMode === "video"
+            ? "detail.videoOnly"
+            : "detail.defaultQuality",
+      );
+    }
     task.status = "queued";
     task.percent = 0;
     task.speed = "";
@@ -477,7 +488,7 @@ export const useDownloadStore = defineStore("download", () => {
       } catch {
         // 旧行可能已不存在，继续。
       }
-      if (!tasks.value.includes(task)) return;
+      if (!tasks.value.includes(task)) return false;
       if (!(await persistTask(task)) && task.status === "queued") {
         task.status = "error";
         task.error = i18n.global.t("downloads.startFailed");
@@ -487,6 +498,8 @@ export const useDownloadStore = defineStore("download", () => {
       retryingTasks.delete(task);
     }
     await tryStartNext();
+    const current = tasks.value.find((candidate) => candidate.id === newId);
+    return Boolean(current && current.status !== "error" && current.status !== "cancelled");
   };
 
   /**

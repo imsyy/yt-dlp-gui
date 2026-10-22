@@ -336,17 +336,7 @@ pub(super) fn build_download_args(
 
     // 时间范围裁剪（仅在有实际裁剪范围时添加，避免 *0-inf 触发不必要的 ffmpeg 处理）
     // 前端已将 time picker 值转换为秒数
-    let has_start = params.start_time.is_some_and(|t| t > 0.0);
-    let has_end = params.end_time.is_some();
-    if has_start || has_end {
-        let start = params.start_time.unwrap_or(0.0);
-        let end_str = params
-            .end_time
-            .map(|t| format!("{}", t))
-            .unwrap_or_else(|| "inf".to_string());
-        args.push("--download-sections".to_string());
-        args.push(format!("*{}-{}", start, end_str));
-    }
+    append_time_range_args(&mut args, params);
 
     // 播放列表
     if params.no_playlist {
@@ -369,6 +359,22 @@ pub(super) fn build_download_args(
     Ok(args)
 }
 
+fn append_time_range_args(args: &mut Vec<String>, params: &DownloadParams) {
+    let has_start = params.start_time.is_some_and(|time| time > 0.0);
+    if !has_start && params.end_time.is_none() {
+        return;
+    }
+    let start = params.start_time.unwrap_or(0.0);
+    let end = params
+        .end_time
+        .map(|time| time.to_string())
+        .unwrap_or_else(|| "inf".to_string());
+    args.extend(["--download-sections".to_string(), format!("*{start}-{end}")]);
+    if params.force_keyframes_at_cuts {
+        args.push("--force-keyframes-at-cuts".to_string());
+    }
+}
+
 fn validate_time_range(start: Option<f64>, end: Option<f64>) -> Result<(), String> {
     let start = start.unwrap_or(0.0);
     if !start.is_finite() || start < 0.0 || end.is_some_and(|end| !end.is_finite() || end <= start)
@@ -380,7 +386,7 @@ fn validate_time_range(start: Option<f64>, end: Option<f64>) -> Result<(), Strin
 
 #[cfg(test)]
 mod time_range_tests {
-    use super::validate_time_range;
+    use super::{append_time_range_args, validate_time_range, DownloadParams};
 
     #[test]
     fn rejects_invalid_ranges_before_starting_ffmpeg() {
@@ -390,6 +396,76 @@ mod time_range_tests {
         assert!(validate_time_range(None, Some(f64::INFINITY)).is_err());
         assert!(validate_time_range(None, Some(20.0)).is_ok());
         assert!(validate_time_range(Some(60.0), None).is_ok());
+    }
+
+    #[test]
+    fn precise_cuts_are_opt_in_and_only_apply_to_actual_sections() {
+        let mut params = DownloadParams {
+            start_time: Some(10.0),
+            end_time: Some(30.0),
+            ..Default::default()
+        };
+        let mut args = Vec::new();
+        append_time_range_args(&mut args, &params);
+        assert_eq!(args, ["--download-sections", "*10-30"]);
+        params.force_keyframes_at_cuts = true;
+        args.clear();
+        append_time_range_args(&mut args, &params);
+        assert_eq!(
+            args,
+            ["--download-sections", "*10-30", "--force-keyframes-at-cuts"]
+        );
+
+        params.end_time = None;
+        args.clear();
+        append_time_range_args(&mut args, &params);
+        assert_eq!(
+            args,
+            [
+                "--download-sections",
+                "*10-inf",
+                "--force-keyframes-at-cuts"
+            ]
+        );
+        params.start_time = Some(0.0);
+        args.clear();
+        append_time_range_args(&mut args, &params);
+        assert!(args.is_empty());
+        params.start_time = None;
+        append_time_range_args(&mut args, &params);
+        assert!(args.is_empty());
+        params.end_time = Some(20.0);
+        append_time_range_args(&mut args, &params);
+        assert_eq!(
+            args,
+            ["--download-sections", "*0-20", "--force-keyframes-at-cuts"]
+        );
+    }
+
+    #[test]
+    fn legacy_params_default_to_fast_cuts_and_camel_case_enables_precise_cuts() {
+        let legacy: DownloadParams = serde_json::from_value(serde_json::json!({
+            "startTime": 10,
+            "endTime": 30
+        }))
+        .unwrap();
+        assert!(!legacy.force_keyframes_at_cuts);
+        let mut args = Vec::new();
+        append_time_range_args(&mut args, &legacy);
+        assert_eq!(args, ["--download-sections", "*10-30"]);
+
+        let precise: DownloadParams = serde_json::from_value(serde_json::json!({
+            "forceKeyframesAtCuts": true,
+            "endTime": 30
+        }))
+        .unwrap();
+        assert!(precise.force_keyframes_at_cuts);
+        args.clear();
+        append_time_range_args(&mut args, &precise);
+        assert_eq!(
+            args,
+            ["--download-sections", "*0-30", "--force-keyframes-at-cuts"]
+        );
     }
 }
 
@@ -596,6 +672,7 @@ mod ffmpeg_requirement_tests {
             subtitles: Vec::new(),
             start_time: None,
             end_time: None,
+            force_keyframes_at_cuts: false,
             no_playlist: false,
             playlist_items: None,
             live_from_start: false,

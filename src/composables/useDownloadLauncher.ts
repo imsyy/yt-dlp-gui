@@ -232,6 +232,7 @@ export const useDownloadLauncher = () => {
       subtitles: item.selectedSubtitles,
       startTime,
       endTime,
+      forceKeyframesAtCuts: Boolean(item.forceKeyframesAtCuts),
       liveFromStart: item.liveFromStart,
       ...playlistOptions,
     };

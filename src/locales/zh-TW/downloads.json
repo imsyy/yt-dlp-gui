@@ -54,7 +54,15 @@
     "confirmClearFailed": "確定要清空所有下載失敗的任務嗎？",
     "errorMessage": "錯誤詳情",
     "confirmRetry": "確定要重新嘗試下載該任務嗎？",
-    "downloadErrors": "yt-dlp 共回報 {count} 條錯誤，最近的錯誤詳情："
+    "downloadErrors": "yt-dlp 共回報 {count} 條錯誤，最近的錯誤詳情：",
+    "editAndRetry": "調整後重試",
+    "editTaskHint": "僅修改本次工作，其他選項保留原值。",
+    "editTimeHint": "裁剪時間以秒計。開始留空表示從頭開始，結束留空表示直到結尾。",
+    "invalidEditTimeRange": "開始時間須為非負秒數，結束時間必須晚於開始時間。",
+    "videoFormatId": "影片格式 ID",
+    "audioFormatIds": "音訊格式 ID（多個音軌以 + 連接）",
+    "retainedOptions": "保留的原設定",
+    "editSingleAudio": "僅音訊模式和擷取音訊只支援一個音訊格式 ID。"
   },
   "pending": {
     "empty": "暫無待下載項目",
@@ -138,6 +146,8 @@
     "remuxFormat": "封裝格式",
     "customArgs": "附加參數",
     "customArgsPlaceholder": "附加 yt-dlp 參數，如 --sleep-requests 2 --sleep-interval 10",
-    "invalidTimeRange": "請選擇影片時長內的裁剪範圍，結束時間必須晚於開始時間。"
+    "invalidTimeRange": "請選擇影片時長內的裁剪範圍，結束時間必須晚於開始時間。",
+    "forceKeyframesAtCuts": "在裁剪切點產生關鍵影格",
+    "forceKeyframesAtCutsHint": "將重新編碼，速度較慢，可減少切點附近畫面損壞；關閉則沿用快速裁剪。"
   }
 }
