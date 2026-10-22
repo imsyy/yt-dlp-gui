@@ -108,7 +108,8 @@
     "youtubeVisitorDataPlaceholder": "مثال: CgtBYmNkZWZHaGlqaw%3D%3D",
     "defaultFfmpegArgs": "وسائط FFmpeg الافتراضية",
     "defaultFfmpegArgsHint": "تُطبَّق تلقائيًا على كل فيديو جديد يتم تحليله، ويمكن تعديلها لكل مهمة على حدة",
-    "showTrayIcon": "إظهار أيقونة منطقة الإعلام"
+    "showTrayIcon": "إظهار أيقونة منطقة الإعلام",
+    "showHomeTips": "إظهار نصائح الصفحة الرئيسية"
   },
   "cookie": {
     "settings": "إعدادات ملفات تعريف الارتباط",

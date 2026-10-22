@@ -108,7 +108,8 @@
     "appUpdateSuccess": "Update complete, restarting",
     "appUpdateFailed": "Update failed: {e}",
     "appIsLatest": "You are on the latest version",
-    "systemBinaryNotice": "Currently using the system-installed yt-dlp. \"Check Update\" only updates the app-managed copy. Switch the path mode to \"App Only\" for updates to take effect."
+    "systemBinaryNotice": "Currently using the system-installed yt-dlp. \"Check Update\" only updates the app-managed copy. Switch the path mode to \"App Only\" for updates to take effect.",
+    "showHomeTips": "Show home screen tips"
   },
   "cookie": {
     "settings": "Cookie Settings",

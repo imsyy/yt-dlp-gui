@@ -108,7 +108,8 @@
     "ytdlpChannel": "Kiadási csatorna",
     "defaultFfmpegArgs": "Alapértelmezett FFmpeg-argumentumok",
     "defaultFfmpegArgsHint": "Automatikusan alkalmazza minden újonnan elemzett videóra; feladatonként külön módosítható",
-    "showTrayIcon": "Rendszertálca ikon megjelenítése"
+    "showTrayIcon": "Rendszertálca ikon megjelenítése",
+    "showHomeTips": "Tippek megjelenítése a kezdőlapon"
   },
   "cookie": {
     "settings": "Cookie-beállítások",

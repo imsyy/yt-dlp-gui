@@ -108,7 +108,8 @@
     "youtubeVisitorDataPlaceholder": "ex.: CgtBYmNkZWZHaGlqaw%3D%3D",
     "defaultFfmpegArgs": "Argumentos padrão do FFmpeg",
     "defaultFfmpegArgsHint": "São aplicados a cada vídeo novo analisado; você ainda pode alterar o valor em cada tarefa",
-    "showTrayIcon": "Mostrar ícone na bandeja do sistema"
+    "showTrayIcon": "Mostrar ícone na bandeja do sistema",
+    "showHomeTips": "Mostrar dicas na tela inicial"
   },
   "cookie": {
     "settings": "Configurações de cookies",

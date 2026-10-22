@@ -152,7 +152,14 @@ const formatHistoryTime = (historyTimestamp: number): string => {
 };
 
 const currentTipIndex = ref(0);
-let tipTimer: ReturnType<typeof setInterval> | null = null;
+watchEffect((onCleanup) => {
+  if (!settingStore.showHomeTips) return;
+  const timer = setInterval(() => {
+    const tipsList = translateMessage("home.tips") as string[];
+    currentTipIndex.value = tipsList.length ? (currentTipIndex.value + 1) % tipsList.length : 0;
+  }, 4000);
+  onCleanup(() => clearInterval(timer));
+});
 
 /**
  * 响应来自深链接、命令行或浏览器扩展的外部 URL 导入：
@@ -210,10 +217,6 @@ const applyExternalImport = (routeQuery: Record<string, unknown>): void => {
 };
 
 onMounted(() => {
-  tipTimer = setInterval(() => {
-    const tipsList = translateMessage("home.tips") as string[];
-    currentTipIndex.value = (currentTipIndex.value + 1) % tipsList.length;
-  }, 4000);
   if (route.query.url || route.query.urls) {
     applyExternalImport(route.query);
   }
@@ -228,10 +231,6 @@ watch(
     }
   },
 );
-
-onUnmounted(() => {
-  if (tipTimer) clearInterval(tipTimer);
-});
 
 /**
  * 处理视频解析成功后的数据分发（加入待下载列表或发起快速下载任务）
@@ -511,7 +510,7 @@ const handleBatchSearch = async (): Promise<void> => {
           {{ $t("home.parseHistory") }}
         </n-button>
       </n-flex>
-      <div class="tips-container">
+      <div v-if="settingStore.showHomeTips" class="tips-container">
         <Transition name="tip-fade" mode="out-in">
           <n-text :key="currentTipIndex" depth="3" class="tip-item">
             {{ $t(`home.tips[${currentTipIndex}]`) }}

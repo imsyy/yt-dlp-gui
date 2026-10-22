@@ -108,7 +108,8 @@
     "youtubeVisitorDataPlaceholder": "например, CgtBYmNkZWZHaGlqaw%3D%3D",
     "defaultFfmpegArgs": "Аргументы FFmpeg по умолчанию",
     "defaultFfmpegArgsHint": "Применяются ко всем новым разбираемым видео; для отдельной задачи значение можно изменить",
-    "showTrayIcon": "Показывать значок в системном трее"
+    "showTrayIcon": "Показывать значок в системном трее",
+    "showHomeTips": "Показывать подсказки на главной"
   },
   "cookie": {
     "settings": "Настройки cookies",

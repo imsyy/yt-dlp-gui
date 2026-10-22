@@ -128,6 +128,7 @@ export const useSettingStore = defineStore(
 
     /** 显示系统托盘图标 */
     const showTrayIcon = ref(true);
+    const showHomeTips = ref(true);
 
     /** 启动时自动检查更新 */
     const autoCheckUpdate = ref(true);
@@ -203,6 +204,7 @@ export const useSettingStore = defineStore(
       notifyMode,
       closeToTray,
       showTrayIcon,
+      showHomeTips,
       autoCheckUpdate,
       ytdlpSource,
       denoSource,

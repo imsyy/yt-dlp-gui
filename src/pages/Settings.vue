@@ -177,6 +177,10 @@ watch(
     <n-card :title="$t('settings.personalization')" size="small" class="section-card">
       <div class="info-list">
         <div class="info-row">
+          <span class="info-label">{{ $t("settings.showHomeTips") }}</span>
+          <n-switch v-model:value="settingStore.showHomeTips" />
+        </div>
+        <div class="info-row">
           <span class="info-label">{{ $t("settings.showTaskbarProgress") }}</span>
           <n-switch v-model:value="settingStore.showTaskbarProgress" />
         </div>

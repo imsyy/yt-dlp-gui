@@ -108,7 +108,8 @@
     "youtubeVisitorDataPlaceholder": "ví dụ: CgtBYmNkZWZHaGlqaw%3D%3D",
     "defaultFfmpegArgs": "Tham số FFmpeg mặc định",
     "defaultFfmpegArgsHint": "Tự động áp dụng cho các video mới được phân tích sau này; mỗi tác vụ tải về vẫn có thể chỉnh riêng",
-    "showTrayIcon": "Hiển thị biểu tượng khay hệ thống"
+    "showTrayIcon": "Hiển thị biểu tượng khay hệ thống",
+    "showHomeTips": "Hiển thị mẹo trên màn hình chính"
   },
   "cookie": {
     "settings": "Cài đặt cookie",

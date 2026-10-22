@@ -108,7 +108,8 @@
     "youtubeVisitorDataPlaceholder": "例如：CgtBYmNkZWZHaGlqaw%3D%3D",
     "defaultFfmpegArgs": "預設 FFmpeg 參數",
     "defaultFfmpegArgsHint": "自動套用到之後新解析的影片，每個下載工作仍可個別修改",
-    "showTrayIcon": "顯示系統匣圖示"
+    "showTrayIcon": "顯示系統匣圖示",
+    "showHomeTips": "顯示首頁提示"
   },
   "cookie": {
     "settings": "Cookie 設定",
