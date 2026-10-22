@@ -147,41 +147,94 @@ pub(super) fn spawn_output_reader<R: tokio::io::AsyncRead + Unpin + Send + 'stat
     reader: R,
 ) -> tokio::task::JoinHandle<()> {
     tokio::spawn(async move {
-        use tokio::io::AsyncReadExt;
-        let mut buf_reader = tokio::io::BufReader::new(reader);
-        const MAX_LINE_LEN: usize = 64 * 1024; // 64KB
-        let mut line_buf = Vec::with_capacity(1024);
-        let mut byte_buf = [0u8; 1];
+        read_output_lines(reader, |line| {
+            process_output_line(&app, &task_id, &processes, line)
+        })
+        .await;
+    })
+}
 
-        loop {
-            match buf_reader.read(&mut byte_buf).await {
-                Ok(0) => {
-                    // EOF：处理缓冲区中剩余的内容
-                    if !line_buf.is_empty() {
-                        let line = String::from_utf8_lossy(&line_buf).trim().to_string();
-                        if !line.is_empty() {
-                            process_output_line(&app, &task_id, &processes, &line);
-                        }
-                    }
-                    break;
-                }
-                Ok(_) => {
-                    if byte_buf[0] == b'\n' || byte_buf[0] == b'\r' {
-                        if !line_buf.is_empty() {
-                            let line = String::from_utf8_lossy(&line_buf).trim().to_string();
-                            if !line.is_empty() {
-                                process_output_line(&app, &task_id, &processes, &line);
-                            }
-                            line_buf.clear();
-                        }
-                    } else if line_buf.len() < MAX_LINE_LEN {
-                        line_buf.push(byte_buf[0]);
-                    }
-                }
-                Err(_) => break,
+/// Read whole pipe chunks without scheduling one async read for every byte.
+/// Keep the line bound even if a tool writes arbitrarily long output.
+async fn read_output_lines<R: tokio::io::AsyncRead + Unpin>(
+    mut reader: R,
+    mut process: impl FnMut(&str),
+) {
+    use tokio::io::AsyncReadExt;
+    const MAX_LINE_LEN: usize = 64 * 1024;
+    let mut line = Vec::with_capacity(1024);
+    let mut chunk = [0u8; 8192];
+    while let Ok(count) = reader.read(&mut chunk).await {
+        if count == 0 {
+            break;
+        }
+        for &byte in &chunk[..count] {
+            if byte == b'\n' || byte == b'\r' {
+                emit_output_line(&line, &mut process);
+                line.clear();
+            } else if line.len() < MAX_LINE_LEN {
+                line.push(byte);
             }
         }
-    })
+    }
+    emit_output_line(&line, &mut process);
+}
+
+fn emit_output_line(line: &[u8], process: &mut impl FnMut(&str)) {
+    if !line.is_empty() {
+        let text = String::from_utf8_lossy(line);
+        let text = text.trim();
+        if !text.is_empty() {
+            process(text);
+        }
+    }
+}
+
+#[cfg(test)]
+mod line_reader_tests {
+    use super::read_output_lines;
+
+    fn read_lines(bytes: &[u8]) -> Vec<String> {
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let mut lines = Vec::new();
+        runtime.block_on(read_output_lines(bytes, |line| {
+            lines.push(line.to_string())
+        }));
+        lines
+    }
+
+    #[test]
+    fn handles_ffmpeg_carriage_returns_crlf_and_unterminated_errors() {
+        assert_eq!(
+            read_lines(b"\r\n progress 1\rprogress 2\r\n\n  \nERROR: final error"),
+            ["progress 1", "progress 2", "ERROR: final error"]
+        );
+    }
+
+    #[test]
+    fn preserves_unicode_across_chunk_boundaries() {
+        let text = format!("{}中文🙂\nnext", "x".repeat(8191));
+        assert_eq!(
+            read_lines(text.as_bytes()),
+            [text.split('\n').next().unwrap(), "next"]
+        );
+    }
+
+    #[test]
+    fn bounds_long_lines_without_losing_the_following_error() {
+        let text = format!("{}\nERROR: retained\n", "x".repeat(100_000));
+        let lines = read_lines(text.as_bytes());
+        assert_eq!(lines.len(), 2);
+        assert_eq!(lines[0].len(), 64 * 1024);
+        assert_eq!(lines[1], "ERROR: retained");
+        assert_eq!(
+            read_lines(b"invalid \xff\xfe\nvalid"),
+            ["invalid ��", "valid"]
+        );
+    }
 }
 
 /// 启动异步任务等待子进程完成并发送结果事件
