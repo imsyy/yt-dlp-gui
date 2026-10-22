@@ -53,9 +53,27 @@ fn requires_audio_extraction(params: &DownloadParams) -> bool {
 /// `no_merge` 为 true 时用逗号分别下载各格式，不丢弃已选音轨。
 fn build_format_args(params: &DownloadParams) -> Vec<String> {
     let mut args = build_format_selector_args(params);
+    let selected_video = params
+        .video_format
+        .as_deref()
+        .is_some_and(|format| !format.is_empty());
+    let selected_audio = params
+        .audio_format
+        .as_deref()
+        .is_some_and(|format| !format.is_empty());
+    let has_explicit_format = match params.download_mode.as_str() {
+        _ if params.extract_audio => selected_audio,
+        "audio" => selected_audio,
+        "video" => selected_video,
+        _ => selected_video || selected_audio,
+    };
     // Format IDs belong to individual videos. A different entry in the same post
     // or playlist may not provide the first entry's chosen format IDs.
-    if !params.no_playlist && params.playlist_items.is_some() && args.len() == 2 {
+    if !params.no_playlist
+        && params.playlist_items.is_some()
+        && has_explicit_format
+        && args.len() == 2
+    {
         let fallback = match params.download_mode.as_str() {
             _ if params.extract_audio => "bestaudio/best",
             "audio" => "bestaudio",
@@ -161,6 +179,12 @@ fn build_format_selector_args(params: &DownloadParams) -> Vec<String> {
                     } else {
                         vec!["-f".to_string(), a.to_string()]
                     }
+                }
+                (None, None) if params.no_merge => {
+                    vec![
+                        "-f".to_string(),
+                        "bestvideo/best[vcodec!=none],bestaudio".to_string(),
+                    ]
                 }
                 _ => Vec::new(),
             }
@@ -650,6 +674,49 @@ mod ffmpeg_requirement_tests {
         value.no_merge = true;
         let args = build_format_args(&value);
         assert_eq!(args, ["-f", "137,140"]);
+    }
+
+    #[test]
+    fn no_merge_without_selected_formats_never_uses_the_default_merged_selector() {
+        let mut value = params();
+        value.no_merge = true;
+        value.video_format = None;
+        value.audio_format = None;
+        assert!(!requires_ffmpeg(&value));
+        assert_eq!(
+            build_format_args(&value),
+            ["-f", "bestvideo/best[vcodec!=none],bestaudio"]
+        );
+        value.playlist_items = Some("1,2".into());
+        assert_eq!(
+            build_format_args(&value),
+            ["-f", "bestvideo/best[vcodec!=none],bestaudio"]
+        );
+        value.video_format = Some(String::new());
+        value.audio_format = Some(String::new());
+        assert_eq!(
+            build_format_args(&value),
+            ["-f", "bestvideo/best[vcodec!=none],bestaudio"]
+        );
+    }
+
+    #[test]
+    fn no_merge_keeps_audio_extraction_and_single_stream_modes_separate() {
+        let mut value = params();
+        value.no_merge = true;
+        value.video_format = None;
+        value.audio_format = None;
+        value.playlist_items = Some("1,2".into());
+        value.extract_audio = true;
+        assert!(requires_ffmpeg(&value));
+        assert_eq!(build_format_args(&value), ["-f", "bestaudio/best"]);
+        value.extract_audio = false;
+        value.download_mode = "audio".into();
+        assert!(requires_ffmpeg(&value));
+        assert_eq!(build_format_args(&value), ["-f", "bestaudio/best"]);
+        value.download_mode = "video".into();
+        assert!(!requires_ffmpeg(&value));
+        assert_eq!(build_format_args(&value), ["-f", "bestvideo/best"]);
     }
 
     #[test]
