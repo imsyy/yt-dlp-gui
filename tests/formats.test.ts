@@ -52,6 +52,8 @@ describe("formats utils", () => {
   });
 
   it("normalizes common yt-dlp codec identifiers", () => {
+    expect(getCodecKey(undefined)).toBe("unknown");
+    expect(getCodecLabel(null)).toBe("Unknown");
     expect(getCodecKey("avc1.640028")).toBe("h264");
     expect(getCodecLabel("av01.0.08M.08")).toBe("AV1");
     expect(getCodecLabel("mp4a.40.2")).toBe("AAC");

@@ -148,11 +148,18 @@ export const useDownloadLauncher = () => {
       return "missing-directory";
     }
 
+    const selectedVideo = item.videoFormats.find(
+      (format) => format.format_id === item.selectedVideoFormat,
+    );
+    const videoHasAudio = Boolean(selectedVideo?.acodec && selectedVideo.acodec !== "none");
+    const extractAudio =
+      item.extractAudio || (item.downloadMode === "audio" && !item.selectedAudioFormat);
     const requiresFfmpeg =
       (item.downloadMode === "default" &&
         Boolean(item.selectedVideoFormat || item.selectedAudioFormat) &&
+        (item.isPlaylist || !videoHasAudio || Boolean(item.selectedAudioFormat)) &&
         !item.noMerge) ||
-      item.extractAudio ||
+      extractAudio ||
       item.embedSubs ||
       item.embedThumbnail ||
       item.embedMetadata ||
@@ -199,6 +206,7 @@ export const useDownloadLauncher = () => {
       downloadDir: settingStore.downloadDir,
       downloadMode: item.downloadMode,
       videoFormat: item.selectedVideoFormat || null,
+      videoHasAudio,
       audioFormat: item.selectedAudioFormat || null,
       cookieFile,
       cookieBrowser,
@@ -213,7 +221,7 @@ export const useDownloadLauncher = () => {
       embedMetadata: item.embedMetadata,
       embedChapters: item.embedChapters,
       sponsorblockRemove: item.sponsorblockRemove,
-      extractAudio: item.extractAudio,
+      extractAudio,
       audioConvertFormat: item.audioConvertFormat || null,
       noMerge: item.noMerge,
       recodeFormat: item.recodeFormat || null,

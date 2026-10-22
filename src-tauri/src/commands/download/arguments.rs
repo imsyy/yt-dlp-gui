@@ -8,13 +8,19 @@ use super::model::DownloadParams;
 pub(super) fn requires_ffmpeg(params: &DownloadParams) -> bool {
     (params.download_mode == "default"
         && !params.no_merge
+        && (params.playlist_items.is_some()
+            || !params.video_has_audio
+            || params
+                .audio_format
+                .as_deref()
+                .is_some_and(|format| !format.is_empty()))
         && [
             params.video_format.as_deref(),
             params.audio_format.as_deref(),
         ]
         .iter()
         .any(|format| format.is_some_and(|value| !value.is_empty())))
-        || params.extract_audio
+        || requires_audio_extraction(params)
         || params.embed_subs
         || params.embed_thumbnail
         || params.embed_metadata
@@ -30,6 +36,15 @@ pub(super) fn requires_ffmpeg(params: &DownloadParams) -> bool {
             .is_some_and(|s| !s.is_empty() && s != "auto")
         || params.start_time.is_some_and(|t| t > 0.0)
         || params.end_time.is_some()
+}
+
+fn requires_audio_extraction(params: &DownloadParams) -> bool {
+    params.extract_audio
+        || (params.download_mode == "audio"
+            && params
+                .audio_format
+                .as_deref()
+                .is_none_or(|format| format.is_empty()))
 }
 
 /// 根据下载模式与格式选择，构建 `-f` 格式参数。
@@ -68,7 +83,7 @@ fn build_format_selector_args(params: &DownloadParams) -> Vec<String> {
                     return vec!["-f".to_string(), vf.clone()];
                 }
             }
-            Vec::new()
+            vec!["-f".to_string(), "bestvideo/best".to_string()]
         }
         "audio" => {
             if let Some(ref af) = params.audio_format {
@@ -76,7 +91,7 @@ fn build_format_selector_args(params: &DownloadParams) -> Vec<String> {
                     return vec!["-f".to_string(), af.clone()];
                 }
             }
-            Vec::new()
+            vec!["-f".to_string(), "bestaudio/best".to_string()]
         }
         _ => {
             let vf = params.video_format.as_deref().filter(|s| !s.is_empty());
@@ -90,7 +105,7 @@ fn build_format_selector_args(params: &DownloadParams) -> Vec<String> {
                     }
                 }
                 (Some(v), None) => {
-                    if params.no_merge {
+                    if params.no_merge || params.video_has_audio {
                         vec!["-f".to_string(), v.to_string()]
                     } else {
                         vec![
@@ -207,7 +222,7 @@ pub(super) fn build_download_args(
         args.push("all".to_string());
     }
     // 提取音频模式
-    if params.extract_audio {
+    if requires_audio_extraction(params) {
         args.push("-x".to_string());
         if let Some(ref fmt) = params.audio_convert_format {
             if !fmt.is_empty() {
@@ -452,7 +467,7 @@ mod subtitle_arg_tests {
 
 #[cfg(test)]
 mod ffmpeg_requirement_tests {
-    use super::{build_format_args, requires_ffmpeg, DownloadParams};
+    use super::{build_format_args, requires_audio_extraction, requires_ffmpeg, DownloadParams};
 
     fn params() -> DownloadParams {
         DownloadParams {
@@ -461,6 +476,7 @@ mod ffmpeg_requirement_tests {
             download_dir: ".".to_string(),
             download_mode: "default".to_string(),
             video_format: Some("137".to_string()),
+            video_has_audio: false,
             audio_format: Some("140".to_string()),
             cookie_file: None,
             cookie_browser: None,
@@ -495,6 +511,25 @@ mod ffmpeg_requirement_tests {
     #[test]
     fn separate_video_and_audio_require_ffmpeg_for_default_download() {
         assert!(requires_ffmpeg(&params()));
+    }
+
+    #[test]
+    fn combined_formats_can_download_directly_without_ffmpeg() {
+        let mut value = params();
+        value.video_has_audio = true;
+        value.audio_format = None;
+        assert!(!requires_ffmpeg(&value));
+        assert_eq!(build_format_args(&value), ["-f", "137"]);
+    }
+
+    #[test]
+    fn audio_only_mode_extracts_audio_when_only_combined_formats_exist() {
+        let mut value = params();
+        value.download_mode = "audio".into();
+        value.audio_format = None;
+        assert!(requires_ffmpeg(&value));
+        assert!(requires_audio_extraction(&value));
+        assert_eq!(build_format_args(&value), ["-f", "bestaudio/best"]);
     }
 
     #[test]

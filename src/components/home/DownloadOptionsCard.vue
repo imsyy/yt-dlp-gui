@@ -41,7 +41,7 @@ watch(multipleAudio, (multiple) => {
 const createCodecOptions = (formats: VideoFormat[]) => {
   const codecs = new Map<string, string>();
   for (const format of formats) {
-    const codec = format.vcodec !== "none" ? format.vcodec : format.acodec;
+    const codec = format.vcodec && format.vcodec !== "none" ? format.vcodec : format.acodec;
     codecs.set(getCodecKey(codec), getCodecLabel(codec));
   }
   return [

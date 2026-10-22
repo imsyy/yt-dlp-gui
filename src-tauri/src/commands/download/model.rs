@@ -105,6 +105,7 @@ pub struct DownloadParams {
     pub download_dir: String,
     pub download_mode: String,
     pub video_format: Option<String>,
+    pub video_has_audio: bool,
     pub audio_format: Option<String>,
     pub cookie_file: Option<String>,
     /// 从浏览器读取 Cookie 的浏览器名称

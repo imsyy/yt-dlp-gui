@@ -36,6 +36,10 @@ describe("normalizeTaskParams", () => {
     expect(normalized.downloadDir).toBe("C:/Downloads");
     expect(normalized.downloadMode).toBe("default");
     expect(normalized.videoFormat).toBeNull();
+    expect(normalized.videoHasAudio).toBe(false);
+    expect(normalizeTaskParams({ ...rawLegacyParams, videoHasAudio: true }).videoHasAudio).toBe(
+      true,
+    );
     expect(normalized.noOverwrites).toBe(false);
     expect(normalized.embedSubs).toBe(false);
     expect(normalized.subtitles).toEqual([]);
@@ -172,7 +176,9 @@ describe("detect + migrate runner", () => {
 
     await migrateLegacyData(first.summary);
 
-    expect(mockedInvoke).toHaveBeenCalledWith("db_upsert_tasks_batch", { tasks: expect.any(Array) });
+    expect(mockedInvoke).toHaveBeenCalledWith("db_upsert_tasks_batch", {
+      tasks: expect.any(Array),
+    });
     expect(mockedInvoke).toHaveBeenCalledWith("db_add_history_batch", { items: expect.any(Array) });
     // 校验通过后清理旧数据源
     expect(mockForageRemoveItem).toHaveBeenCalledWith("download_tasks");

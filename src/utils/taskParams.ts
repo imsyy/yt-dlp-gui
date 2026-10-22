@@ -13,6 +13,7 @@ export const normalizeTaskParams = (params?: Partial<DownloadTaskParams>): Downl
   downloadDir: params?.downloadDir || "",
   downloadMode: params?.downloadMode || "default",
   videoFormat: params?.videoFormat ?? null,
+  videoHasAudio: Boolean(params?.videoHasAudio),
   audioFormat: params?.audioFormat ?? null,
   cookieFile: params?.cookieFile ?? null,
   cookieBrowser: params?.cookieBrowser ?? null,
