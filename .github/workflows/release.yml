@@ -82,6 +82,14 @@ jobs:
           includeUpdaterJson: true
           args: --target ${{ matrix.target }}
 
+      - name: Verify macOS bundle resource seal
+        if: matrix.platform == 'macos-latest'
+        shell: bash
+        run: |
+          app="src-tauri/target/${{ matrix.target }}/release/bundle/macos/YDL GUI.app"
+          test -s "$app/Contents/_CodeSignature/CodeResources"
+          codesign --verify --deep --strict --verbose=2 "$app"
+
       - name: Verify AppImage uses host Wayland libraries
         if: matrix.platform == 'ubuntu-22.04'
         shell: bash
