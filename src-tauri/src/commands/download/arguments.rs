@@ -37,6 +37,17 @@ pub(super) fn requires_ffmpeg(params: &DownloadParams) -> bool {
 /// （yt-dlp 无 --no-merge-output 选项，用单独格式替代）。
 fn build_format_args(params: &DownloadParams) -> Vec<String> {
     let mut args = build_format_selector_args(params);
+    // Format IDs belong to individual videos. A different entry in the same post
+    // or playlist may not provide the first entry's chosen format IDs.
+    if !params.no_playlist && params.playlist_items.is_some() && args.len() == 2 {
+        let fallback = match params.download_mode.as_str() {
+            "audio" => "bestaudio",
+            "video" => "bestvideo/best",
+            _ if params.no_merge => "best/bestvideo",
+            _ => "bestvideo*+bestaudio/best",
+        };
+        args[1] = format!("{}/{}", args[1], fallback);
+    }
     if params.download_mode != "video"
         && !params.no_merge
         && params
@@ -495,6 +506,20 @@ mod ffmpeg_requirement_tests {
         value.download_mode = "default".into();
         value.no_merge = true;
         assert_eq!(build_format_args(&value), ["-f", "137"]);
+    }
+
+    #[test]
+    fn playlist_entries_can_fall_back_when_format_ids_differ() {
+        let mut value = params();
+        value.playlist_items = Some("1,2".into());
+        assert_eq!(
+            build_format_args(&value),
+            ["-f", "137+140/bestvideo*+bestaudio/best"]
+        );
+        value.download_mode = "audio".into();
+        assert_eq!(build_format_args(&value), ["-f", "140/bestaudio"]);
+        value.no_playlist = true;
+        assert_eq!(build_format_args(&value), ["-f", "140"]);
     }
 
     #[test]

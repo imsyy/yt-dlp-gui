@@ -87,7 +87,7 @@ export const useVideoStore = defineStore("video", () => {
 
       const entries = filterPlaylistEntries(info.entries || []);
 
-      if (info._type === "playlist" && entries.length) {
+      if ((info._type === "playlist" || info._type === "multi_video") && entries.length) {
         isPlaylist = true;
         playlistEntries = entries.map((e, i) => ({
           id: e.id || String(i + 1),

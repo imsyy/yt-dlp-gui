@@ -30,6 +30,21 @@ test("applies global custom arguments when fetching metadata", async () => {
   );
 });
 
+test.each(["playlist", "multi_video"])("recognizes %s posts with multiple videos", async (type) => {
+  vi.mocked(invoke).mockResolvedValue({
+    _type: type,
+    title: "Post",
+    entries: [
+      { id: "first", title: "First", formats: [], playlist_index: 1 },
+      null,
+      { id: "third", title: "Third", formats: [], playlist_index: 3 },
+    ],
+  });
+  const result = await useVideoStore().fetchVideoInfo("https://example.com/post");
+  expect(result?.isPlaylist).toBe(true);
+  expect(result?.playlistEntries.map((entry) => entry.playlist_index)).toEqual([1, 3]);
+});
+
 test("uses task or quick arguments for metadata refresh, including an explicit empty value", async () => {
   const store = useVideoStore();
   await store.fetchVideoInfo("https://example.com/video", { customArgs: "--sleep-requests 5" });
