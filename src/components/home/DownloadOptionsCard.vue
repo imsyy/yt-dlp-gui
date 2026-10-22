@@ -10,6 +10,8 @@ const props = defineProps<{
   videoFormats: VideoFormat[];
   audioFormats: VideoFormat[];
   videoInfo: VideoInfo;
+  extractAudio?: boolean;
+  noMerge?: boolean;
 }>();
 
 const downloadMode = defineModel<"default" | "video" | "audio">("downloadMode", {
@@ -24,6 +26,17 @@ const selectedAudioFormat = defineModel<string>("selectedAudioFormat", {
 
 const selectedVideoCodec = ref("all");
 const selectedAudioCodec = ref("all");
+const multipleAudio = computed(
+  () => downloadMode.value === "default" && !props.extractAudio && !props.noMerge,
+);
+
+const handleAudioFormatChange = (value: string | string[] | null) => {
+  selectedAudioFormat.value = Array.isArray(value) ? value.join("+") : value || "";
+};
+
+watch(multipleAudio, (multiple) => {
+  if (!multiple) selectedAudioFormat.value = selectedAudioFormat.value.split("+")[0] || "";
+});
 
 const createCodecOptions = (formats: VideoFormat[]) => {
   const codecs = new Map<string, string>();
@@ -118,10 +131,12 @@ const handleVideoCodecChange = (value: string) => {
 
 const handleAudioCodecChange = (value: string) => {
   selectedAudioCodec.value = value;
-  const currentIsVisible = filteredAudioFormats.value.some(
-    (format) => format.format_id === selectedAudioFormat.value,
-  );
-  if (!currentIsVisible) selectedAudioFormat.value = filteredAudioFormats.value[0]?.format_id || "";
+  const visibleSelections = selectedAudioFormat.value
+    .split("+")
+    .filter((id) => filteredAudioFormats.value.some((format) => format.format_id === id));
+  selectedAudioFormat.value = visibleSelections.length
+    ? visibleSelections.join("+")
+    : filteredAudioFormats.value[0]?.format_id || "";
 };
 
 watch(
@@ -193,10 +208,14 @@ watch(
           @update:value="handleAudioCodecChange"
         />
         <n-select
-          v-model:value="selectedAudioFormat"
+          :value="
+            multipleAudio ? selectedAudioFormat.split('+').filter(Boolean) : selectedAudioFormat
+          "
+          :multiple="multipleAudio"
           :options="audioFormatOptions"
           size="small"
           style="min-width: 0"
+          @update:value="handleAudioFormatChange"
         />
       </n-flex>
     </n-flex>

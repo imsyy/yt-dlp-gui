@@ -72,8 +72,8 @@ const estimatedSize = computed(() => {
     }
   }
   if (item.downloadMode !== "video") {
-    const af = item.audioFormats.find((f) => f.format_id === item.selectedAudioFormat);
-    if (af) {
+    const selectedAudio = item.selectedAudioFormat.split("+");
+    for (const af of item.audioFormats.filter((f) => selectedAudio.includes(f.format_id))) {
       const { size } = estimateFileSize(af, duration);
       total += size;
     }
@@ -241,6 +241,8 @@ const handleDownload = async () => {
           v-model:selected-video-format="activeItem.selectedVideoFormat"
           v-model:selected-audio-format="activeItem.selectedAudioFormat"
           :video-formats="activeItem.videoFormats"
+          :extract-audio="activeItem.extractAudio"
+          :no-merge="activeItem.noMerge"
           :audio-formats="activeItem.audioFormats"
           :video-info="activeItem.videoInfo as VideoInfo"
           class="section-card"

@@ -36,6 +36,20 @@ pub(super) fn requires_ffmpeg(params: &DownloadParams) -> bool {
 /// `no_merge` 为 true 时不使用 `+` 拼接，避免触发 ffmpeg 合并
 /// （yt-dlp 无 --no-merge-output 选项，用单独格式替代）。
 fn build_format_args(params: &DownloadParams) -> Vec<String> {
+    let mut args = build_format_selector_args(params);
+    if params.download_mode != "video"
+        && !params.no_merge
+        && params
+            .audio_format
+            .as_deref()
+            .is_some_and(|value| value.contains('+'))
+    {
+        args.push("--audio-multistreams".to_string());
+    }
+    args
+}
+
+fn build_format_selector_args(params: &DownloadParams) -> Vec<String> {
     match params.download_mode.as_str() {
         "video" => {
             if let Some(ref vf) = params.video_format {
@@ -466,6 +480,21 @@ mod ffmpeg_requirement_tests {
     fn merge_mode_uses_plus_concatenation() {
         let args = build_format_args(&params());
         assert_eq!(args, ["-f", "137+140"]);
+    }
+
+    #[test]
+    fn multiple_audio_tracks_are_preserved_in_the_merged_video() {
+        let mut value = params();
+        value.audio_format = Some("140-en+140-es".into());
+        assert_eq!(
+            build_format_args(&value),
+            ["-f", "137+140-en+140-es", "--audio-multistreams"]
+        );
+        value.download_mode = "video".into();
+        assert_eq!(build_format_args(&value), ["-f", "137"]);
+        value.download_mode = "default".into();
+        value.no_merge = true;
+        assert_eq!(build_format_args(&value), ["-f", "137"]);
     }
 
     #[test]
