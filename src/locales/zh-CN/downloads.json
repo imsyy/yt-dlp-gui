@@ -137,6 +137,7 @@
     "playlistTag": "合集 {n}P",
     "views": "次播放",
     "viewWan": "万",
-    "viewYi": "亿"
+    "viewYi": "亿",
+    "invalidTimeRange": "请选择视频时长内的裁剪范围，结束时间必须晚于开始时间。"
   }
 }

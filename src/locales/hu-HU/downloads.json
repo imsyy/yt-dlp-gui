@@ -137,6 +137,7 @@
     "tplErrConversion": "Nem támogatott „{char}” átalakítótípus; a mező után s/d stb. elvárt (lásd az yt-dlp OUTPUT TEMPLATE dokumentációját)",
     "remuxFormat": "Konténer formátum",
     "customArgs": "További argumentumok",
-    "customArgsPlaceholder": "További yt-dlp argumentumok, pl. --sleep-requests 2 --sleep-interval 10"
+    "customArgsPlaceholder": "További yt-dlp argumentumok, pl. --sleep-requests 2 --sleep-interval 10",
+    "invalidTimeRange": "Válasszon a videó hosszán belüli tartományt, ahol a végpont a kezdőpont után van."
   }
 }

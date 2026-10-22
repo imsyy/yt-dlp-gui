@@ -10,6 +10,7 @@ import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import { useVideoStore } from "@/stores/video";
 import { getPlaylistDownloadOptions } from "@/utils/playlist";
+import { isValidTimeRange } from "@/utils/validate";
 import type { DownloadTask, FfmpegStatus, PendingItem } from "@/types";
 
 export type DownloadLaunchResult =
@@ -133,6 +134,15 @@ export const useDownloadLauncher = () => {
   ): Promise<DownloadLaunchResult> => {
     const playlistOptions = getPlaylistDownloadOptions(item.isPlaylist, item.selectedPlaylistItems);
     if (!playlistOptions) return "failed";
+    const startTime = item.startTime != null ? timeToSeconds(item.startTime) : null;
+    const endTime = item.endTime != null ? timeToSeconds(item.endTime) : null;
+    if (
+      !isValidTimeRange(startTime, endTime, item.isPlaylist ? undefined : item.videoInfo.duration)
+    ) {
+      window.$message.error(t("detail.invalidTimeRange"));
+      if (preparingTaskId) await markPreparationError(preparingTaskId);
+      return "failed";
+    }
     if (!settingStore.downloadDir) {
       window.$message.warning(t("detail.setDownloadDirFirst"));
       return "missing-directory";
@@ -212,8 +222,8 @@ export const useDownloadLauncher = () => {
       ffmpegArgs: item.ffmpegArgs || null,
       customArgs: item.customArgs || null,
       subtitles: item.selectedSubtitles,
-      startTime: item.startTime != null ? timeToSeconds(item.startTime) : null,
-      endTime: item.endTime != null ? timeToSeconds(item.endTime) : null,
+      startTime,
+      endTime,
       liveFromStart: item.liveFromStart,
       ...playlistOptions,
     };

@@ -120,6 +120,7 @@ pub(super) fn build_download_args(
     app: &AppHandle,
     params: &DownloadParams,
 ) -> Result<Vec<String>, String> {
+    validate_time_range(params.start_time, params.end_time)?;
     let mut args: Vec<String> = vec![
         "--newline".to_string(),
         "--ignore-config".to_string(),  // 忽略用户系统配置，防止干扰 GUI
@@ -289,6 +290,30 @@ pub(super) fn build_download_args(
     args.push(params.url.clone());
 
     Ok(args)
+}
+
+fn validate_time_range(start: Option<f64>, end: Option<f64>) -> Result<(), String> {
+    let start = start.unwrap_or(0.0);
+    if !start.is_finite() || start < 0.0 || end.is_some_and(|end| !end.is_finite() || end <= start)
+    {
+        return Err("Invalid time range: the end must be after a non-negative start".into());
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod time_range_tests {
+    use super::validate_time_range;
+
+    #[test]
+    fn rejects_invalid_ranges_before_starting_ffmpeg() {
+        assert!(validate_time_range(Some(60.0), Some(60.0)).is_err());
+        assert!(validate_time_range(Some(-1.0), None).is_err());
+        assert!(validate_time_range(Some(f64::NAN), None).is_err());
+        assert!(validate_time_range(None, Some(f64::INFINITY)).is_err());
+        assert!(validate_time_range(None, Some(20.0)).is_ok());
+        assert!(validate_time_range(Some(60.0), None).is_ok());
+    }
 }
 
 /// Keep the template relative so yt-dlp can honor a separate `-P temp:...` path.

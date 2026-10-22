@@ -137,6 +137,7 @@
     "tplErrConversion": "Kiểu chuyển đổi “{char}” không được hỗ trợ; sau trường dữ liệu phải là s/d v.v. (xem OUTPUT TEMPLATE của yt-dlp)",
     "remuxFormat": "Định dạng vùng chứa",
     "customArgs": "Tham số bổ sung",
-    "customArgsPlaceholder": "Tham số yt-dlp bổ sung, vd: --sleep-requests 2 --sleep-interval 10"
+    "customArgsPlaceholder": "Tham số yt-dlp bổ sung, vd: --sleep-requests 2 --sleep-interval 10",
+    "invalidTimeRange": "Chọn khoảng trong thời lượng video, với thời điểm kết thúc sau bắt đầu."
   }
 }

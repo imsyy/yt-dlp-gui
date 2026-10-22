@@ -2,6 +2,7 @@
 import { NFlex, NCheckbox, type LogInst } from "naive-ui";
 import { revealItemInDir, openUrl } from "@tauri-apps/plugin-opener";
 import { invoke } from "@tauri-apps/api/core";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { useDownloadStore } from "@/stores/download";
 import { useI18n } from "vue-i18n";
 import { formatError } from "@/utils/format";
@@ -115,16 +116,21 @@ const toggleLog = () => {
   }
 };
 
-watch(
-  () => props.task.logs.length,
-  () => {
-    if (isLogExpanded.value) {
-      nextTick(() => {
-        logRef.value?.scrollTo({ position: "bottom", silent: true });
-      });
-    }
-  },
-);
+const copyLog = async () => {
+  try {
+    await writeText(props.task.logs.join("\n"));
+  } catch {
+    window.$message.error(t("clipboard.writeFailed"));
+  }
+};
+
+watch(logContent, () => {
+  if (isLogExpanded.value) {
+    nextTick(() => {
+      logRef.value?.scrollTo({ position: "bottom", silent: true });
+    });
+  }
+});
 
 /** 打开源网页 */
 const handleOpenSource = async () => {
@@ -386,9 +392,9 @@ const handleRemove = () => {
               {{ $t("common.open") }}
             </n-tooltip>
 
-            <!-- 查看/收起任务日志（进行中或失败状态） -->
+            <!-- 查看/收起任务日志 -->
             <n-button
-              v-if="isActive || task.status === 'error'"
+              v-if="isActive || task.logs.length > 0"
               size="tiny"
               strong
               secondary
@@ -471,7 +477,18 @@ const handleRemove = () => {
 
         <n-collapse-transition :show="isLogExpanded">
           <div class="task-log">
-            <n-log ref="logRef" :log="logContent" :rows="8" :font-size="12" :trim="false" />
+            <n-flex justify="end">
+              <n-button size="tiny" :disabled="!task.logs.length" @click="copyLog">
+                {{ $t("common.copy") }}
+              </n-button>
+            </n-flex>
+            <n-log
+              ref="logRef"
+              :log="logContent"
+              :font-size="12"
+              :trim="false"
+              class="task-log-content"
+            />
           </div>
         </n-collapse-transition>
       </n-flex>
@@ -555,9 +572,24 @@ const handleRemove = () => {
 }
 
 .task-log {
+  display: flex;
+  flex-direction: column;
+  height: 200px;
+  min-height: 100px;
+  max-height: 70vh;
+  resize: vertical;
   border-radius: 8px;
   padding: 6px 0 6px 6px;
   overflow: hidden;
   background: var(--n-color-modal);
+
+  :deep(*) {
+    user-select: text;
+  }
+}
+
+.task-log-content {
+  flex: 1;
+  min-height: 0;
 }
 </style>

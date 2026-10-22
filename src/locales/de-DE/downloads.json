@@ -137,6 +137,7 @@
     "tplErrConversion": "Nicht unterstützter Konvertierungstyp „{char}“; nach dem Feld wird s/d usw. erwartet (siehe yt-dlp OUTPUT TEMPLATE)",
     "remuxFormat": "Container-Format",
     "customArgs": "Zusätzliche Parameter",
-    "customArgsPlaceholder": "Zusätzliche yt-dlp-Parameter, z. B. --sleep-requests 2 --sleep-interval 10"
+    "customArgsPlaceholder": "Zusätzliche yt-dlp-Parameter, z. B. --sleep-requests 2 --sleep-interval 10",
+    "invalidTimeRange": "Wähle einen Bereich innerhalb der Videodauer mit dem Ende nach dem Start."
   }
 }

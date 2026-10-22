@@ -137,6 +137,7 @@
     "tplErrConversion": "Nepodporovaný typ konverzie „{char}“; po poli sa očakáva s/d a pod. (pozri yt-dlp OUTPUT TEMPLATE)",
     "remuxFormat": "Formát kontajnera",
     "customArgs": "Ďalšie parametre",
-    "customArgsPlaceholder": "Dodatočné parametre yt-dlp, napr. --sleep-requests 2 --sleep-interval 10"
+    "customArgsPlaceholder": "Dodatočné parametre yt-dlp, napr. --sleep-requests 2 --sleep-interval 10",
+    "invalidTimeRange": "Vyberte rozsah v rámci dĺžky videa s koncom po začiatku."
   }
 }

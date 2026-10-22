@@ -137,6 +137,7 @@
     "tplErrConversion": "지원하지 않는 변환 형식 \"{char}\"입니다. 필드 뒤에는 s/d 등을 지정해야 합니다(yt-dlp OUTPUT TEMPLATE 참고)",
     "remuxFormat": "컨테이너 형식",
     "customArgs": "추가 인수",
-    "customArgsPlaceholder": "추가 yt-dlp 인수 (예: --sleep-requests 2 --sleep-interval 10)"
+    "customArgsPlaceholder": "추가 yt-dlp 인수 (예: --sleep-requests 2 --sleep-interval 10)",
+    "invalidTimeRange": "동영상 길이 내에서 종료가 시작보다 뒤인 구간을 선택하세요."
   }
 }

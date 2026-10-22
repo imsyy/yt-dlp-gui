@@ -137,6 +137,7 @@
     "tplErrConversion": "変換タイプ「{char}」はサポートされていません。フィールドの後には s/d などを指定してください（yt-dlp の OUTPUT TEMPLATE を参照）",
     "remuxFormat": "コンテナ変換",
     "customArgs": "追加引数",
-    "customArgsPlaceholder": "追加の yt-dlp 引数（例: --sleep-requests 2 --sleep-interval 10）"
+    "customArgsPlaceholder": "追加の yt-dlp 引数（例: --sleep-requests 2 --sleep-interval 10）",
+    "invalidTimeRange": "動画の長さ以内で、終了が開始より後になる範囲を選んでください。"
   }
 }

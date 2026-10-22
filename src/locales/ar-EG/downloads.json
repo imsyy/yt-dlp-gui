@@ -137,6 +137,7 @@
     "tplErrConversion": "نوع التحويل “{char}” غير مدعوم؛ يُتوقَّع بعد الحقل نوع مثل s/d (راجع OUTPUT TEMPLATE في yt-dlp)",
     "remuxFormat": "تنسيق الحاوية",
     "customArgs": "معلمات إضافية",
-    "customArgsPlaceholder": "معلمات yt-dlp إضافية، مثل --sleep-requests 2 --sleep-interval 10"
+    "customArgsPlaceholder": "معلمات yt-dlp إضافية، مثل --sleep-requests 2 --sleep-interval 10",
+    "invalidTimeRange": "اختر نطاقًا ضمن مدة الفيديو، بحيث تكون النهاية بعد البداية."
   }
 }

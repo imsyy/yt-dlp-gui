@@ -137,6 +137,7 @@
     "tplErrConversion": "Неподдерживаемый тип преобразования «{char}»; после поля ожидается s/d и т. п. (см. OUTPUT TEMPLATE в документации yt-dlp)",
     "remuxFormat": "Контейнер",
     "customArgs": "Дополнительные аргументы",
-    "customArgsPlaceholder": "Дополнительные аргументы yt-dlp, например --sleep-requests 2 --sleep-interval 10"
+    "customArgsPlaceholder": "Дополнительные аргументы yt-dlp, например --sleep-requests 2 --sleep-interval 10",
+    "invalidTimeRange": "Выберите диапазон в пределах длительности видео; конец должен быть позже начала."
   }
 }

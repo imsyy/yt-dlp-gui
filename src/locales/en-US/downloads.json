@@ -137,6 +137,7 @@
     "playlistTag": "Playlist {n}P",
     "views": " views",
     "viewWan": "K",
-    "viewYi": "M"
+    "viewYi": "M",
+    "invalidTimeRange": "Choose a range within the video duration, with the end after the start."
   }
 }

@@ -234,13 +234,11 @@ export const useDownloadStore = defineStore("download", () => {
             task.fileSizeBytes = event.payload.fileSizeBytes;
             task.total = formatFileSize(event.payload.fileSizeBytes);
           }
-          // 已完成任务不再需要运行时日志：清空以节省内存与数据库空间
-          task.logs = [];
           notify(
             i18n.global.t("downloads.notifyComplete"),
             task.title || i18n.global.t("downloads.notifyCompleteBody"),
           );
-          // 后端只落了状态/产物，内存里的 total/清空后的 logs 需要同步回库
+          // Preserve the bounded log buffer for diagnostics after completion.
           void updateTask(task);
         }
         updateTaskbarProgress();

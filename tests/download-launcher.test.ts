@@ -24,7 +24,7 @@ const processingOptions: Partial<PendingItem>[] = [
   { downloadMode: "default", selectedVideoFormat: "137", selectedAudioFormat: "140" },
   { downloadMode: "default", selectedVideoFormat: "137" },
   { downloadMode: "audio", extractAudio: true },
-  { downloadMode: "video", startTime: 1000 },
+  { downloadMode: "video", startTime: new Date(2026, 0, 1, 0, 0, 10).getTime() },
   { downloadMode: "video", remuxFormat: "mkv" },
 ];
 
