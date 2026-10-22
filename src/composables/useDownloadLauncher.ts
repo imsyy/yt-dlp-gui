@@ -138,15 +138,24 @@ export const useDownloadLauncher = () => {
       return "missing-directory";
     }
 
-    const requiresFfmpegMerge =
-      item.downloadMode === "default" &&
-      Boolean(item.selectedVideoFormat) &&
-      Boolean(item.selectedAudioFormat) &&
-      !item.noMerge;
-    if (requiresFfmpegMerge) {
+    const requiresFfmpeg =
+      (item.downloadMode === "default" &&
+        Boolean(item.selectedVideoFormat || item.selectedAudioFormat) &&
+        !item.noMerge) ||
+      item.extractAudio ||
+      item.embedSubs ||
+      item.embedThumbnail ||
+      item.embedMetadata ||
+      item.embedChapters ||
+      item.sponsorblockRemove ||
+      Boolean(item.recodeFormat) ||
+      Boolean(item.remuxFormat && item.remuxFormat !== "auto") ||
+      item.startTime != null ||
+      item.endTime != null;
+    if (requiresFfmpeg) {
       try {
         const status = await invoke<FfmpegStatus>("get_ffmpeg_status");
-        if (!status.installed) {
+        if (!status.installed || !status.runnable) {
           statusStore.showFfmpegSetupModal = true;
           if (preparingTaskId) await markPreparationError(preparingTaskId);
           return "missing-ffmpeg";

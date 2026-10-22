@@ -5,17 +5,31 @@ use tauri::AppHandle;
 
 use super::model::DownloadParams;
 
-pub(super) fn requires_ffmpeg_merge(params: &DownloadParams) -> bool {
-    params.download_mode == "default"
-        && params
-            .video_format
-            .as_deref()
-            .is_some_and(|format| !format.is_empty())
-        && params
-            .audio_format
-            .as_deref()
-            .is_some_and(|format| !format.is_empty())
+pub(super) fn requires_ffmpeg(params: &DownloadParams) -> bool {
+    (params.download_mode == "default"
         && !params.no_merge
+        && [
+            params.video_format.as_deref(),
+            params.audio_format.as_deref(),
+        ]
+        .iter()
+        .any(|format| format.is_some_and(|value| !value.is_empty())))
+        || params.extract_audio
+        || params.embed_subs
+        || params.embed_thumbnail
+        || params.embed_metadata
+        || params.embed_chapters
+        || params.sponsorblock_remove
+        || params
+            .recode_format
+            .as_deref()
+            .is_some_and(|s| !s.is_empty())
+        || params
+            .remux_format
+            .as_deref()
+            .is_some_and(|s| !s.is_empty() && s != "auto")
+        || params.start_time.is_some_and(|t| t > 0.0)
+        || params.end_time.is_some()
 }
 
 /// 根据下载模式与格式选择，构建 `-f` 格式参数。
@@ -54,7 +68,13 @@ fn build_format_args(params: &DownloadParams) -> Vec<String> {
                     if params.no_merge {
                         vec!["-f".to_string(), v.to_string()]
                     } else {
-                        vec!["-f".to_string(), format!("{}+bestaudio/{}", v, v)]
+                        vec![
+                            "-f".to_string(),
+                            format!(
+                                "{0}[acodec!=none]/{0}+bestaudio/best[vcodec!=none][acodec!=none]",
+                                v
+                            ),
+                        ]
                     }
                 }
                 (None, Some(a)) => {
@@ -382,7 +402,7 @@ mod subtitle_arg_tests {
 
 #[cfg(test)]
 mod ffmpeg_requirement_tests {
-    use super::{build_format_args, requires_ffmpeg_merge, DownloadParams};
+    use super::{build_format_args, requires_ffmpeg, DownloadParams};
 
     fn params() -> DownloadParams {
         DownloadParams {
@@ -424,14 +444,14 @@ mod ffmpeg_requirement_tests {
 
     #[test]
     fn separate_video_and_audio_require_ffmpeg_for_default_download() {
-        assert!(requires_ffmpeg_merge(&params()));
+        assert!(requires_ffmpeg(&params()));
     }
 
     #[test]
     fn explicit_no_merge_allows_separate_output_files() {
         let mut value = params();
         value.no_merge = true;
-        assert!(!requires_ffmpeg_merge(&value));
+        assert!(!requires_ffmpeg(&value));
     }
 
     #[test]
@@ -446,5 +466,33 @@ mod ffmpeg_requirement_tests {
     fn merge_mode_uses_plus_concatenation() {
         let args = build_format_args(&params());
         assert_eq!(args, ["-f", "137+140"]);
+    }
+
+    #[test]
+    fn single_video_selection_does_not_fall_back_to_a_silent_video() {
+        let mut value = params();
+        value.audio_format = None;
+        assert_eq!(
+            build_format_args(&value),
+            [
+                "-f",
+                "137[acodec!=none]/137+bestaudio/best[vcodec!=none][acodec!=none]"
+            ]
+        );
+        assert!(requires_ffmpeg(&value));
+    }
+
+    #[test]
+    fn postprocessing_requires_ffmpeg_even_without_a_merge() {
+        let mut value = params();
+        value.no_merge = true;
+        value.extract_audio = true;
+        assert!(requires_ffmpeg(&value));
+        value.extract_audio = false;
+        value.start_time = Some(15.0);
+        assert!(requires_ffmpeg(&value));
+        value.start_time = None;
+        value.remux_format = Some("mkv".into());
+        assert!(requires_ffmpeg(&value));
     }
 }

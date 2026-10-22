@@ -20,6 +20,7 @@ export interface BrowserExtensionImport {
 
 export interface ToolStatus {
   installed: boolean;
+  runnable: boolean;
   version: string;
   path: string;
   source: ToolSource;
