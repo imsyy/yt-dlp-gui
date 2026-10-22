@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { normalizeAudioFormat, normalizeVideoFormat } from "@/utils/normalizer";
 import { getCodecKey, getCodecLabel } from "@/utils/formats";
+import { useSettingStore } from "@/stores/setting";
 import { useI18n } from "vue-i18n";
 import type { VideoFormat, VideoInfo } from "@/types";
 
 const { t } = useI18n();
+const settingStore = useSettingStore();
 
 const props = defineProps<{
   videoFormats: VideoFormat[];
@@ -125,6 +127,7 @@ const audioFormatOptions = computed(() => {
 });
 
 const handleVideoCodecChange = (value: string) => {
+  settingStore.preferredVideoCodec = value;
   selectedVideoCodec.value = value;
   const currentIsVisible = filteredVideoFormats.value.some(
     (format) => format.format_id === selectedVideoFormat.value,
@@ -133,6 +136,7 @@ const handleVideoCodecChange = (value: string) => {
 };
 
 const handleAudioCodecChange = (value: string) => {
+  settingStore.preferredAudioCodec = value;
   selectedAudioCodec.value = value;
   const visibleSelections = selectedAudioFormat.value
     .split("+")
@@ -143,21 +147,45 @@ const handleAudioCodecChange = (value: string) => {
 };
 
 watch(
-  () => props.videoFormats,
+  [
+    () => props.videoInfo,
+    () => props.videoFormats,
+    selectedVideoFormat,
+    () => settingStore.preferredVideoCodec,
+  ],
   () => {
-    if (!videoCodecOptions.value.some((option) => option.value === selectedVideoCodec.value)) {
-      selectedVideoCodec.value = "all";
-    }
+    const preferred = settingStore.preferredVideoCodec;
+    const selected = props.videoFormats.find(
+      (format) => format.format_id === selectedVideoFormat.value,
+    );
+    selectedVideoCodec.value =
+      videoCodecOptions.value.some((option) => option.value === preferred) &&
+      (!selected || getCodecKey(selected.vcodec) === preferred)
+        ? preferred
+        : "all";
   },
+  { immediate: true },
 );
 
 watch(
-  () => props.audioFormats,
+  [
+    () => props.videoInfo,
+    () => props.audioFormats,
+    selectedAudioFormat,
+    () => settingStore.preferredAudioCodec,
+  ],
   () => {
-    if (!audioCodecOptions.value.some((option) => option.value === selectedAudioCodec.value)) {
-      selectedAudioCodec.value = "all";
-    }
+    const preferred = settingStore.preferredAudioCodec;
+    const selectedIds = selectedAudioFormat.value.split("+");
+    const selectionsMatch = props.audioFormats
+      .filter((format) => selectedIds.includes(format.format_id))
+      .every((format) => getCodecKey(format.acodec) === preferred);
+    selectedAudioCodec.value =
+      audioCodecOptions.value.some((option) => option.value === preferred) && selectionsMatch
+        ? preferred
+        : "all";
   },
+  { immediate: true },
 );
 </script>
 

@@ -1,10 +1,15 @@
-import { expect, test, vi } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
+import { createPinia, setActivePinia } from "pinia";
 import { createRenderer, getCurrentInstance, h, ssrContextKey } from "vue";
 import DownloadOptionsCard from "@/components/home/DownloadOptionsCard.vue";
+import { useSettingStore } from "@/stores/setting";
 import type { VideoFormat, VideoInfo } from "@/types";
 import type { Component, ComponentInternalInstance } from "vue";
 
 vi.mock("vue-i18n", () => ({ useI18n: () => ({ t: (key: string) => key }) }));
+vi.mock("@/locales", () => ({ resolveLocale: () => "en-US", setI18nLocale: vi.fn() }));
+
+beforeEach(() => setActivePinia(createPinia()));
 
 // Exercise the component's real model/watch lifecycle without a browser or DOM dependency.
 const renderer = createRenderer<Record<string, never>, Record<string, never>>({
@@ -55,6 +60,9 @@ const mountCard = (mode: "default" | "video" | "audio" = "default") => {
     selectedVideoFormat: "video",
     selectedAudioFormat: "en+es",
     extractAudio: false,
+    videoInfo: { ...videoInfo },
+    videoFormats: [format("video", true)],
+    audioFormats: [format("en"), format("es")],
   });
   let componentState: Record<string, unknown> = {};
   const Card: Component = {
@@ -71,9 +79,9 @@ const mountCard = (mode: "default" | "video" | "audio" = "default") => {
     render: () =>
       h(Card, {
         ...state,
-        videoInfo,
-        videoFormats: [format("video", true)],
-        audioFormats: [format("en"), format("es")],
+        "onUpdate:selectedVideoFormat": (value: string) => {
+          state.selectedVideoFormat = value;
+        },
         "onUpdate:selectedAudioFormat": (value: string) => {
           state.selectedAudioFormat = value;
         },
@@ -82,7 +90,19 @@ const mountCard = (mode: "default" | "video" | "audio" = "default") => {
   // Vitest transforms SFCs for SSR, whose setup registers this module in the context.
   app.provide(ssrContextKey, { modules: new Set() });
   app.mount({});
-  return { state, multipleAudio: () => componentState.multipleAudio, unmount: () => app.unmount() };
+  return {
+    state,
+    multipleAudio: () => componentState.multipleAudio,
+    videoCodec: () => componentState.selectedVideoCodec,
+    audioCodec: () => componentState.selectedAudioCodec,
+    visibleVideoFormats: () => componentState.filteredVideoFormats as VideoFormat[],
+    visibleAudioFormats: () => componentState.filteredAudioFormats as VideoFormat[],
+    selectVideoCodec: (value: string) =>
+      (componentState.handleVideoCodecChange as (value: string) => void)(value),
+    selectAudioCodec: (value: string) =>
+      (componentState.handleAudioCodecChange as (value: string) => void)(value),
+    unmount: () => app.unmount(),
+  };
 };
 
 test("switching to video-only and back preserves all selected audio tracks", async () => {
@@ -121,5 +141,65 @@ test("an initial audio-only configuration is normalized before displaying the se
   const card = mountCard("audio");
   await nextTick();
   expect(card.state.selectedAudioFormat).toBe("en");
+  card.unmount();
+});
+
+test("user codec filters update the existing settings store", async () => {
+  const settings = useSettingStore();
+  const card = mountCard();
+  card.state.videoFormats.push({ ...format("av1", true), vcodec: "av01.0.08M.08" });
+  card.state.audioFormats.push({ ...format("aac"), acodec: "mp4a.40.2" });
+  await nextTick();
+  card.selectVideoCodec("av1");
+  card.selectAudioCodec("aac");
+  await nextTick();
+  expect(settings.preferredVideoCodec).toBe("av1");
+  expect(settings.preferredAudioCodec).toBe("aac");
+  expect(card.state.selectedVideoFormat).toBe("av1");
+  expect(card.state.selectedAudioFormat).toBe("aac");
+  card.selectVideoCodec("all");
+  expect(settings.preferredVideoCodec).toBe("all");
+  card.unmount();
+});
+
+test("a reused card exposes existing selections when switching pending items", async () => {
+  const settings = useSettingStore();
+  settings.preferredVideoCodec = "h264";
+  settings.preferredAudioCodec = "opus";
+  const card = mountCard();
+  expect(card.videoCodec()).toBe("h264");
+  expect(card.audioCodec()).toBe("opus");
+
+  card.state.videoInfo = { ...videoInfo, title: "Other item" };
+  card.state.videoFormats = [
+    format("video", true),
+    { ...format("av1", true), vcodec: "av01.0.08M.08" },
+  ];
+  card.state.audioFormats = [format("opus"), { ...format("aac"), acodec: "mp4a.40.2" }];
+  card.state.selectedVideoFormat = "av1";
+  card.state.selectedAudioFormat = "opus+aac";
+  await nextTick();
+  expect(card.videoCodec()).toBe("all");
+  expect(card.audioCodec()).toBe("all");
+  expect(card.visibleVideoFormats().map((format) => format.format_id)).toContain("av1");
+  expect(card.visibleAudioFormats()).toHaveLength(2);
+  expect(card.state.selectedVideoFormat).toBe("av1");
+  expect(card.state.selectedAudioFormat).toBe("opus+aac");
+  expect(settings.preferredVideoCodec).toBe("h264");
+  expect(settings.preferredAudioCodec).toBe("opus");
+  card.unmount();
+});
+
+test("unsupported saved codecs keep available selectors visible without changing preferences", () => {
+  const settings = useSettingStore();
+  settings.preferredVideoCodec = "hevc";
+  settings.preferredAudioCodec = "aac";
+  const card = mountCard();
+  expect(card.videoCodec()).toBe("all");
+  expect(card.audioCodec()).toBe("all");
+  expect(card.visibleVideoFormats()).toHaveLength(1);
+  expect(card.visibleAudioFormats()).toHaveLength(2);
+  expect(settings.preferredVideoCodec).toBe("hevc");
+  expect(settings.preferredAudioCodec).toBe("aac");
   card.unmount();
 });

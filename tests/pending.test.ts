@@ -1,5 +1,6 @@
 import { beforeEach, expect, test, vi } from "vitest";
-import { createPinia, setActivePinia } from "pinia";
+import { createPinia, disposePinia, setActivePinia } from "pinia";
+import { createPersistedState } from "pinia-plugin-persistedstate";
 import { useSettingStore } from "@/stores/setting";
 import { createPendingItem, usePendingStore } from "@/stores/pending";
 import type { FetchedVideoData, VideoFormat } from "@/types";
@@ -121,4 +122,88 @@ test("refresh does not silently select other episodes when selected ones disappe
     playlistEntries: [{ id: "5", title: "Five", url: "", duration: 60, playlist_index: 5 }],
   });
   expect(store.activeItem!.selectedPlaylistItems).toEqual([]);
+});
+
+const codecData = (): FetchedVideoData => ({
+  ...data,
+  videoFormats: [
+    { ...format("av1-2160"), vcodec: "av01.0.12M.08", height: 2160 },
+    { ...format("vp9-1080"), vcodec: "vp09.00.40.08", height: 1080 },
+    { ...format("h264-720"), vcodec: "avc1.64001f", height: 720 },
+  ],
+  audioFormats: [
+    { ...format("opus"), acodec: "opus" },
+    { ...format("aac"), acodec: "mp4a.40.2" },
+  ],
+});
+
+test("new tasks apply normalized video and audio codec preferences", () => {
+  const settings = useSettingStore();
+  settings.preferredVideoCodec = "h264";
+  settings.preferredAudioCodec = "aac";
+  const item = createPendingItem(codecData());
+  expect(item.selectedVideoFormat).toBe("h264-720");
+  expect(item.selectedAudioFormat).toBe("aac");
+});
+
+test("quick height limits take priority over the saved codec", () => {
+  const settings = useSettingStore();
+  settings.preferredVideoCodec = "av1";
+  settings.quickMaxHeight = 1080;
+  expect(createPendingItem(codecData(), true).selectedVideoFormat).toBe("vp9-1080");
+  settings.preferredVideoCodec = "h264";
+  expect(createPendingItem(codecData(), true).selectedVideoFormat).toBe("h264-720");
+});
+
+test("unsupported codec preferences fall back without clearing the preference", () => {
+  const settings = useSettingStore();
+  settings.preferredVideoCodec = "hevc";
+  settings.preferredAudioCodec = "vorbis";
+  const item = createPendingItem(codecData());
+  expect(item.selectedVideoFormat).toBe("av1-2160");
+  expect(item.selectedAudioFormat).toBe("opus");
+  expect(settings.preferredVideoCodec).toBe("hevc");
+  expect(settings.preferredAudioCodec).toBe("vorbis");
+  settings.preferredVideoCodec = "all";
+  settings.preferredAudioCodec = "all";
+  expect(createPendingItem(codecData()).selectedVideoFormat).toBe("av1-2160");
+});
+
+test("changed global codec preferences never reset an existing pending item or refresh", () => {
+  const store = usePendingStore();
+  const settings = useSettingStore();
+  const source = codecData();
+  const id = store.add(source);
+  store.activeItem!.selectedVideoFormat = "vp9-1080";
+  store.activeItem!.selectedAudioFormat = "opus+aac";
+  settings.preferredVideoCodec = "h264";
+  settings.preferredAudioCodec = "aac";
+  expect(store.activeItem!.selectedVideoFormat).toBe("vp9-1080");
+  store.refresh(id, { ...source, videoInfo: { ...source.videoInfo } });
+  expect(store.activeItem!.selectedVideoFormat).toBe("vp9-1080");
+  expect(store.activeItem!.selectedAudioFormat).toBe("opus+aac");
+  expect(createPendingItem(source).selectedVideoFormat).toBe("h264-720");
+});
+
+test("codec preferences restore through the existing setting persistence", () => {
+  const entries = new Map<string, string>();
+  const storage = {
+    getItem: (key: string) => entries.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      entries.set(key, value);
+    },
+  };
+  const first = createPinia().use(createPersistedState({ storage }));
+  createApp({}).use(first);
+  const settings = useSettingStore(first);
+  settings.preferredVideoCodec = "h264";
+  settings.preferredAudioCodec = "aac";
+  settings.$persist();
+  disposePinia(first);
+
+  const restored = createPinia().use(createPersistedState({ storage }));
+  createApp({}).use(restored);
+  expect(useSettingStore(restored).preferredVideoCodec).toBe("h264");
+  expect(useSettingStore(restored).preferredAudioCodec).toBe("aac");
+  disposePinia(restored);
 });

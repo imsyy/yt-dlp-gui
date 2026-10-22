@@ -1,14 +1,22 @@
 import { defineStore } from "pinia";
 import { useSettingStore } from "@/stores/setting";
+import { getCodecKey } from "@/utils/formats";
 import type { FetchedVideoData, PendingItem, VideoFormat } from "@/types";
 
 const generateId = () => `pd_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
-const selectVideoFormat = (formats: VideoFormat[], maxHeight?: number): string => {
-  if (!maxHeight) return formats[0]?.format_id ?? "";
+const selectVideoFormat = (
+  formats: VideoFormat[],
+  preferredCodec: string,
+  maxHeight?: number,
+): string => {
+  const withinHeight = maxHeight
+    ? formats.filter((format) => format.height != null && format.height <= maxHeight)
+    : formats;
+  const candidates = withinHeight.length ? withinHeight : formats;
   return (
-    formats.find((format) => format.height != null && format.height <= maxHeight)?.format_id ??
-    formats[0]?.format_id ??
+    candidates.find((format) => getCodecKey(format.vcodec) === preferredCodec)?.format_id ??
+    candidates[0]?.format_id ??
     ""
   );
 };
@@ -31,8 +39,17 @@ export const createPendingItem = (data: FetchedVideoData, quick = false): Pendin
       ? data.playlistEntries.map((entry, i) => entry.playlist_index ?? i + 1)
       : [],
     downloadMode: quick ? settingStore.quickDownloadMode : settingStore.defaultDownloadMode,
-    selectedVideoFormat: selectVideoFormat(data.videoFormats, maxHeight),
-    selectedAudioFormat: data.audioFormats[0]?.format_id ?? "",
+    selectedVideoFormat: selectVideoFormat(
+      data.videoFormats,
+      settingStore.preferredVideoCodec,
+      maxHeight,
+    ),
+    selectedAudioFormat:
+      data.audioFormats.find(
+        (format) => getCodecKey(format.acodec) === settingStore.preferredAudioCodec,
+      )?.format_id ??
+      data.audioFormats[0]?.format_id ??
+      "",
     startTime: null,
     endTime: null,
     embedSubs: quick ? false : settingStore.defaultEmbedSubs,
