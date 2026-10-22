@@ -193,7 +193,7 @@ pub fn parse_json_from_stdout(stdout: &str) -> Option<Value> {
         if matches!(&result, Some(Err(error)) if error.is_eof()) {
             // A truncated JSON document can contain complete nested objects.
             // Do not return one of those as if it were the missing outer value.
-            break;
+            return None;
         }
         if let Some(Ok(value)) = result {
             // All current callers expect -J metadata. Ignore valid JSON log
@@ -350,6 +350,11 @@ DEBUG: {}
 
     #[test]
     fn does_not_extract_nested_objects_from_truncated_metadata() {
+        assert!(parse_json_from_stdout(
+            r#"DEBUG: {}
+{"id":"video","title":"Video","formats":[{"format_id":"137"}]"#
+        )
+        .is_none());
         assert!(parse_json_from_stdout(
             r#"{"id":"video","title":"Video","formats":[{"format_id":"137"}]"#
         )
