@@ -1,5 +1,6 @@
 {
   "settings": {
+    "toolNotRunnable": "실행할 수 없음",
     "title": "설정",
     "installed": "설치됨",
     "notInstalled": "미설치",
@@ -7,6 +8,12 @@
     "toolManager": "필수 설정",
     "sourceManaged": "앱 내장",
     "sourceSystem": "시스템 PATH",
+    "sourceLocal": "로컬 / venv",
+    "ytdlpLocalPath": "yt-dlp 실행 파일 경로",
+    "ytdlpLocalPathHint": "yt-dlp 실행 파일을 선택하세요. venv의 Scripts/yt-dlp.exe 또는 bin/yt-dlp도 사용할 수 있습니다.",
+    "selectYtdlpExecutable": "yt-dlp 실행 파일 선택",
+    "localManaged": "외부 관리",
+    "localManagedHint": "pip 또는 설치에 사용한 패키지 관리자로 업데이트하세요.",
     "installManaged": "앱 버전 설치",
     "updateNow": "지금 업데이트",
     "systemManaged": "시스템에서 관리",
@@ -108,7 +115,12 @@
     "youtubeVisitorDataPlaceholder": "예: CgtBYmNkZWZHaGlqaw%3D%3D",
     "defaultFfmpegArgs": "기본 FFmpeg 인수",
     "defaultFfmpegArgsHint": "이후 새로 분석되는 영상에 자동으로 적용되며, 개별 작업에서 따로 변경할 수 있습니다",
-    "showTrayIcon": "시스템 트레이 아이콘 표시"
+    "showTrayIcon": "시스템 트레이 아이콘 표시",
+    "showHomeTips": "홈 화면 도움말 표시",
+    "playlistSubfolders": "재생목록별로 별도 폴더에 다운로드",
+    "startMaximized": "최대화된 창으로 시작",
+    "jsRuntime": "JavaScript 런타임",
+    "jsRuntimeHint": "Deno는 앱에서 설치할 수 있습니다. 다른 런타임은 시스템 PATH를 사용합니다."
   },
   "cookie": {
     "settings": "Cookie 설정",

@@ -1,4 +1,4 @@
-export type ToolSource = "managed" | "system" | "custom";
+export type ToolSource = "managed" | "system" | "local" | "custom";
 export type YtdlpChannel = "stable" | "nightly" | "master";
 export type HomeMode = "standard" | "batch";
 export type HomeDownloadBehavior = "pending" | "quick";
@@ -20,11 +20,13 @@ export interface BrowserExtensionImport {
 
 export interface ToolStatus {
   installed: boolean;
+  runnable: boolean;
   version: string;
   path: string;
   source: ToolSource;
   isManaged: boolean;
   canUpdate: boolean;
+  error?: string | null;
 }
 
 export interface ToolUpdateCheck {
@@ -152,6 +154,7 @@ export interface DownloadTaskParams {
   downloadDir: string;
   downloadMode: string;
   videoFormat: string | null;
+  videoHasAudio?: boolean;
   audioFormat: string | null;
   cookieFile: string | null;
   cookieBrowser: string | null;
@@ -177,6 +180,7 @@ export interface DownloadTaskParams {
   subtitles: string[];
   startTime: number | null;
   endTime: number | null;
+  forceKeyframesAtCuts?: boolean;
   noPlaylist: boolean;
   playlistItems: string | null;
   /** 从开始下载直播流 */
@@ -228,6 +232,7 @@ export interface PendingItem extends FetchedVideoData {
   selectedAudioFormat: string;
   startTime: number | null;
   endTime: number | null;
+  forceKeyframesAtCuts?: boolean;
   embedSubs: boolean;
   embedThumbnail: boolean;
   writeThumbnail: boolean;
@@ -249,6 +254,7 @@ export interface PendingItem extends FetchedVideoData {
 }
 
 export interface PlaylistEntry {
+  playlist_index?: number | null;
   id: string;
   title: string;
   duration: number | null;
@@ -285,7 +291,7 @@ export interface VideoInfo {
   is_live?: boolean;
   /** Playlist fields — present when the URL is a playlist */
   _type?: string;
-  entries?: PlaylistEntry[];
+  entries?: Array<PlaylistEntry | null>;
   playlist_count?: number;
 }
 
@@ -410,4 +416,3 @@ export interface ChannelEnrichProgressPayload {
   fixed: number;
   message?: string | null;
 }
-

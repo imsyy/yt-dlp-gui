@@ -53,7 +53,16 @@
     "confirmClearFailed": "失敗したタスクをすべて消去しますか？",
     "errorMessage": "エラー詳細",
     "confirmRetry": "このダウンロードタスクを再試行しますか？",
-    "confirmRetryAllFailed": "失敗したすべてのタスクを再試行しますか？"
+    "confirmRetryAllFailed": "失敗したすべてのタスクを再試行しますか？",
+    "downloadErrors": "yt-dlp が {count} 件のエラーを報告しました。最新の詳細：",
+    "editAndRetry": "編集して再試行",
+    "editTaskHint": "変更はこのタスクにのみ適用されます。他の設定は元の値を維持します。",
+    "editTimeHint": "切り抜き時間は秒単位です。開始を空欄にすると先頭から、終了を空欄にすると末尾までになります。",
+    "invalidEditTimeRange": "開始は0以上、終了は開始より後にしてください。",
+    "videoFormatId": "動画形式 ID",
+    "audioFormatIds": "音声形式 ID（複数トラックは + で連結）",
+    "retainedOptions": "保持する元の設定",
+    "editSingleAudio": "音声のみモードと音声抽出では音声形式 ID を1つ指定してください。"
   },
   "pending": {
     "empty": "保留中の項目はありません",
@@ -136,6 +145,9 @@
     "tplErrConversion": "変換タイプ「{char}」はサポートされていません。フィールドの後には s/d などを指定してください（yt-dlp の OUTPUT TEMPLATE を参照）",
     "remuxFormat": "コンテナ変換",
     "customArgs": "追加引数",
-    "customArgsPlaceholder": "追加の yt-dlp 引数（例: --sleep-requests 2 --sleep-interval 10）"
+    "customArgsPlaceholder": "追加の yt-dlp 引数（例: --sleep-requests 2 --sleep-interval 10）",
+    "invalidTimeRange": "動画の長さ以内で、終了が開始より後になる範囲を選んでください。",
+    "forceKeyframesAtCuts": "切り抜き位置にキーフレームを生成",
+    "forceKeyframesAtCutsHint": "再エンコードで時間がかかりますが、切り抜き位置付近の映像の乱れを軽減します。オフにすると高速に切り抜きます。"
   }
 }

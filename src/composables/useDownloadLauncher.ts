@@ -9,6 +9,8 @@ import { useDownloadStore } from "@/stores/download";
 import { useSettingStore } from "@/stores/setting";
 import { useStatusStore } from "@/stores/status";
 import { useVideoStore } from "@/stores/video";
+import { getPlaylistDownloadOptions } from "@/utils/playlist";
+import { isValidTimeRange } from "@/utils/validate";
 import type { DownloadTask, FfmpegStatus, PendingItem } from "@/types";
 
 export type DownloadLaunchResult =
@@ -130,20 +132,47 @@ export const useDownloadLauncher = () => {
     item: PendingItem,
     preparingTaskId?: string,
   ): Promise<DownloadLaunchResult> => {
+    const playlistOptions = getPlaylistDownloadOptions(item.isPlaylist, item.selectedPlaylistItems);
+    if (!playlistOptions) return "failed";
+    const startTime = item.startTime != null ? timeToSeconds(item.startTime) : null;
+    const endTime = item.endTime != null ? timeToSeconds(item.endTime) : null;
+    if (
+      !isValidTimeRange(startTime, endTime, item.isPlaylist ? undefined : item.videoInfo.duration)
+    ) {
+      window.$message.error(t("detail.invalidTimeRange"));
+      if (preparingTaskId) await markPreparationError(preparingTaskId);
+      return "failed";
+    }
     if (!settingStore.downloadDir) {
       window.$message.warning(t("detail.setDownloadDirFirst"));
       return "missing-directory";
     }
 
-    const requiresFfmpegMerge =
-      item.downloadMode === "default" &&
-      Boolean(item.selectedVideoFormat) &&
-      Boolean(item.selectedAudioFormat) &&
-      !item.noMerge;
-    if (requiresFfmpegMerge) {
+    const selectedVideo = item.videoFormats.find(
+      (format) => format.format_id === item.selectedVideoFormat,
+    );
+    const videoHasAudio = Boolean(selectedVideo?.acodec && selectedVideo.acodec !== "none");
+    const extractAudio =
+      item.extractAudio || (item.downloadMode === "audio" && !item.selectedAudioFormat);
+    const requiresFfmpeg =
+      (item.downloadMode === "default" &&
+        (Boolean(item.selectedVideoFormat) || item.selectedAudioFormat.includes("+")) &&
+        (item.isPlaylist || !videoHasAudio || Boolean(item.selectedAudioFormat)) &&
+        !item.noMerge) ||
+      extractAudio ||
+      item.embedSubs ||
+      item.embedThumbnail ||
+      item.embedMetadata ||
+      item.embedChapters ||
+      item.sponsorblockRemove ||
+      Boolean(item.recodeFormat) ||
+      Boolean(item.remuxFormat && item.remuxFormat !== "auto") ||
+      item.startTime != null ||
+      item.endTime != null;
+    if (requiresFfmpeg) {
       try {
         const status = await invoke<FfmpegStatus>("get_ffmpeg_status");
-        if (!status.installed) {
+        if (!status.installed || !status.runnable) {
           statusStore.showFfmpegSetupModal = true;
           if (preparingTaskId) await markPreparationError(preparingTaskId);
           return "missing-ffmpeg";
@@ -161,6 +190,7 @@ export const useDownloadLauncher = () => {
       settingStore.outputTemplate,
       settingStore.filenamePrefix,
       settingStore.filenameSuffix,
+      item.isPlaylist && settingStore.playlistSubfolders,
     );
     // 非法文件名模板直接拦截，避免发给 yt-dlp 后报晦涩的格式错误
     const templateError = validateOutputTemplate(outputTemplate);
@@ -176,6 +206,7 @@ export const useDownloadLauncher = () => {
       downloadDir: settingStore.downloadDir,
       downloadMode: item.downloadMode,
       videoFormat: item.selectedVideoFormat || null,
+      videoHasAudio,
       audioFormat: item.selectedAudioFormat || null,
       cookieFile,
       cookieBrowser,
@@ -190,7 +221,7 @@ export const useDownloadLauncher = () => {
       embedMetadata: item.embedMetadata,
       embedChapters: item.embedChapters,
       sponsorblockRemove: item.sponsorblockRemove,
-      extractAudio: item.extractAudio,
+      extractAudio,
       audioConvertFormat: item.audioConvertFormat || null,
       noMerge: item.noMerge,
       recodeFormat: item.recodeFormat || null,
@@ -199,27 +230,19 @@ export const useDownloadLauncher = () => {
       ffmpegArgs: item.ffmpegArgs || null,
       customArgs: item.customArgs || null,
       subtitles: item.selectedSubtitles,
-      startTime: item.startTime != null ? timeToSeconds(item.startTime) : null,
-      endTime: item.endTime != null ? timeToSeconds(item.endTime) : null,
+      startTime,
+      endTime,
+      forceKeyframesAtCuts: Boolean(item.forceKeyframesAtCuts),
       liveFromStart: item.liveFromStart,
-      noPlaylist: item.isPlaylist && item.selectedPlaylistItems.length === 1,
-      playlistItems:
-        item.isPlaylist && item.selectedPlaylistItems.length > 0
-          ? item.selectedPlaylistItems
-              .slice()
-              .sort((a, b) => a - b)
-              .join(",")
-          : null,
+      ...playlistOptions,
     };
-    const shouldQueue = !downloadStore.canStartNow();
-
     const task: DownloadTask = {
       id: taskId,
       url: item.url,
       title: item.videoInfo.title || t("detail.unknownVideo"),
       thumbnail: item.videoInfo.thumbnail || "",
       formatLabel: buildFormatLabel(item),
-      status: shouldQueue ? "queued" : "downloading",
+      status: "queued",
       percent: 0,
       speed: "",
       eta: "",
@@ -230,49 +253,14 @@ export const useDownloadLauncher = () => {
       params,
     };
 
-    if (preparingTaskId) {
-      const preparingTask = downloadStore.tasks.find(
-        (candidate) => candidate.id === preparingTaskId,
-      );
-      if (!preparingTask || preparingTask.status !== "preparing") return "failed";
-      // preparing 行占位用的 prepare_xxx id 即将被 dl_xxx 覆盖，先删旧行避免孤儿记录
-      const stalePreparingId = preparingTask.id;
-      Object.assign(preparingTask, task);
-      try {
-        await invoke("db_delete_task", { id: stalePreparingId });
-      } catch {
-        // 旧行可能已不存在，继续
+    const result = await downloadStore.addTask(task, preparingTaskId);
+    if (result === "failed") {
+      const failedTask = downloadStore.tasks.find((candidate) => candidate.id === taskId);
+      if (failedTask?.status === "error") {
+        window.$message.error(failedTask.error || t("detail.startDownloadFailed"));
       }
-      // 先落库再起进程，保证后端的状态更新写到已存在的行上
-      await downloadStore.updateTask(preparingTask);
-    } else {
-      await downloadStore.addTask(task);
     }
-
-    if (shouldQueue) return "queued";
-
-    try {
-      await invoke("start_download", { params: { id: taskId, ...params } });
-      return "started";
-    } catch (error: unknown) {
-      window.$message.error(
-        error instanceof Error ? error.message : String(error) || t("detail.startDownloadFailed"),
-      );
-      if (preparingTaskId) {
-        const failedTask = downloadStore.tasks.find((candidate) => candidate.id === taskId);
-        if (failedTask) {
-          failedTask.status = "error";
-          failedTask.error =
-            error instanceof Error
-              ? error.message
-              : String(error) || t("detail.startDownloadFailed");
-          await downloadStore.updateTask(failedTask);
-        }
-      } else {
-        await downloadStore.removeTask(taskId);
-      }
-      return "failed";
-    }
+    return result === "preparing" ? "failed" : result;
   };
 
   return { createPreparingTask, markPreparationError, launchDownload };

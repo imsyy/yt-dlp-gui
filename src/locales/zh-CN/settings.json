@@ -1,5 +1,6 @@
 {
   "settings": {
+    "toolNotRunnable": "无法运行",
     "title": "设置",
     "installed": "已安装",
     "notInstalled": "未安装",
@@ -9,6 +10,12 @@
     "toolManager": "必要配置",
     "sourceManaged": "应用内置",
     "sourceSystem": "系统 PATH",
+    "sourceLocal": "本地 / venv",
+    "ytdlpLocalPath": "yt-dlp 可执行文件路径",
+    "ytdlpLocalPathHint": "选择 yt-dlp 可执行文件，支持 venv 中的 Scripts/yt-dlp.exe 或 bin/yt-dlp。",
+    "selectYtdlpExecutable": "选择 yt-dlp 可执行文件",
+    "localManaged": "外部管理",
+    "localManagedHint": "请通过 pip 或安装它的包管理器更新此版本。",
     "installManaged": "安装应用版",
     "updateNow": "立即更新",
     "systemManaged": "由系统管理",
@@ -108,7 +115,12 @@
     "appUpdateSuccess": "更新完成，即将重启",
     "appUpdateFailed": "更新失败: {e}",
     "appIsLatest": "当前已是最新版本",
-    "systemBinaryNotice": "当前使用的是系统安装的 yt-dlp，「检测更新」只会更新应用管理的副本，不会影响实际使用的版本；请将上方「工具路径优先级」切换为「仅应用」，或通过系统包管理器更新"
+    "systemBinaryNotice": "当前使用的是系统安装的 yt-dlp，「检测更新」只会更新应用管理的副本，不会影响实际使用的版本；请将上方「工具路径优先级」切换为「仅应用」，或通过系统包管理器更新",
+    "showHomeTips": "显示首页提示",
+    "playlistSubfolders": "将每个播放列表下载到独立子目录",
+    "startMaximized": "启动时最大化窗口",
+    "jsRuntime": "JavaScript 运行时",
+    "jsRuntimeHint": "Deno 可在应用内安装，其他运行时使用系统 PATH 中的可执行文件。"
   },
   "cookie": {
     "settings": "Cookie 设置",

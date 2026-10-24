@@ -7,7 +7,7 @@ import {
   requestPermission,
   sendNotification,
 } from "@tauri-apps/plugin-notification";
-import type { DownloadTask } from "@/types";
+import type { DownloadTask, DownloadTaskParams } from "@/types";
 import { useSettingStore } from "@/stores/setting";
 import { formatFileSize } from "@/utils/format";
 import { cleanMultipleTasksResiduals } from "@/utils/taskFiles";
@@ -31,59 +31,82 @@ interface ProgressPayload {
  * 视频下载管理 Store
  */
 export const useDownloadStore = defineStore("download", () => {
+  const settingStore = useSettingStore();
   const tasks = ref<DownloadTask[]>([]);
   const loaded = ref(false);
   let listenersSetup = false;
+  const pendingTaskIds = new Set<string>();
+  const pendingWrites = new Map<string, Promise<boolean>>();
+  const startingTasks = new Map<string, Promise<unknown>>();
+  const startingIds = reactive(new Set<string>());
+  const cancellingIds = reactive(new Set<string>());
+  const cancellations = new Map<string, Promise<void>>();
+  const retryingTasks = new Set<DownloadTask>();
+  let scheduling: Promise<void> | undefined;
+  let scheduleRequested = false;
 
   /** 当前占用下载进程的任务数（后处理尚未释放进程，也计入并发槽位） */
-  const activeCount = computed(
-    () =>
-      tasks.value.filter(
-        (task) => task.status === "downloading" || task.status === "postprocessing",
-      ).length,
-  );
+  const activeCount = computed(() => {
+    const ids = new Set([...startingIds, ...cancellingIds]);
+    for (const task of tasks.value) {
+      if (task.status === "downloading" || task.status === "postprocessing") ids.add(task.id);
+    }
+    return ids.size;
+  });
+
+  const errorMessage = (error: unknown): string =>
+    error instanceof Error
+      ? error.message
+      : String(error) || i18n.global.t("downloads.startFailed");
 
   /**
-   * 尝试启动排队中的下一个就绪任务
+   * 统一启动已落库的排队任务，填满空闲槽位；并发调用共享同一轮调度。
    *
    * @returns 启动流程 Promise
    */
   const tryStartNext = async (): Promise<void> => {
-    const settingStore = useSettingStore();
-    const max = settingStore.maxConcurrent;
-    if (activeCount.value >= max) return;
+    scheduleRequested = true;
+    if (scheduling) return scheduling;
 
-    const next = tasks.value.find((taskItem) => taskItem.status === "queued");
-    if (!next) return;
+    scheduling = (async () => {
+      await ready;
+      do {
+        scheduleRequested = false;
+        while (activeCount.value < settingStore.maxConcurrent) {
+          const next = tasks.value.find(
+            (task) => task.status === "queued" && !pendingTaskIds.has(task.id),
+          );
+          if (!next) break;
 
-    const fullParams = normalizeTaskParams(next.params);
-    next.params = fullParams;
-    next.status = "downloading";
-
-    try {
-      await invoke("start_download", {
-        params: { id: next.id, ...fullParams },
-      });
-    } catch (error: unknown) {
-      next.status = "error";
-      next.error =
-        error instanceof Error
-          ? error.message
-          : String(error) || i18n.global.t("downloads.startFailed");
-      next.speed = "";
-      next.eta = "";
-      await updateTask(next);
-    }
-  };
-
-  /**
-   * 判断当前是否允许立即开启新下载（未超最大并发数）
-   *
-   * @returns 是否能够立即开始下载
-   */
-  const canStartNow = (): boolean => {
-    const settingStore = useSettingStore();
-    return activeCount.value < settingStore.maxConcurrent;
+          const id = next.id;
+          next.params = normalizeTaskParams(next.params);
+          next.status = "downloading";
+          startingIds.add(id);
+          const starting = invoke("start_download", { params: { id, ...next.params } });
+          startingTasks.set(id, starting);
+          try {
+            await starting;
+          } catch (error: unknown) {
+            // A cancellation or a terminal event may already have changed the task.
+            if (next.id === id && next.status === "downloading" && tasks.value.includes(next)) {
+              next.status = "error";
+              next.error = errorMessage(error);
+              next.speed = "";
+              next.eta = "";
+              await updateTask(next);
+            }
+          } finally {
+            startingTasks.delete(id);
+            startingIds.delete(id);
+          }
+        }
+      } while (scheduleRequested);
+    })().finally(() => {
+      scheduling = undefined;
+      // A request can arrive after the last scan but before this promise settles.
+      if (scheduleRequested) void tryStartNext();
+    });
+    return scheduling;
   };
 
   /**
@@ -224,7 +247,7 @@ export const useDownloadStore = defineStore("download", () => {
       "download-complete",
       (event) => {
         const task = tasks.value.find((t) => t.id === event.payload.id);
-        if (task) {
+        if (task && (task.status === "downloading" || task.status === "postprocessing")) {
           task.status = "completed";
           task.percent = 100;
           task.speed = "";
@@ -234,17 +257,15 @@ export const useDownloadStore = defineStore("download", () => {
             task.fileSizeBytes = event.payload.fileSizeBytes;
             task.total = formatFileSize(event.payload.fileSizeBytes);
           }
-          // 已完成任务不再需要运行时日志：清空以节省内存与数据库空间
-          task.logs = [];
           notify(
             i18n.global.t("downloads.notifyComplete"),
             task.title || i18n.global.t("downloads.notifyCompleteBody"),
           );
-          // 后端只落了状态/产物，内存里的 total/清空后的 logs 需要同步回库
+          // Preserve the bounded log buffer for diagnostics after completion.
           void updateTask(task);
         }
         updateTaskbarProgress();
-        tryStartNext();
+        void tryStartNext();
       },
     );
 
@@ -259,27 +280,98 @@ export const useDownloadStore = defineStore("download", () => {
         void updateTask(task);
       }
       updateTaskbarProgress();
-      tryStartNext();
+      void tryStartNext();
     });
   };
 
-  loadTasks();
-  setupListeners();
+  const ready = Promise.all([loadTasks(), setupListeners()]);
+  void ready.then(() => tryStartNext());
+  watch(
+    () => settingStore.maxConcurrent,
+    (max, previous) => {
+      if (max > previous) void tryStartNext();
+    },
+  );
+
+  /** 同一任务的写入串行执行，避免较早的 queued 覆盖稍后的 cancelled。 */
+  const persistTask = async (task: DownloadTask): Promise<boolean> => {
+    const id = task.id;
+    const previous = pendingWrites.get(id);
+    const record = {
+      ...task,
+      logs: [...task.logs],
+      params: { ...task.params, subtitles: [...task.params.subtitles] },
+    };
+    const writing = (async () => {
+      if (previous) await previous;
+      try {
+        await invoke("db_upsert_task", { task: record });
+        return true;
+      } catch (error) {
+        console.error("写入任务至数据库失败:", error);
+        return false;
+      }
+    })();
+    pendingWrites.set(id, writing);
+    try {
+      return await writing;
+    } finally {
+      if (pendingWrites.get(id) === writing) pendingWrites.delete(id);
+    }
+  };
 
   /**
-   * 添加新的下载任务到列表顶部，并同步写入 SQLite 持久化
+   * 添加任务（或替换解析占位），落库成功后统一交给队列调度。
    *
    * 必须 await：确保行落库后再启动子进程，否则后端的状态更新会写到空行上。
    *
    * @param task 新创建的下载任务对象
    */
-  const addTask = async (task: DownloadTask): Promise<void> => {
-    tasks.value.unshift(task);
-    try {
-      await invoke("db_upsert_task", { task });
-    } catch (err) {
-      console.error("写入任务至数据库失败:", err);
+  const addTask = async (
+    task: DownloadTask,
+    preparingTaskId?: string,
+  ): Promise<"started" | "queued" | "failed" | "preparing"> => {
+    await ready;
+    let target: DownloadTask;
+    if (preparingTaskId) {
+      const preparing = tasks.value.find((candidate) => candidate.id === preparingTaskId);
+      if (!preparing || preparing.status !== "preparing") return "failed";
+      target = preparing;
+    } else {
+      if (tasks.value.some((candidate) => candidate.id === task.id)) return "failed";
+      tasks.value.unshift(task);
+      target = tasks.value[0];
     }
+
+    pendingTaskIds.add(task.id);
+    Object.assign(target, task);
+    if (target.status !== "preparing") target.status = "queued";
+    try {
+      if (preparingTaskId) {
+        await pendingWrites.get(preparingTaskId);
+        try {
+          await invoke("db_delete_task", { id: preparingTaskId });
+        } catch {
+          // 旧占位行可能已不存在。
+        }
+      }
+      if (!tasks.value.includes(target)) return "failed";
+      if (!(await persistTask(target))) {
+        if (target.status === "queued" || target.status === "preparing") {
+          target.status = "error";
+          target.error = i18n.global.t("downloads.startFailed");
+        }
+        return "failed";
+      }
+    } finally {
+      pendingTaskIds.delete(task.id);
+    }
+
+    await tryStartNext();
+    if (target.status === "preparing") return "preparing";
+    if (target.status === "queued") return "queued";
+    if (target.status === "error" || target.status === "cancelled") return "failed";
+    return tasks.value.includes(target) ? "started" : "failed";
   };
 
   /**
@@ -292,11 +384,7 @@ export const useDownloadStore = defineStore("download", () => {
     if (idx !== -1) {
       Object.assign(tasks.value[idx], task);
     }
-    try {
-      await invoke("db_upsert_task", { task });
-    } catch (err) {
-      console.error("更新任务至数据库失败:", err);
-    }
+    await persistTask(task);
   };
 
   /**
@@ -305,52 +393,83 @@ export const useDownloadStore = defineStore("download", () => {
    * @param id 任务 ID
    * @returns 取消流程 Promise
    */
-  const cancelTask = async (id: string): Promise<void> => {
+  const cancelTask = (id: string): Promise<void> => {
+    const existing = cancellations.get(id);
+    if (existing) return existing;
     const task = tasks.value.find((t) => t.id === id);
-    if (!task) return;
+    if (
+      !task ||
+      (task.status !== "queued" &&
+        task.status !== "preparing" &&
+        task.status !== "downloading" &&
+        task.status !== "postprocessing")
+    ) {
+      return Promise.resolve();
+    }
 
     const hadNoProcess = task.status === "queued" || task.status === "preparing";
+    if (!hadNoProcess) cancellingIds.add(id);
     task.status = "cancelled";
     task.speed = "";
     task.eta = "";
 
-    if (!hadNoProcess) {
-      try {
-        await invoke("cancel_download", { id, deleteFiles: false });
-      } catch {
-        // 进程可能已经提前退出
+    const cancelling = (async () => {
+      if (!hadNoProcess) {
+        // start_download can still be checking FFmpeg before registering its process.
+        await startingTasks.get(id)?.catch(() => {});
+        try {
+          await invoke("cancel_download", { id, deleteFiles: false });
+        } catch {
+          // 进程可能已经提前退出。
+        }
       }
-    }
-    // 无论后端是否成功标记，都以内存态为准落库，避免 cancelled 回退为 error
-    await updateTask(task);
-
-    updateTaskbarProgress();
-    tryStartNext();
+      await updateTask(task);
+      updateTaskbarProgress();
+    })().finally(() => {
+      cancellations.delete(id);
+      cancellingIds.delete(id);
+      void tryStartNext();
+    });
+    cancellations.set(id, cancelling);
+    return cancelling;
   };
 
   /**
    * 重新下载失败或已取消的任务（原位重试，更新原有槽位）
    *
    * @param id 待重试的任务 ID
+   * @param editedParams 本次重试的完整参数快照，不修改全局偏好
    * @returns 重试流程 Promise
    */
-  const retryTask = async (id: string): Promise<void> => {
+  const retryTask = async (id: string, editedParams?: DownloadTaskParams): Promise<boolean> => {
     const task = tasks.value.find((taskItem) => taskItem.id === id);
-    if (!task) return;
+    if (
+      !task ||
+      (task.status !== "error" && task.status !== "cancelled") ||
+      retryingTasks.has(task) ||
+      pendingTaskIds.has(id) ||
+      cancellations.has(id)
+    ) {
+      return false;
+    }
+    retryingTasks.add(task);
 
     const newId = `dl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    const fullParams = normalizeTaskParams(task.params);
     const oldId = task.id;
-
-    // 先从 SQLite 移除旧任务记录，再写入新 ID 行，串行避免乱序留下孤儿行
-    try {
-      await invoke("db_delete_task", { id: oldId });
-    } catch {
-      // 旧行可能已不存在，继续
-    }
-
+    pendingTaskIds.add(newId);
     task.id = newId;
-    task.params = fullParams;
+    const params = normalizeTaskParams(editedParams ?? task.params);
+    task.params = { ...params, subtitles: [...params.subtitles] };
+    if (editedParams) {
+      task.formatLabel = i18n.global.t(
+        params.downloadMode === "audio"
+          ? "detail.audioOnly"
+          : params.downloadMode === "video"
+            ? "detail.videoOnly"
+            : "detail.defaultQuality",
+      );
+    }
+    task.status = "queued";
     task.percent = 0;
     task.speed = "";
     task.eta = "";
@@ -358,26 +477,29 @@ export const useDownloadStore = defineStore("download", () => {
     task.total = "";
     task.logs = [];
     task.error = undefined;
+    task.outputFile = undefined;
+    task.fileSizeBytes = undefined;
 
-    if (canStartNow()) {
-      task.status = "downloading";
-      await updateTask(task);
+    try {
+      // Drain older writes before deleting the former ID, so they cannot recreate it.
+      await pendingWrites.get(oldId);
       try {
-        await invoke("start_download", {
-          params: { id: newId, ...fullParams },
-        });
-      } catch (error: unknown) {
-        task.status = "error";
-        task.error =
-          error instanceof Error
-            ? error.message
-            : String(error) || i18n.global.t("downloads.startFailed");
-        await updateTask(task);
+        await invoke("db_delete_task", { id: oldId });
+      } catch {
+        // 旧行可能已不存在，继续。
       }
-    } else {
-      task.status = "queued";
-      await updateTask(task);
+      if (!tasks.value.includes(task)) return false;
+      if (!(await persistTask(task)) && task.status === "queued") {
+        task.status = "error";
+        task.error = i18n.global.t("downloads.startFailed");
+      }
+    } finally {
+      pendingTaskIds.delete(newId);
+      retryingTasks.delete(task);
     }
+    await tryStartNext();
+    const current = tasks.value.find((candidate) => candidate.id === newId);
+    return Boolean(current && current.status !== "error" && current.status !== "cancelled");
   };
 
   /**
@@ -389,7 +511,7 @@ export const useDownloadStore = defineStore("download", () => {
    */
   const reDownloadTask = async (id: string): Promise<void> => {
     const existingTask = tasks.value.find((taskItem) => taskItem.id === id);
-    if (!existingTask) return;
+    if (!existingTask || existingTask.status !== "completed") return;
 
     const newTaskId = `dl_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const fullParams = normalizeTaskParams(existingTask.params);
@@ -411,28 +533,7 @@ export const useDownloadStore = defineStore("download", () => {
       params: fullParams,
     };
 
-    tasks.value.unshift(newTask);
-    try {
-      await invoke("db_upsert_task", { task: newTask });
-    } catch {
-      // 落库失败不阻塞启动，后续 updateTask 会补写
-    }
-
-    if (canStartNow()) {
-      newTask.status = "downloading";
-      try {
-        await invoke("start_download", {
-          params: { id: newTaskId, ...fullParams },
-        });
-      } catch (error: unknown) {
-        newTask.status = "error";
-        newTask.error =
-          error instanceof Error
-            ? error.message
-            : String(error) || i18n.global.t("downloads.startFailed");
-      }
-      await updateTask(newTask);
-    }
+    await addTask(newTask);
   };
 
   /**
@@ -455,8 +556,10 @@ export const useDownloadStore = defineStore("download", () => {
    * @param id 任务 ID
    */
   const removeTask = async (id: string): Promise<void> => {
+    await cancelTask(id);
     const idx = tasks.value.findIndex((taskItem) => taskItem.id === id);
     if (idx !== -1) tasks.value.splice(idx, 1);
+    await pendingWrites.get(id);
     try {
       await invoke("db_delete_task", { id });
     } catch {
@@ -464,68 +567,54 @@ export const useDownloadStore = defineStore("download", () => {
     }
   };
 
+  const clearTasks = async (
+    statuses: DownloadTask["status"][],
+    cleanResiduals: boolean,
+  ): Promise<void> => {
+    const targets = tasks.value.filter((task) => statuses.includes(task.status));
+    const ids = targets.map((task) => task.id);
+    const cancelling = ids.map((id) => cancelTask(id));
+    tasks.value = tasks.value.filter((task) => !ids.includes(task.id));
+    // Pending cancellation and persistence must finish before deletion, or an
+    // older upsert can recreate a row the user has just cleared.
+    await Promise.all(cancelling);
+    await Promise.all(ids.map((id) => pendingWrites.get(id)));
+    if (ids.length > 0) {
+      await invoke("db_delete_tasks", { ids }).catch(() => {});
+      if (cleanResiduals) await cleanMultipleTasksResiduals(targets);
+    }
+  };
+
   /**
    * 仅清空所有已成功完成的任务
    */
-  const clearCompleted = (): void => {
-    tasks.value = tasks.value.filter((task) => task.status !== "completed");
-    invoke("db_clear_completed_tasks").catch(() => {});
-  };
+  const clearCompleted = (): Promise<void> => clearTasks(["completed"], false);
 
   /**
    * 仅清空已取消的任务（同时清理磁盘残留临时未合并文件）
    *
    * @returns 清理流程 Promise
    */
-  const clearCancelled = async (): Promise<void> => {
-    const cancelledTasks = tasks.value.filter((task) => task.status === "cancelled");
-    const ids = cancelledTasks.map((t) => t.id);
-    tasks.value = tasks.value.filter((task) => task.status !== "cancelled");
-    if (ids.length > 0) {
-      invoke("db_delete_tasks", { ids }).catch(() => {});
-      await cleanMultipleTasksResiduals(cancelledTasks);
-    }
-  };
+  const clearCancelled = (): Promise<void> => clearTasks(["cancelled"], true);
 
   /**
    * 仅清空下载失败的任务（同时清理磁盘残留临时未合并文件）
    *
    * @returns 清理流程 Promise
    */
-  const clearFailed = async (): Promise<void> => {
-    const failedTasks = tasks.value.filter((task) => task.status === "error");
-    const ids = failedTasks.map((t) => t.id);
-    tasks.value = tasks.value.filter((task) => task.status !== "error");
-    if (ids.length > 0) {
-      invoke("db_delete_tasks", { ids }).catch(() => {});
-      await cleanMultipleTasksResiduals(failedTasks);
-    }
-  };
+  const clearFailed = (): Promise<void> => clearTasks(["error"], true);
 
   /**
    * 仅清空所有失败与已取消的任务（同时清理磁盘残留临时文件）
    *
    * @returns 清理流程 Promise
    */
-  const clearInterrupted = async (): Promise<void> => {
-    const interruptedTasks = tasks.value.filter(
-      (task) => task.status === "error" || task.status === "cancelled",
-    );
-    const ids = interruptedTasks.map((t) => t.id);
-    tasks.value = tasks.value.filter(
-      (task) => task.status !== "error" && task.status !== "cancelled",
-    );
-    if (ids.length > 0) {
-      invoke("db_delete_tasks", { ids }).catch(() => {});
-      await cleanMultipleTasksResiduals(interruptedTasks);
-    }
-  };
+  const clearInterrupted = (): Promise<void> => clearTasks(["error", "cancelled"], true);
 
   return {
     tasks,
     loaded,
     activeCount,
-    canStartNow,
     loadTasks,
     addTask,
     updateTask,

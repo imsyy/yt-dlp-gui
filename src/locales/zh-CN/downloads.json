@@ -53,7 +53,16 @@
     "clearFailed": "清空失败",
     "confirmClearFailed": "确定要清空所有下载失败的任务吗？",
     "errorMessage": "错误详情",
-    "confirmRetry": "确定要重新尝试下载该任务吗？"
+    "confirmRetry": "确定要重新尝试下载该任务吗？",
+    "downloadErrors": "yt-dlp 共报告 {count} 条错误，最近的错误详情：",
+    "editAndRetry": "调整后重试",
+    "editTaskHint": "仅修改本次任务，其他选项保留原值。",
+    "editTimeHint": "裁剪时间以秒计。开始留空表示从头开始，结束留空表示直到结尾。",
+    "invalidEditTimeRange": "开始时间须为非负秒数，结束时间必须晚于开始时间。",
+    "videoFormatId": "视频格式 ID",
+    "audioFormatIds": "音频格式 ID（多个音轨以 + 连接）",
+    "retainedOptions": "保留的原配置",
+    "editSingleAudio": "仅音频模式和提取音频只支持一个音频格式 ID。"
   },
   "pending": {
     "empty": "暂无待下载项目",
@@ -136,6 +145,9 @@
     "playlistTag": "合集 {n}P",
     "views": "次播放",
     "viewWan": "万",
-    "viewYi": "亿"
+    "viewYi": "亿",
+    "invalidTimeRange": "请选择视频时长内的裁剪范围，结束时间必须晚于开始时间。",
+    "forceKeyframesAtCuts": "在裁剪切点生成关键帧",
+    "forceKeyframesAtCutsHint": "将重新编码，速度更慢，可减少切点附近花屏；关闭沿用快速裁剪。"
   }
 }

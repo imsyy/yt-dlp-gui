@@ -1,5 +1,6 @@
 {
   "settings": {
+    "toolNotRunnable": "Impossible à exécuter",
     "title": "Paramètres",
     "installed": "Installé",
     "notInstalled": "Non installé",
@@ -7,6 +8,12 @@
     "toolManager": "Configuration requise",
     "sourceManaged": "Intégré",
     "sourceSystem": "PATH système",
+    "sourceLocal": "Local / venv",
+    "ytdlpLocalPath": "Chemin de l’exécutable yt-dlp",
+    "ytdlpLocalPathHint": "Sélectionnez l’exécutable yt-dlp, y compris dans un venv (Scripts/yt-dlp.exe ou bin/yt-dlp).",
+    "selectYtdlpExecutable": "Sélectionner l’exécutable yt-dlp",
+    "localManaged": "Gestion externe",
+    "localManagedHint": "Mettez à jour cette installation avec pip ou le gestionnaire de paquets utilisé.",
     "installManaged": "Installer la version de l’application",
     "updateNow": "Mettre à jour",
     "systemManaged": "Géré par le système",
@@ -108,7 +115,12 @@
     "youtubeVisitorDataPlaceholder": "ex. CgtBYmNkZWZHaGlqaw%3D%3D",
     "defaultFfmpegArgs": "Arguments FFmpeg par défaut",
     "defaultFfmpegArgsHint": "Appliqués à chaque nouvelle vidéo analysée ; la valeur reste modifiable pour chaque tâche",
-    "showTrayIcon": "Afficher l'icône dans la zone de notification"
+    "showTrayIcon": "Afficher l'icône dans la zone de notification",
+    "showHomeTips": "Afficher les conseils sur l’accueil",
+    "playlistSubfolders": "Télécharger chaque playlist dans son propre dossier",
+    "startMaximized": "Démarrer avec la fenêtre agrandie",
+    "jsRuntime": "Moteur JavaScript",
+    "jsRuntimeHint": "Deno peut être installé dans l’application. Les autres moteurs utilisent le PATH système."
   },
   "cookie": {
     "settings": "Paramètres des cookies",

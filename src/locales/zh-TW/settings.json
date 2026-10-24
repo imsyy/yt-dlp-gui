@@ -1,5 +1,6 @@
 {
   "settings": {
+    "toolNotRunnable": "無法執行",
     "title": "設定",
     "installed": "已安裝",
     "notInstalled": "未安裝",
@@ -7,6 +8,12 @@
     "toolManager": "必要設定",
     "sourceManaged": "應用程式內建",
     "sourceSystem": "系統 PATH",
+    "sourceLocal": "本機 / venv",
+    "ytdlpLocalPath": "yt-dlp 執行檔路徑",
+    "ytdlpLocalPathHint": "選擇 yt-dlp 執行檔，支援 venv 中的 Scripts/yt-dlp.exe 或 bin/yt-dlp。",
+    "selectYtdlpExecutable": "選擇 yt-dlp 執行檔",
+    "localManaged": "外部管理",
+    "localManagedHint": "請透過 pip 或安裝它的套件管理員更新此版本。",
     "installManaged": "安裝應用程式版本",
     "updateNow": "立即更新",
     "systemManaged": "由系統管理",
@@ -108,7 +115,12 @@
     "youtubeVisitorDataPlaceholder": "例如：CgtBYmNkZWZHaGlqaw%3D%3D",
     "defaultFfmpegArgs": "預設 FFmpeg 參數",
     "defaultFfmpegArgsHint": "自動套用到之後新解析的影片，每個下載工作仍可個別修改",
-    "showTrayIcon": "顯示系統匣圖示"
+    "showTrayIcon": "顯示系統匣圖示",
+    "showHomeTips": "顯示首頁提示",
+    "playlistSubfolders": "將每個播放清單下載到獨立子目錄",
+    "startMaximized": "啟動時最大化視窗",
+    "jsRuntime": "JavaScript 執行環境",
+    "jsRuntimeHint": "Deno 可在應用程式內安裝，其他執行環境使用系統 PATH 中的執行檔。"
   },
   "cookie": {
     "settings": "Cookie 設定",

@@ -3,10 +3,11 @@
 use std::path::PathBuf;
 use std::sync::{OnceLock, RwLock};
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ToolSource {
     Managed,
     System,
+    Local,
 }
 
 impl ToolSource {
@@ -14,6 +15,7 @@ impl ToolSource {
         match value {
             "managed" => Ok(Self::Managed),
             "system" => Ok(Self::System),
+            "local" => Ok(Self::Local),
             _ => Err(format!("err_invalid_tool_source:{}", value)),
         }
     }
@@ -22,13 +24,15 @@ impl ToolSource {
         match self {
             Self::Managed => "managed",
             Self::System => "system",
+            Self::Local => "local",
         }
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct ToolSources {
     ytdlp: ToolSource,
+    ytdlp_local_path: String,
     deno: ToolSource,
     ffmpeg: ToolSource,
 }
@@ -37,6 +41,7 @@ impl Default for ToolSources {
     fn default() -> Self {
         Self {
             ytdlp: ToolSource::Managed,
+            ytdlp_local_path: String::new(),
             deno: ToolSource::Managed,
             ffmpeg: ToolSource::System,
         }
@@ -44,23 +49,99 @@ impl Default for ToolSources {
 }
 
 static TOOL_SOURCES: OnceLock<RwLock<ToolSources>> = OnceLock::new();
+static JS_RUNTIME: OnceLock<RwLock<&'static str>> = OnceLock::new();
 static CLI_TOOL_PATHS: OnceLock<RwLock<(Option<PathBuf>, Option<PathBuf>)>> = OnceLock::new();
+
+pub fn get_ytdlp_local_path() -> Result<PathBuf, String> {
+    tool_sources_lock()
+        .read()
+        .map(|sources| PathBuf::from(sources.ytdlp_local_path.as_str()))
+        .map_err(|e| e.to_string())
+}
+
+fn parse_js_runtime(runtime: &str) -> Result<&'static str, String> {
+    match runtime.trim() {
+        "deno" => Ok("deno"),
+        "node" => Ok("node"),
+        "bun" => Ok("bun"),
+        "quickjs" => Ok("quickjs"),
+        _ => Err(format!("err_invalid_js_runtime:{}", runtime)),
+    }
+}
+
+pub fn set_js_runtime(runtime: &str) -> Result<(), String> {
+    let runtime = parse_js_runtime(runtime)?;
+    *JS_RUNTIME
+        .get_or_init(|| RwLock::new("deno"))
+        .write()
+        .map_err(|e| e.to_string())? = runtime;
+    Ok(())
+}
+
+pub fn get_js_runtime() -> &'static str {
+    JS_RUNTIME
+        .get_or_init(|| RwLock::new("deno"))
+        .read()
+        .map(|runtime| *runtime)
+        .unwrap_or("deno")
+}
+
+#[cfg(test)]
+mod runtime_tests {
+    use super::parse_js_runtime;
+
+    #[test]
+    fn accepts_only_runtimes_supported_by_ytdlp() {
+        for runtime in ["deno", "node", "bun", "quickjs"] {
+            assert_eq!(parse_js_runtime(runtime).unwrap(), runtime);
+        }
+        assert!(parse_js_runtime("python").is_err());
+        assert!(parse_js_runtime("").is_err());
+    }
+}
 
 fn tool_sources_lock() -> &'static RwLock<ToolSources> {
     TOOL_SOURCES.get_or_init(|| RwLock::new(ToolSources::default()))
 }
 
-pub fn set_tool_sources(ytdlp: &str, deno: &str, ffmpeg: &str) -> Result<(), String> {
+pub fn set_tool_sources(
+    ytdlp: &str,
+    deno: &str,
+    ffmpeg: &str,
+    ytdlp_local_path: &str,
+) -> Result<(), String> {
     let sources = ToolSources {
-        ytdlp: ToolSource::parse(ytdlp)?,
-        deno: ToolSource::parse(deno)?,
-        ffmpeg: ToolSource::parse(ffmpeg)?,
+        ytdlp: parse_tool_source("yt-dlp", ytdlp)?,
+        // Save invalid input too: leaving the previous executable active would be misleading.
+        ytdlp_local_path: ytdlp_local_path.to_string(),
+        deno: parse_tool_source("deno", deno)?,
+        ffmpeg: parse_tool_source("ffmpeg", ffmpeg)?,
     };
     let mut guard = tool_sources_lock()
         .write()
         .map_err(|e| format!("err_set_tool_sources:{}", e))?;
     *guard = sources;
     Ok(())
+}
+
+fn parse_tool_source(tool: &str, value: &str) -> Result<ToolSource, String> {
+    let source = ToolSource::parse(value)?;
+    if source == ToolSource::Local && tool != "yt-dlp" {
+        return Err(format!("err_invalid_tool_source:{}:{}", tool, value));
+    }
+    Ok(source)
+}
+
+#[cfg(test)]
+mod local_source_tests {
+    use super::{parse_tool_source, ToolSource};
+
+    #[test]
+    fn local_source_is_only_supported_for_ytdlp() {
+        assert_eq!(parse_tool_source("yt-dlp", "local"), Ok(ToolSource::Local));
+        assert!(parse_tool_source("deno", "local").is_err());
+        assert!(parse_tool_source("ffmpeg", "local").is_err());
+    }
 }
 
 pub fn get_tool_source(tool: &str) -> Result<ToolSource, String> {

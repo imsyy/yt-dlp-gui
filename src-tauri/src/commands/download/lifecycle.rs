@@ -1,13 +1,13 @@
 //! 下载子进程的创建与生命周期启动。
 
-use crate::utils;
 #[cfg(target_os = "windows")]
 use crate::commands::CREATE_NO_WINDOW;
+use crate::utils;
 use std::process::Stdio;
 use tauri::{AppHandle, Manager};
 
 use super::{
-    arguments::{build_download_args, requires_ffmpeg_merge},
+    arguments::{build_download_args, requires_ffmpeg},
     model::{DownloadParams, DownloadProcessInfo, DownloadState},
     output::{spawn_completion_handler, spawn_output_reader},
 };
@@ -23,10 +23,11 @@ pub async fn start_download(
     if !ytdlp_path.exists() {
         return Err("err_ytdlp_not_installed".to_string());
     }
-    if requires_ffmpeg_merge(&params)
-        && (!utils::get_ffmpeg_path(&app)?.exists() || !utils::get_ffprobe_path(&app)?.exists())
-    {
-        return Err("err_ffmpeg_required_for_merge".to_string());
+    if requires_ffmpeg(&params) {
+        let status = crate::commands::get_ffmpeg_status(app.clone()).await?;
+        if !status.installed || !status.runnable {
+            return Err("err_ffmpeg_required_for_merge".to_string());
+        }
     }
 
     let args = build_download_args(&app, &params)?;
@@ -88,24 +89,33 @@ pub async fn start_download(
                 download_dir: params.download_dir.clone(),
                 filepath_file: Some(filepath_file),
                 clip_duration,
-                last_error: None,
+                errors: Default::default(),
             },
         );
     }
 
     // 真正直接由 Rust 后端写入 SQLite 下载中状态
-    let _ = crate::db::tasks::mark_task_downloading(&app.state::<crate::db::DatabaseState>(), &task_id);
+    let _ =
+        crate::db::tasks::mark_task_downloading(&app.state::<crate::db::DatabaseState>(), &task_id);
 
     let stdout = child.stdout.take().ok_or("err_capture_stdout")?;
     let stderr = child.stderr.take().ok_or("err_capture_stderr")?;
 
     // 读取 stdout（原始字节，lossy 解码以应对 Windows GBK 编码）
-    spawn_output_reader(app.clone(), task_id.clone(), processes.clone(), stdout);
+    let stdout_reader =
+        spawn_output_reader(app.clone(), task_id.clone(), processes.clone(), stdout);
     // 读取 stderr
-    spawn_output_reader(app.clone(), task_id.clone(), processes.clone(), stderr);
+    let stderr_reader =
+        spawn_output_reader(app.clone(), task_id.clone(), processes.clone(), stderr);
 
     // 等待进程完成并处理结果
-    spawn_completion_handler(app.clone(), task_id, processes.clone(), child);
+    spawn_completion_handler(
+        app.clone(),
+        task_id,
+        processes.clone(),
+        child,
+        [stdout_reader, stderr_reader],
+    );
 
     Ok(())
 }

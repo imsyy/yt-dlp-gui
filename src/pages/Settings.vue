@@ -49,6 +49,12 @@ const notifyModeOptions = computed(() => [
   { label: t("settings.all"), value: "all" },
 ]);
 
+const downloadModeOptions = computed(() => [
+  { label: t("common.default"), value: "default" },
+  { label: t("detail.videoOnly"), value: "video" },
+  { label: t("detail.audioOnly"), value: "audio" },
+]);
+
 const applyYoutubeExtractorArgs = async () => {
   await invoke("set_youtube_extractor_args", {
     poToken: settingStore.youtubePoToken,
@@ -102,6 +108,23 @@ watch(
 
     <n-card :title="$t('settings.youtubeAdvanced')" size="small" class="section-card">
       <n-flex vertical :size="12">
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">{{ $t("settings.jsRuntime") }}</span>
+            <n-select
+              v-model:value="settingStore.jsRuntime"
+              :options="[
+                { label: 'Deno', value: 'deno' },
+                { label: 'Node.js', value: 'node' },
+                { label: 'Bun', value: 'bun' },
+                { label: 'QuickJS', value: 'quickjs' },
+              ]"
+              size="small"
+              style="width: 160px"
+            />
+          </div>
+        </div>
+        <n-text depth="3" style="font-size: 13px">{{ $t("settings.jsRuntimeHint") }}</n-text>
         <n-text depth="3" style="font-size: 13px">
           {{ $t("settings.youtubeAdvancedDesc") }}
         </n-text>
@@ -171,6 +194,14 @@ watch(
     <n-card :title="$t('settings.personalization')" size="small" class="section-card">
       <div class="info-list">
         <div class="info-row">
+          <span class="info-label">{{ $t("settings.startMaximized") }}</span>
+          <n-switch v-model:value="settingStore.startMaximized" />
+        </div>
+        <div class="info-row">
+          <span class="info-label">{{ $t("settings.showHomeTips") }}</span>
+          <n-switch v-model:value="settingStore.showHomeTips" />
+        </div>
+        <div class="info-row">
           <span class="info-label">{{ $t("settings.showTaskbarProgress") }}</span>
           <n-switch v-model:value="settingStore.showTaskbarProgress" />
         </div>
@@ -185,6 +216,23 @@ watch(
 
     <n-card :title="$t('settings.downloadOptions')" size="small" class="section-card">
       <n-flex vertical :size="12">
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">{{ $t("settings.playlistSubfolders") }}</span>
+            <n-switch v-model:value="settingStore.playlistSubfolders" />
+          </div>
+        </div>
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">{{ $t("detail.downloadMethod") }}</span>
+            <n-select
+              v-model:value="settingStore.defaultDownloadMode"
+              :options="downloadModeOptions"
+              size="small"
+              style="width: 160px"
+            />
+          </div>
+        </div>
         <div class="info-list">
           <div class="info-row">
             <span class="info-label">{{ $t("settings.concurrentFragments") }}</span>
@@ -242,6 +290,15 @@ watch(
           </div>
         </div>
       </n-flex>
+    </n-card>
+
+    <n-card :title="$t('detail.customArgs')" size="small" class="section-card">
+      <n-input
+        v-model:value="settingStore.defaultCustomArgs"
+        :placeholder="$t('detail.customArgsPlaceholder')"
+        type="textarea"
+        :autosize="{ minRows: 2, maxRows: 5 }"
+      />
     </n-card>
 
     <n-card :title="$t('settings.about')" size="small" class="section-card">

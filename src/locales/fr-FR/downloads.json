@@ -53,7 +53,16 @@
     "cancelDownload": "Annuler le téléchargement",
     "confirmCancelDownload": "Voulez-vous vraiment annuler ce téléchargement ?",
     "alsoDeleteResidualFiles": "Supprimer également les fichiers temporaires résiduels (.part etc.)",
-    "confirmRetryAllFailed": "Voulez-vous vraiment réessayer toutes les tâches échouées ?"
+    "confirmRetryAllFailed": "Voulez-vous vraiment réessayer toutes les tâches échouées ?",
+    "downloadErrors": "yt-dlp a signalé {count} erreurs. Derniers détails :",
+    "editAndRetry": "Modifier et réessayer",
+    "editTaskHint": "Les modifications concernent uniquement cette tâche. Les autres options conservent leurs valeurs initiales.",
+    "editTimeHint": "Les temps de découpe sont en secondes. Laissez les champs vides pour le début ou la fin.",
+    "invalidEditTimeRange": "Le début doit être positif ou nul ; la fin doit être postérieure au début.",
+    "videoFormatId": "ID du format vidéo",
+    "audioFormatIds": "ID des formats audio (+ sépare les pistes)",
+    "retainedOptions": "Options initiales conservées",
+    "editSingleAudio": "Le mode audio seul et l’extraction audio nécessitent un seul ID de format audio."
   },
   "pending": {
     "empty": "Aucun élément en attente",
@@ -136,6 +145,9 @@
     "tplErrConversion": "Type de conversion « {char} » non pris en charge ; un type comme s/d est attendu après le champ (voir OUTPUT TEMPLATE de yt-dlp)",
     "remuxFormat": "Conteneur",
     "customArgs": "Paramètres supplémentaires",
-    "customArgsPlaceholder": "Paramètres yt-dlp supplémentaires, ex. --sleep-requests 2 --sleep-interval 10"
+    "customArgsPlaceholder": "Paramètres yt-dlp supplémentaires, ex. --sleep-requests 2 --sleep-interval 10",
+    "invalidTimeRange": "Choisissez une plage dans la durée de la vidéo, avec la fin après le début.",
+    "forceKeyframesAtCuts": "Générer des images clés aux points de découpe",
+    "forceKeyframesAtCutsHint": "Le réencodage est plus lent et réduit les défauts visuels près des coupes. Désactivez pour une découpe rapide."
   }
 }

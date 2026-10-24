@@ -67,6 +67,7 @@ export const useSettingStore = defineStore(
 
     /** 文件名输出模板 */
     const outputTemplate = ref(DEFAULT_OUTPUT_TEMPLATE);
+    const playlistSubfolders = ref(false);
 
     /** 文件名静态前缀/后缀（后缀插入扩展名前） */
     const filenamePrefix = ref("");
@@ -83,6 +84,10 @@ export const useSettingStore = defineStore(
 
     /** 新下载任务默认自定义 yt-dlp 附加参数（如 --sleep-requests 2） */
     const defaultCustomArgs = ref("");
+    const defaultDownloadMode = ref<"default" | "video" | "audio">("default");
+    /** 上次主动选择的编码筛选，仅用于初始化新解析任务。 */
+    const preferredVideoCodec = ref("all");
+    const preferredAudioCodec = ref("all");
 
     /** 标准流程新解析任务的默认额外选项 */
     const defaultEmbedSubs = ref(false);
@@ -127,13 +132,17 @@ export const useSettingStore = defineStore(
 
     /** 显示系统托盘图标 */
     const showTrayIcon = ref(true);
+    const showHomeTips = ref(true);
+    const startMaximized = ref(false);
 
     /** 启动时自动检查更新 */
     const autoCheckUpdate = ref(true);
 
     /** 每个外部工具独立选择应用管理版本或系统 PATH 版本 */
-    const ytdlpSource = ref<"managed" | "system">("managed");
+    const ytdlpSource = ref<"managed" | "system" | "local">("managed");
+    const ytdlpLocalPath = ref("");
     const denoSource = ref<"managed" | "system">("managed");
+    const jsRuntime = ref<"deno" | "node" | "bun" | "quickjs">("deno");
     const ffmpegSource = ref<"managed" | "system">("system");
 
     /** 内置 yt-dlp 的发行通道：stable（稳定版）/ nightly（每日构建）/ master（最新提交构建） */
@@ -177,12 +186,16 @@ export const useSettingStore = defineStore(
       cookieBrowser,
       proxy,
       outputTemplate,
+      playlistSubfolders,
       filenamePrefix,
       filenameSuffix,
       concurrentFragments,
       noOverwrites,
       defaultFfmpegArgs,
       defaultCustomArgs,
+      defaultDownloadMode,
+      preferredVideoCodec,
+      preferredAudioCodec,
       defaultEmbedSubs,
       defaultEmbedThumbnail,
       defaultWriteThumbnail,
@@ -201,9 +214,13 @@ export const useSettingStore = defineStore(
       notifyMode,
       closeToTray,
       showTrayIcon,
+      showHomeTips,
+      startMaximized,
       autoCheckUpdate,
       ytdlpSource,
+      ytdlpLocalPath,
       denoSource,
+      jsRuntime,
       ffmpegSource,
       ytdlpChannel,
       ytdlpInstalledChannel,

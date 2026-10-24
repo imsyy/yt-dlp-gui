@@ -1,5 +1,6 @@
 {
   "settings": {
+    "toolNotRunnable": "Nicht ausführbar",
     "title": "Einstellungen",
     "installed": "Installiert",
     "notInstalled": "Nicht installiert",
@@ -7,6 +8,12 @@
     "toolManager": "Erforderliche Konfiguration",
     "sourceManaged": "Integriert",
     "sourceSystem": "System-PATH",
+    "sourceLocal": "Lokal / venv",
+    "ytdlpLocalPath": "Pfad zur yt-dlp-Datei",
+    "ytdlpLocalPathHint": "Wähle die ausführbare yt-dlp-Datei, auch aus einer venv (Scripts/yt-dlp.exe oder bin/yt-dlp).",
+    "selectYtdlpExecutable": "Ausführbare yt-dlp-Datei wählen",
+    "localManaged": "Extern verwaltet",
+    "localManagedHint": "Aktualisiere diese Installation mit pip oder dem verwendeten Paketmanager.",
     "installManaged": "App-Version installieren",
     "updateNow": "Jetzt aktualisieren",
     "systemManaged": "Vom System verwaltet",
@@ -108,7 +115,12 @@
     "youtubeVisitorDataPlaceholder": "z. B. CgtBYmNkZWZHaGlqaw%3D%3D",
     "defaultFfmpegArgs": "Standard-FFmpeg-Argumente",
     "defaultFfmpegArgsHint": "Werden automatisch auf alle neu analysierten Videos angewendet und lassen sich pro Aufgabe einzeln überschreiben",
-    "showTrayIcon": "Symbol im Systemtray anzeigen"
+    "showTrayIcon": "Symbol im Systemtray anzeigen",
+    "showHomeTips": "Tipps auf der Startseite anzeigen",
+    "playlistSubfolders": "Jede Wiedergabeliste in einen eigenen Ordner laden",
+    "startMaximized": "Mit maximiertem Fenster starten",
+    "jsRuntime": "JavaScript-Laufzeit",
+    "jsRuntimeHint": "Deno kann in der App installiert werden. Andere Laufzeiten verwenden den System-PATH."
   },
   "cookie": {
     "settings": "Cookie-Einstellungen",

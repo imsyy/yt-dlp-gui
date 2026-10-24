@@ -33,6 +33,9 @@
     "active": true,
     "targets": "all",
     "createUpdaterArtifacts": true,
+    "macOS": {
+      "signingIdentity": "-"
+    },
     "resources": {
       "../browser-extension": "browser-extension"
     },

@@ -1,5 +1,6 @@
 {
   "settings": {
+    "toolNotRunnable": "Nem futtatható",
     "title": "Beállítások",
     "installed": "Telepítve",
     "notInstalled": "Nincs telepítve",
@@ -7,6 +8,12 @@
     "toolManager": "Szükséges beállítások",
     "sourceManaged": "Beépített",
     "sourceSystem": "Rendszer PATH",
+    "sourceLocal": "Helyi / venv",
+    "ytdlpLocalPath": "A yt-dlp futtatható fájl elérési útja",
+    "ytdlpLocalPathHint": "Válaszd ki a yt-dlp futtatható fájlját, akár egy venv környezetből (Scripts/yt-dlp.exe vagy bin/yt-dlp).",
+    "selectYtdlpExecutable": "yt-dlp futtatható fájl kiválasztása",
+    "localManaged": "Külső kezelés",
+    "localManagedHint": "A frissítéshez használd a pipet vagy a telepítéshez használt csomagkezelőt.",
     "installManaged": "Alkalmazásverzió telepítése",
     "updateNow": "Frissítés most",
     "systemManaged": "A rendszer kezeli",
@@ -108,7 +115,12 @@
     "ytdlpChannel": "Kiadási csatorna",
     "defaultFfmpegArgs": "Alapértelmezett FFmpeg-argumentumok",
     "defaultFfmpegArgsHint": "Automatikusan alkalmazza minden újonnan elemzett videóra; feladatonként külön módosítható",
-    "showTrayIcon": "Rendszertálca ikon megjelenítése"
+    "showTrayIcon": "Rendszertálca ikon megjelenítése",
+    "showHomeTips": "Tippek megjelenítése a kezdőlapon",
+    "playlistSubfolders": "Lejátszási listák letöltése külön mappákba",
+    "startMaximized": "Indítás teljes méretű ablakkal",
+    "jsRuntime": "JavaScript-futtatókörnyezet",
+    "jsRuntimeHint": "A Deno az alkalmazásból telepíthető. A többi futtatókörnyezet a rendszer PATH változóját használja."
   },
   "cookie": {
     "settings": "Cookie-beállítások",

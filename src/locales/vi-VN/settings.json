@@ -1,5 +1,6 @@
 {
   "settings": {
+    "toolNotRunnable": "Không thể chạy",
     "title": "Cài đặt",
     "installed": "Đã cài",
     "notInstalled": "Chưa cài",
@@ -7,6 +8,12 @@
     "toolManager": "Cấu hình cần thiết",
     "sourceManaged": "Tích hợp sẵn",
     "sourceSystem": "PATH hệ thống",
+    "sourceLocal": "Cục bộ / venv",
+    "ytdlpLocalPath": "Đường dẫn tệp thực thi yt-dlp",
+    "ytdlpLocalPathHint": "Chọn tệp thực thi yt-dlp, kể cả trong venv (Scripts/yt-dlp.exe hoặc bin/yt-dlp).",
+    "selectYtdlpExecutable": "Chọn tệp thực thi yt-dlp",
+    "localManaged": "Quản lý bên ngoài",
+    "localManagedHint": "Cập nhật bản cài đặt này bằng pip hoặc trình quản lý gói đã dùng để cài đặt.",
     "installManaged": "Cài bản của ứng dụng",
     "updateNow": "Cập nhật ngay",
     "systemManaged": "Hệ thống quản lý",
@@ -108,7 +115,12 @@
     "youtubeVisitorDataPlaceholder": "ví dụ: CgtBYmNkZWZHaGlqaw%3D%3D",
     "defaultFfmpegArgs": "Tham số FFmpeg mặc định",
     "defaultFfmpegArgsHint": "Tự động áp dụng cho các video mới được phân tích sau này; mỗi tác vụ tải về vẫn có thể chỉnh riêng",
-    "showTrayIcon": "Hiển thị biểu tượng khay hệ thống"
+    "showTrayIcon": "Hiển thị biểu tượng khay hệ thống",
+    "showHomeTips": "Hiển thị mẹo trên màn hình chính",
+    "playlistSubfolders": "Tải mỗi danh sách phát vào thư mục riêng",
+    "startMaximized": "Khởi động với cửa sổ phóng to",
+    "jsRuntime": "Môi trường JavaScript",
+    "jsRuntimeHint": "Có thể cài Deno trong ứng dụng. Các môi trường khác dùng PATH hệ thống."
   },
   "cookie": {
     "settings": "Cài đặt cookie",

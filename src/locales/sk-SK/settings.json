@@ -1,5 +1,6 @@
 {
   "settings": {
+    "toolNotRunnable": "Nedá sa spustiť",
     "title": "Nastavenia",
     "installed": "Nainštalované",
     "notInstalled": "Nie je nainštalované",
@@ -9,6 +10,12 @@
     "toolManager": "Potrebné nastavenia",
     "sourceManaged": "Zabudované",
     "sourceSystem": "Systémový PATH",
+    "sourceLocal": "Lokálne / venv",
+    "ytdlpLocalPath": "Cesta k spustiteľnému súboru yt-dlp",
+    "ytdlpLocalPathHint": "Vyberte spustiteľný súbor yt-dlp, aj z prostredia venv (Scripts/yt-dlp.exe alebo bin/yt-dlp).",
+    "selectYtdlpExecutable": "Vybrať spustiteľný súbor yt-dlp",
+    "localManaged": "Externá správa",
+    "localManagedHint": "Túto inštaláciu aktualizujte cez pip alebo správcu balíkov použitého pri inštalácii.",
     "installManaged": "Nainštalovať kópiu aplikácie",
     "updateNow": "Aktualizácia",
     "systemManaged": "Spravované systémom",
@@ -108,7 +115,12 @@
     "appUpdateFailed": "Aktualizácia sa nepodarila: {e}",
     "appIsLatest": "Používate najnovšiu verziu",
     "systemBinaryNotice": "V súčasnosti sa používa yt-dlp nainštalovaný v systéme. „Skontrolovať aktualizácie“ aktualizuje iba kópiu spravovanú aplikáciou. Aby sa aktualizácie uplatnili, prepnite režim cesty na „Iba aplikácia“.",
-    "showTrayIcon": "Zobraziť ikonu v systémovej lište"
+    "showTrayIcon": "Zobraziť ikonu v systémovej lište",
+    "showHomeTips": "Zobraziť tipy na úvodnej obrazovke",
+    "playlistSubfolders": "Stiahnuť každý zoznam do vlastného priečinka",
+    "startMaximized": "Spustiť s maximalizovaným oknom",
+    "jsRuntime": "Prostredie JavaScript",
+    "jsRuntimeHint": "Deno možno nainštalovať v aplikácii. Ostatné prostredia používajú systémový PATH."
   },
   "cookie": {
     "settings": "Nastavenia súborov cookie",

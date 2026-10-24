@@ -1,5 +1,6 @@
 {
   "settings": {
+    "toolNotRunnable": "Cannot run",
     "title": "Settings",
     "installed": "Installed",
     "notInstalled": "Not Installed",
@@ -9,6 +10,12 @@
     "toolManager": "Required Setup",
     "sourceManaged": "Built-in",
     "sourceSystem": "System PATH",
+    "sourceLocal": "Local / venv",
+    "ytdlpLocalPath": "yt-dlp executable path",
+    "ytdlpLocalPathHint": "Select the yt-dlp executable, including one in a venv (Scripts/yt-dlp.exe or bin/yt-dlp).",
+    "selectYtdlpExecutable": "Select yt-dlp executable",
+    "localManaged": "Package managed",
+    "localManagedHint": "Update this installation with pip or the package manager that installed it.",
     "installManaged": "Install app copy",
     "updateNow": "Update",
     "systemManaged": "System managed",
@@ -108,7 +115,12 @@
     "appUpdateSuccess": "Update complete, restarting",
     "appUpdateFailed": "Update failed: {e}",
     "appIsLatest": "You are on the latest version",
-    "systemBinaryNotice": "Currently using the system-installed yt-dlp. \"Check Update\" only updates the app-managed copy. Switch the path mode to \"App Only\" for updates to take effect."
+    "systemBinaryNotice": "Currently using the system-installed yt-dlp. \"Check Update\" only updates the app-managed copy. Switch the path mode to \"App Only\" for updates to take effect.",
+    "showHomeTips": "Show home screen tips",
+    "playlistSubfolders": "Download each playlist into its own folder",
+    "startMaximized": "Start with a maximized window",
+    "jsRuntime": "JavaScript runtime",
+    "jsRuntimeHint": "Deno can be installed in the app. Other runtimes use your system PATH."
   },
   "cookie": {
     "settings": "Cookie Settings",

@@ -61,6 +61,10 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Prepare AppImage bundler
+        if: matrix.platform == 'ubuntu-22.04'
+        run: bash scripts/packaging/prepare-linuxdeploy.sh
+
       - name: Generate release notes
         id: release_notes
         uses: actions/github-script@v7
@@ -82,6 +86,8 @@ jobs:
       - name: Build and release
         uses: tauri-apps/tauri-action@v0
         env:
+          # Exclude before AppImage creation and updater signing (#72).
+          LINUXDEPLOY_EXCLUDED_LIBRARIES: "libwayland-*.so*"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
@@ -94,6 +100,26 @@ jobs:
           generateReleaseNotes: false
           includeUpdaterJson: true
           args: --target ${{ matrix.target }}
+
+      - name: Verify macOS bundle resource seal
+        if: matrix.platform == 'macos-latest'
+        shell: bash
+        run: |
+          app="src-tauri/target/${{ matrix.target }}/release/bundle/macos/YDL GUI.app"
+          test -s "$app/Contents/_CodeSignature/CodeResources"
+          codesign --verify --deep --strict --verbose=2 "$app"
+
+      - name: Verify AppImage uses host Wayland libraries
+        if: matrix.platform == 'ubuntu-22.04'
+        shell: bash
+        run: |
+          appdir="src-tauri/target/${{ matrix.target }}/release/bundle/appimage/YDL GUI.AppDir"
+          test -d "$appdir"
+          bundled=$(find "$appdir" -name 'libwayland-*.so*' -print)
+          if [ -n "$bundled" ]; then
+            printf 'Unexpected bundled Wayland libraries:\n%s\n' "$bundled" >&2
+            exit 1
+          fi
 
       - name: Upload artifacts (Windows)
         if: matrix.platform == 'windows-latest'

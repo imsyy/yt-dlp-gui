@@ -1,7 +1,7 @@
 import type { VideoFormat } from "@/types";
 
-export const getCodecKey = (codec: string): string => {
-  const normalized = codec.toLowerCase();
+export const getCodecKey = (codec?: string | null): string => {
+  const normalized = codec?.toLowerCase() || "unknown";
   if (/^(avc1|avc3|h264)/.test(normalized)) return "h264";
   if (/^(hev1|hvc1|h265|hevc)/.test(normalized)) return "hevc";
   if (/^(av01|av1)/.test(normalized)) return "av1";
@@ -31,7 +31,7 @@ const CODEC_LABELS: Record<string, string> = {
   unknown: "Unknown",
 };
 
-export const getCodecLabel = (codec: string): string => {
+export const getCodecLabel = (codec?: string | null): string => {
   const key = getCodecKey(codec);
   return CODEC_LABELS[key] || key.toUpperCase();
 };

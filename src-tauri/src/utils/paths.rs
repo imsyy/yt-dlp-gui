@@ -3,7 +3,9 @@
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 
-use super::source::{get_cli_tool_path, get_tool_source, ToolSource};
+use super::source::{
+    get_cli_tool_path, get_js_runtime, get_tool_source, get_ytdlp_local_path, ToolSource,
+};
 
 /// 构建应用数据目录下的可执行文件路径。
 fn get_managed_executable_path(app: &AppHandle, file_name: &str) -> Result<PathBuf, String> {
@@ -18,7 +20,7 @@ fn get_managed_executable_path(app: &AppHandle, file_name: &str) -> Result<PathB
 /// 在系统 PATH 中查找可执行文件
 /// 使用 `which` crate 而非派生子进程，避免 Windows 控制台代码页（GBK 等）
 /// 输出非 UTF-8 时解析失败；同时自动处理 PATHEXT 等平台细节。
-fn find_system_executable(name: &str) -> Option<PathBuf> {
+pub(super) fn find_system_executable(name: &str) -> Option<PathBuf> {
     if let Some(path) = which::which(name).ok().filter(|path| path.exists()) {
         return Some(path);
     }
@@ -47,12 +49,13 @@ fn resolve_executable_path(
     managed_path: PathBuf,
     system_name: &str,
     source: ToolSource,
-) -> PathBuf {
+) -> Result<PathBuf, String> {
     match source {
-        ToolSource::Managed => managed_path,
+        ToolSource::Managed => Ok(managed_path),
         ToolSource::System => {
-            find_system_executable(system_name).unwrap_or_else(|| PathBuf::from(system_name))
+            Ok(find_system_executable(system_name).unwrap_or_else(|| PathBuf::from(system_name)))
         }
+        ToolSource::Local => Err(format!("err_invalid_tool_source:{}:local", system_name)),
     }
 }
 
@@ -70,12 +73,24 @@ pub fn get_ytdlp_path(app: &AppHandle) -> Result<PathBuf, String> {
     if let Some(path) = get_cli_tool_path("yt-dlp") {
         return Ok(path);
     }
-    let managed_path = get_managed_ytdlp_path(app)?;
-    Ok(resolve_executable_path(
-        managed_path,
-        "yt-dlp",
-        get_tool_source("yt-dlp")?,
-    ))
+    let source = get_tool_source("yt-dlp")?;
+    if source == ToolSource::Local {
+        return validate_local_ytdlp_path(get_ytdlp_local_path()?);
+    }
+    resolve_executable_path(get_managed_ytdlp_path(app)?, "yt-dlp", source)
+}
+
+pub(super) fn validate_local_ytdlp_path(path: PathBuf) -> Result<PathBuf, String> {
+    if path.as_os_str().is_empty() || path.to_string_lossy().trim().is_empty() {
+        return Err("err_ytdlp_local_path_empty".to_string());
+    }
+    if !path.is_absolute() {
+        return Err("err_ytdlp_local_path_absolute".to_string());
+    }
+    if !path.is_file() {
+        return Err(format!("err_ytdlp_local_path_missing:{}", path.display()));
+    }
+    Ok(path)
 }
 
 /// 获取应用管理的 Deno 路径（应用数据目录）
@@ -93,11 +108,77 @@ pub fn get_deno_path(app: &AppHandle) -> Result<PathBuf, String> {
         return Ok(path);
     }
     let managed_path = get_managed_deno_path(app)?;
-    Ok(resolve_executable_path(
-        managed_path,
-        "deno",
-        get_tool_source("deno")?,
-    ))
+    resolve_executable_path(managed_path, "deno", get_tool_source("deno")?)
+}
+
+/// Resolve the selected runtime exactly as it will be passed to yt-dlp.
+/// Deno follows its selected source/CLI override; the other runtimes use PATH.
+pub fn get_js_runtime_path(app: &AppHandle) -> Result<PathBuf, String> {
+    let runtime = get_js_runtime();
+    if runtime == "deno" {
+        return get_deno_path(app);
+    }
+    Ok(resolve_system_runtime_path(runtime, find_system_executable))
+}
+
+fn resolve_system_runtime_path(runtime: &str, find: impl Fn(&str) -> Option<PathBuf>) -> PathBuf {
+    if runtime == "quickjs" {
+        find("qjs")
+            .or_else(|| find("quickjs"))
+            .unwrap_or_else(|| PathBuf::from("qjs"))
+    } else {
+        find(runtime).unwrap_or_else(|| PathBuf::from(runtime))
+    }
+}
+
+#[cfg(test)]
+mod runtime_tests {
+    use super::{resolve_system_runtime_path, validate_local_ytdlp_path};
+    use std::path::PathBuf;
+
+    #[test]
+    fn local_ytdlp_requires_an_explicit_existing_file() {
+        assert_eq!(
+            validate_local_ytdlp_path(PathBuf::new()),
+            Err("err_ytdlp_local_path_empty".to_string())
+        );
+        assert!(validate_local_ytdlp_path(PathBuf::from("yt-dlp")).is_err());
+        assert!(validate_local_ytdlp_path(std::env::temp_dir()).is_err());
+        let missing = std::env::temp_dir().join(format!("missing-ytdlp-{}", std::process::id()));
+        assert!(validate_local_ytdlp_path(missing).is_err());
+        let executable = std::env::current_exe().unwrap();
+        assert_eq!(
+            validate_local_ytdlp_path(executable.clone()),
+            Ok(executable)
+        );
+    }
+
+    #[test]
+    fn system_runtimes_do_not_fall_back_to_deno() {
+        let node = PathBuf::from("node-location");
+        assert_eq!(
+            resolve_system_runtime_path("node", |name| (name == "node").then(|| node.clone())),
+            node
+        );
+        assert_eq!(
+            resolve_system_runtime_path("bun", |_| None),
+            PathBuf::from("bun")
+        );
+    }
+
+    #[test]
+    fn quickjs_resolves_both_common_executable_names() {
+        assert_eq!(
+            resolve_system_runtime_path("quickjs", |name| (name == "qjs")
+                .then(|| PathBuf::from("qjs-location"))),
+            PathBuf::from("qjs-location")
+        );
+        assert_eq!(
+            resolve_system_runtime_path("quickjs", |name| (name == "quickjs")
+                .then(|| PathBuf::from("quickjs-location"))),
+            PathBuf::from("quickjs-location")
+        );
+    }
 }
 
 pub fn get_managed_ffmpeg_dir(app: &AppHandle) -> Result<PathBuf, String> {
@@ -129,19 +210,19 @@ pub fn get_managed_ffprobe_path(app: &AppHandle) -> Result<PathBuf, String> {
 }
 
 pub fn get_ffmpeg_path(app: &AppHandle) -> Result<PathBuf, String> {
-    Ok(resolve_executable_path(
+    resolve_executable_path(
         get_managed_ffmpeg_path(app)?,
         "ffmpeg",
         get_tool_source("ffmpeg")?,
-    ))
+    )
 }
 
 pub fn get_ffprobe_path(app: &AppHandle) -> Result<PathBuf, String> {
-    Ok(resolve_executable_path(
+    resolve_executable_path(
         get_managed_ffprobe_path(app)?,
         "ffprobe",
         get_tool_source("ffmpeg")?,
-    ))
+    )
 }
 
 /// 获取 Cookie 文件路径（存放在应用数据目录下）

@@ -25,6 +25,7 @@ export const useAppBootstrap = () => {
       ytdlp: settingStore.ytdlpSource,
       deno: settingStore.denoSource,
       ffmpeg: settingStore.ffmpegSource,
+      ytdlpLocalPath: settingStore.ytdlpLocalPath,
     });
 
   /**
@@ -60,7 +61,12 @@ export const useAppBootstrap = () => {
    */
   const bootstrap = async (): Promise<void> => {
     watch(
-      () => [settingStore.ytdlpSource, settingStore.denoSource, settingStore.ffmpegSource],
+      () => [
+        settingStore.ytdlpSource,
+        settingStore.ytdlpLocalPath,
+        settingStore.denoSource,
+        settingStore.ffmpegSource,
+      ],
       () => applyToolSources(),
     );
 
@@ -70,6 +76,11 @@ export const useAppBootstrap = () => {
     );
 
     await applyToolSources();
+    watch(
+      () => settingStore.jsRuntime,
+      (runtime) => invoke("set_js_runtime", { runtime }),
+    );
+    await invoke("set_js_runtime", { runtime: settingStore.jsRuntime });
     await applyYtdlpChannel();
 
     if (settingStore.autoCheckUpdate) {

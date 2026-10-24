@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { VideoInfo } from "@/types";
 import { formatDuration, formatViewCount } from "@/utils/format";
+import { useThumbnail } from "@/composables/useThumbnail";
 
 const props = defineProps<{
   videoInfo: VideoInfo;
@@ -17,27 +18,31 @@ const isUpcoming = computed(() => props.videoInfo.live_status === "is_upcoming")
 
 const coverError = ref(false);
 const coverLoaded = ref(false);
-
-watch(
+const { src: thumbnailSrc, failed: thumbnailFailed } = useThumbnail(
   () => props.videoInfo.thumbnail,
-  () => {
-    coverError.value = false;
-    coverLoaded.value = false;
-  },
 );
+
+watch(thumbnailSrc, () => {
+  coverError.value = false;
+  coverLoaded.value = false;
+});
 </script>
 
 <template>
   <n-card size="small">
     <n-flex :size="16" :wrap="false">
       <div class="video-cover">
-        <div v-if="!coverLoaded || coverError" class="cover-placeholder" aria-hidden="true">
-          <icon-mdi-image-broken-variant v-if="coverError" />
+        <div
+          v-if="!coverLoaded || coverError || thumbnailFailed"
+          class="cover-placeholder"
+          aria-hidden="true"
+        >
+          <icon-mdi-image-broken-variant v-if="coverError || thumbnailFailed" />
           <icon-mdi-image-outline v-else />
         </div>
         <img
-          v-if="videoInfo.thumbnail && !coverError"
-          :src="videoInfo.thumbnail"
+          v-if="thumbnailSrc && !coverError"
+          :src="thumbnailSrc"
           class="cover-img"
           :class="{ 'cover-img-loading': !coverLoaded }"
           alt=""

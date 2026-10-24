@@ -15,11 +15,12 @@ pub async fn get_ffmpeg_status(app: AppHandle) -> Result<ToolStatus, String> {
     let ffprobe_path = utils::get_ffprobe_path(&app)?;
     let managed_path = utils::get_managed_ffmpeg_path(&app)?;
     let mut status = build_tool_status("ffmpeg", ffmpeg_path, managed_path, "-version").await?;
-    // ffmpeg 与 ffprobe 必须同时存在才算装好（缺 ffprobe 就无法完成合并/探测）。
-    // ffprobe 没有单独探测版本的必要，因此 runnable 只要求它存在即可。
+    // Probe both executables: an existing ffprobe can still fail to run.
     let ffprobe_present = ffprobe_path.exists();
     status.installed = status.installed && ffprobe_present;
-    status.runnable = status.runnable && ffprobe_present;
+    status.runnable = status.runnable
+        && ffprobe_present
+        && verify_executable(&ffprobe_path, "-version").await.is_ok();
     Ok(status)
 }
 

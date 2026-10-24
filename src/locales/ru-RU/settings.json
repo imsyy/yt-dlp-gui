@@ -1,5 +1,6 @@
 {
   "settings": {
+    "toolNotRunnable": "Не удаётся запустить",
     "title": "Настройки",
     "installed": "Установлено",
     "notInstalled": "Не установлено",
@@ -7,6 +8,12 @@
     "toolManager": "Необходимая настройка",
     "sourceManaged": "Встроен",
     "sourceSystem": "Системный PATH",
+    "sourceLocal": "Локальный / venv",
+    "ytdlpLocalPath": "Путь к исполняемому файлу yt-dlp",
+    "ytdlpLocalPathHint": "Выберите исполняемый файл yt-dlp, в том числе из venv (Scripts/yt-dlp.exe или bin/yt-dlp).",
+    "selectYtdlpExecutable": "Выбрать исполняемый файл yt-dlp",
+    "localManaged": "Внешнее управление",
+    "localManagedHint": "Обновляйте эту установку через pip или пакетный менеджер, которым она установлена.",
     "installManaged": "Установить версию приложения",
     "updateNow": "Обновить сейчас",
     "systemManaged": "Управляется системой",
@@ -108,7 +115,12 @@
     "youtubeVisitorDataPlaceholder": "например, CgtBYmNkZWZHaGlqaw%3D%3D",
     "defaultFfmpegArgs": "Аргументы FFmpeg по умолчанию",
     "defaultFfmpegArgsHint": "Применяются ко всем новым разбираемым видео; для отдельной задачи значение можно изменить",
-    "showTrayIcon": "Показывать значок в системном трее"
+    "showTrayIcon": "Показывать значок в системном трее",
+    "showHomeTips": "Показывать подсказки на главной",
+    "playlistSubfolders": "Скачивать каждый плейлист в отдельную папку",
+    "startMaximized": "Запускать с развёрнутым окном",
+    "jsRuntime": "Среда JavaScript",
+    "jsRuntimeHint": "Deno можно установить в приложении. Другие среды используют системный PATH."
   },
   "cookie": {
     "settings": "Настройки cookies",

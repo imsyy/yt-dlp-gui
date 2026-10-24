@@ -1,8 +1,8 @@
 //! 外部工具管理共用的状态探测、进度通知与原子替换逻辑。
 
-use crate::utils;
 #[cfg(target_os = "windows")]
 use crate::commands::CREATE_NO_WINDOW;
+use crate::utils;
 use futures_util::StreamExt;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
@@ -196,19 +196,44 @@ pub(super) async fn download_to_file_with_progress(
 /// 内嵌归档/依赖完整，因此替换正式文件前必须实测一次。
 /// 失败时返回原始错误详情，由调用方拼接自己的错误码并清理临时文件。
 pub(super) async fn verify_executable(path: &Path, version_arg: &str) -> Result<(), String> {
-    let output = tokio::process::Command::new(path)
+    probe_version(path, version_arg, "").await.map(|_| ())
+}
+
+async fn probe_version(path: &Path, version_arg: &str, tool: &str) -> Result<String, String> {
+    let mut command = tokio::process::Command::new(path);
+    command
         .arg(version_arg)
-        .output()
+        .env("PYTHONUTF8", "1")
+        .env("PYTHONIOENCODING", "utf-8")
+        .stdin(std::process::Stdio::null())
+        .kill_on_drop(true);
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NO_WINDOW);
+    let output = tokio::time::timeout(Duration::from_secs(10), command.output())
         .await
+        .map_err(|_| "version probe timed out after 10 seconds".to_string())?
         .map_err(|e| e.to_string())?;
-    if output.status.success() && !output.stdout.is_empty() {
-        return Ok(());
-    }
-    let detail = String::from_utf8_lossy(&output.stderr).trim().to_string();
-    if detail.is_empty() {
-        Err(format!("exit_code:{}", output.status.code().unwrap_or(-1)))
+    version_probe_result(output, tool)
+}
+
+fn version_probe_result(output: std::process::Output, tool: &str) -> Result<String, String> {
+    let raw = if output.stdout.is_empty() {
+        &output.stderr
     } else {
-        Err(detail)
+        &output.stdout
+    };
+    let text = String::from_utf8_lossy(raw).trim().to_string();
+    // QuickJS intentionally exits with 1 after printing its help/version header.
+    // Accept that one case only when it really identifies a QuickJS runtime.
+    let quickjs_help = tool == "quickjs"
+        && output.status.code() == Some(1)
+        && quickjs_version(text.lines().next().unwrap_or_default()).is_some();
+    if (output.status.success() || quickjs_help) && !text.is_empty() {
+        Ok(text)
+    } else if !text.is_empty() {
+        Err(text)
+    } else {
+        Err(format!("exit_code:{}", output.status.code().unwrap_or(-1)))
     }
 }
 
@@ -225,61 +250,54 @@ pub(super) async fn build_tool_status(
     } else {
         configured_source.as_str()
     };
-    let installed = path.exists();
-    if !installed {
-        return Ok(ToolStatus {
-            installed: false,
-            runnable: false,
-            version: String::new(),
-            path: path.to_string_lossy().to_string(),
-            source: source.to_string(),
-            is_managed: !has_cli_override && configured_source == utils::ToolSource::Managed,
-            can_update: false,
-        });
-    }
+    let is_managed = !has_cli_override
+        && configured_source == utils::ToolSource::Managed
+        && path == managed_path;
+    let can_update = can_update_tool(tool, configured_source, has_cli_override);
+    Ok(probe_tool_status(tool, path, version_arg, source, is_managed, can_update).await)
+}
 
-    let mut cmd = tokio::process::Command::new(&path);
-    cmd.arg(version_arg)
-        .env("PYTHONUTF8", "1")
-        .env("PYTHONIOENCODING", "utf-8");
-    #[cfg(target_os = "windows")]
-    cmd.creation_flags(CREATE_NO_WINDOW);
-    let output = cmd
-        .output()
-        .await
-        .map_err(|e| format!("err_run_tool:{}:{}", tool, e))?;
-    let raw = if output.stdout.is_empty() {
-        &output.stderr
-    } else {
-        &output.stdout
-    };
-    let first_line = String::from_utf8_lossy(raw)
-        .lines()
-        .next()
-        .unwrap_or("")
-        .trim()
-        .to_string();
-    // 文件存在不等于能跑：`--version` 失败说明这个二进制不可用（缺动态库、
-    // 架构不符、权限不足等）。此时不要把 installed 拉回 false，否则界面会
-    // 显示「未安装」并引导用户反复下载一个其实就在磁盘上的文件。
-    let runnable = output.status.success();
-    let version = if runnable {
-        parse_version(tool, &first_line)
-    } else {
-        // 跑不起来时 stdout/stderr 通常是报错文本，塞进「版本」字段会误导用户
-        String::new()
-    };
+fn can_update_tool(tool: &str, source: utils::ToolSource, has_cli_override: bool) -> bool {
+    !has_cli_override
+        && match source {
+            utils::ToolSource::Managed => true,
+            utils::ToolSource::System => tool != "ffmpeg",
+            utils::ToolSource::Local => false,
+        }
+}
 
-    Ok(ToolStatus {
-        installed: true,
+pub(super) async fn probe_tool_status(
+    tool: &str,
+    path: PathBuf,
+    version_arg: &str,
+    source: &str,
+    is_managed: bool,
+    can_update: bool,
+) -> ToolStatus {
+    let installed = path.is_file();
+    let probe = if installed {
+        probe_version(&path, version_arg, tool).await
+    } else {
+        Err(format!("err_tool_not_installed:{}", tool))
+    };
+    let runnable = probe.is_ok();
+    let error = if installed {
+        probe.as_ref().err().cloned()
+    } else {
+        None
+    };
+    ToolStatus {
+        installed,
         runnable,
-        version,
+        version: probe
+            .map(|text| parse_version(tool, text.lines().next().unwrap_or_default()))
+            .unwrap_or_default(),
         path: path.to_string_lossy().to_string(),
         source: source.to_string(),
-        is_managed: path == managed_path,
-        can_update: !has_cli_override
-            && (configured_source == utils::ToolSource::Managed || tool != "ffmpeg"),
-    })
+        is_managed,
+        can_update: runnable && can_update,
+        error,
+    }
 }
 
 /// 从工具 `--version` 的首行输出里提取纯版本号
@@ -297,14 +315,152 @@ fn parse_version(tool: &str, first_line: &str) -> String {
             .strip_prefix("deno ")
             .unwrap_or(first_line)
             .to_string()
+    } else if tool == "quickjs" {
+        quickjs_version(first_line)
+            .unwrap_or(first_line)
+            .to_string()
     } else {
         first_line.to_string()
     }
 }
 
+fn quickjs_version(first_line: &str) -> Option<&str> {
+    let version = first_line
+        .strip_prefix("QuickJS version ")
+        .or_else(|| first_line.strip_prefix("QuickJS-ng version "))?
+        .split_whitespace()
+        .next()?;
+    (version.bytes().next()?.is_ascii_digit()
+        && version
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || byte == b'.' || byte == b'-'))
+    .then_some(version)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::ProgressThrottle;
+    use super::{
+        can_update_tool, parse_version, probe_tool_status, version_probe_result, ProgressThrottle,
+    };
+
+    #[test]
+    fn local_and_cli_ytdlp_cannot_be_updated_by_the_app() {
+        use crate::utils::ToolSource;
+        assert!(!can_update_tool("yt-dlp", ToolSource::Local, false));
+        assert!(!can_update_tool("yt-dlp", ToolSource::Managed, true));
+        assert!(!can_update_tool("yt-dlp", ToolSource::System, true));
+        assert!(can_update_tool("yt-dlp", ToolSource::Managed, false));
+        assert!(can_update_tool("yt-dlp", ToolSource::System, false));
+    }
+
+    fn probe_output(code: i32, text: &str) -> std::process::Output {
+        #[cfg(unix)]
+        use std::os::unix::process::ExitStatusExt;
+        #[cfg(windows)]
+        use std::os::windows::process::ExitStatusExt;
+
+        std::process::Output {
+            #[cfg(windows)]
+            status: std::process::ExitStatus::from_raw(code as u32),
+            #[cfg(unix)]
+            status: std::process::ExitStatus::from_raw(code << 8),
+            stdout: Vec::new(),
+            stderr: text.as_bytes().to_vec(),
+        }
+    }
+
+    #[test]
+    fn runtime_status_keeps_installation_distinct_from_execution_failure() {
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let executable = std::env::current_exe().unwrap();
+        let broken = runtime.block_on(probe_tool_status(
+            "node",
+            executable.clone(),
+            "--unknown-runtime-probe-option",
+            "system",
+            false,
+            true,
+        ));
+        assert!(broken.installed);
+        assert!(!broken.runnable);
+        assert!(broken.version.is_empty());
+        assert!(!broken.can_update);
+        assert!(broken.error.is_some());
+
+        let working = runtime.block_on(probe_tool_status(
+            "node", executable, "--help", "system", false, false,
+        ));
+        assert!(working.installed);
+        assert!(working.runnable);
+        assert_eq!(working.source, "system");
+        assert!(!working.can_update);
+        assert!(!working.is_managed);
+        assert!(working.error.is_none());
+    }
+
+    #[test]
+    fn missing_runtime_has_no_version_or_update_action() {
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let path =
+            std::env::temp_dir().join(format!("yt-dlp-missing-runtime-{}", std::process::id()));
+        let status = runtime.block_on(probe_tool_status(
+            "bun",
+            path,
+            "--version",
+            "system",
+            false,
+            true,
+        ));
+        assert!(!status.installed);
+        assert!(!status.runnable);
+        assert!(status.version.is_empty());
+        assert!(!status.can_update);
+        assert!(status.error.is_none());
+    }
+
+    #[test]
+    fn quickjs_version_label_does_not_include_help_text() {
+        assert_eq!(
+            parse_version("quickjs", "QuickJS version 2025-09-13"),
+            "2025-09-13"
+        );
+        assert_eq!(
+            parse_version("quickjs", "QuickJS-ng version 0.11.0"),
+            "0.11.0"
+        );
+    }
+
+    #[test]
+    fn quickjs_help_exit_code_is_accepted_only_with_a_valid_version_header() {
+        assert!(version_probe_result(
+            probe_output(1, "QuickJS version 2025-09-13\nusage: qjs [options]"),
+            "quickjs"
+        )
+        .is_ok());
+        assert!(version_probe_result(
+            probe_output(1, "QuickJS-ng version 0.11.0\nusage: qjs [options]"),
+            "quickjs"
+        )
+        .is_ok());
+        assert!(
+            version_probe_result(probe_output(1, "failed to load library"), "quickjs").is_err()
+        );
+        assert!(
+            version_probe_result(probe_output(1, "QuickJS version unknown"), "quickjs").is_err()
+        );
+        assert!(
+            version_probe_result(probe_output(2, "QuickJS version 2025-09-13"), "quickjs").is_err()
+        );
+        assert!(
+            version_probe_result(probe_output(1, "QuickJS version 2025-09-13"), "node").is_err()
+        );
+    }
 
     #[test]
     fn throttle_pushes_first_progress_immediately() {

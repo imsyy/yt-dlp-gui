@@ -1,5 +1,6 @@
 {
   "settings": {
+    "toolNotRunnable": "تعذر التشغيل",
     "title": "الإعدادات",
     "installed": "مثبت",
     "notInstalled": "غير مثبت",
@@ -7,6 +8,12 @@
     "toolManager": "الإعدادات الضرورية",
     "sourceManaged": "مدمج",
     "sourceSystem": "PATH النظام",
+    "sourceLocal": "محلي / venv",
+    "ytdlpLocalPath": "مسار ملف yt-dlp التنفيذي",
+    "ytdlpLocalPathHint": "اختر ملف yt-dlp التنفيذي، بما في ذلك داخل venv ‏(Scripts/yt-dlp.exe أو bin/yt-dlp).",
+    "selectYtdlpExecutable": "اختيار ملف yt-dlp التنفيذي",
+    "localManaged": "إدارة خارجية",
+    "localManagedHint": "حدّث هذا التثبيت باستخدام pip أو مدير الحزم الذي ثبّته.",
     "installManaged": "تثبيت نسخة التطبيق",
     "updateNow": "التحديث الآن",
     "systemManaged": "يديره النظام",
@@ -108,7 +115,12 @@
     "youtubeVisitorDataPlaceholder": "مثال: CgtBYmNkZWZHaGlqaw%3D%3D",
     "defaultFfmpegArgs": "وسائط FFmpeg الافتراضية",
     "defaultFfmpegArgsHint": "تُطبَّق تلقائيًا على كل فيديو جديد يتم تحليله، ويمكن تعديلها لكل مهمة على حدة",
-    "showTrayIcon": "إظهار أيقونة منطقة الإعلام"
+    "showTrayIcon": "إظهار أيقونة منطقة الإعلام",
+    "showHomeTips": "إظهار نصائح الصفحة الرئيسية",
+    "playlistSubfolders": "تنزيل كل قائمة تشغيل في مجلد منفصل",
+    "startMaximized": "بدء التشغيل بنافذة مكبرة",
+    "jsRuntime": "وقت تشغيل JavaScript",
+    "jsRuntimeHint": "يمكن تثبيت Deno من التطبيق. تستخدم أوقات التشغيل الأخرى PATH للنظام."
   },
   "cookie": {
     "settings": "إعدادات ملفات تعريف الارتباط",

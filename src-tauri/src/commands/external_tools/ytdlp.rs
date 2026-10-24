@@ -1,8 +1,8 @@
 //! yt-dlp 的探测、安装和升级。
 
-use crate::utils;
 #[cfg(target_os = "windows")]
 use crate::commands::CREATE_NO_WINDOW;
+use crate::utils;
 use std::process::Stdio;
 use tauri::{AppHandle, Emitter};
 use tokio::io::AsyncBufReadExt;
@@ -16,7 +16,22 @@ use super::ToolStatus;
 /// 获取 yt-dlp 安装状态和版本
 #[tauri::command]
 pub async fn get_ytdlp_status(app: AppHandle) -> Result<ToolStatus, String> {
-    let ytdlp_path = utils::get_ytdlp_path(&app)?;
+    let ytdlp_path = match utils::get_ytdlp_path(&app) {
+        Ok(path) => path,
+        Err(error) if utils::get_tool_source("yt-dlp")? == utils::ToolSource::Local => {
+            return Ok(ToolStatus {
+                installed: false,
+                runnable: false,
+                version: String::new(),
+                path: utils::get_ytdlp_local_path()?.to_string_lossy().to_string(),
+                source: "local".to_string(),
+                is_managed: false,
+                can_update: false,
+                error: Some(error),
+            });
+        }
+        Err(error) => return Err(error),
+    };
     let managed_path = utils::get_managed_ytdlp_path(&app)?;
     build_tool_status("yt-dlp", ytdlp_path, managed_path, "--version").await
 }
@@ -80,6 +95,7 @@ pub async fn download_ytdlp(app: AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub async fn update_ytdlp(app: AppHandle) -> Result<String, String> {
     let source = utils::get_tool_source("yt-dlp")?;
+    ensure_update_supported(source, utils::get_cli_tool_path("yt-dlp").is_some())?;
     if source == utils::ToolSource::Managed {
         download_ytdlp_impl(app, "update").await?;
         return Ok("Updated managed yt-dlp".to_string());
@@ -101,8 +117,7 @@ pub async fn update_ytdlp(app: AppHandle) -> Result<String, String> {
     } else {
         cmd.arg("--update-to").arg(channel.as_str());
     }
-    cmd.env("PYTHONUTF8", "1")
-        .env("PYTHONIOENCODING", "utf-8");
+    cmd.env("PYTHONUTF8", "1").env("PYTHONIOENCODING", "utf-8");
     #[cfg(target_os = "windows")]
     cmd.creation_flags(CREATE_NO_WINDOW);
 
@@ -152,5 +167,30 @@ pub async fn update_ytdlp(app: AppHandle) -> Result<String, String> {
         Ok(format!("{}\n{}", stdout_out, stderr_out).trim().to_string())
     } else {
         Err(format!("err_update_failed:{}", stderr_out.trim()))
+    }
+}
+
+fn ensure_update_supported(
+    source: utils::ToolSource,
+    has_cli_override: bool,
+) -> Result<(), String> {
+    if source == utils::ToolSource::Local || has_cli_override {
+        return Err("err_tool_update_not_supported:yt-dlp".to_string());
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ensure_update_supported;
+    use crate::utils::ToolSource;
+
+    #[test]
+    fn rejects_local_and_cli_updates_before_starting_a_process() {
+        assert!(ensure_update_supported(ToolSource::Local, false).is_err());
+        assert!(ensure_update_supported(ToolSource::Managed, true).is_err());
+        assert!(ensure_update_supported(ToolSource::System, true).is_err());
+        assert!(ensure_update_supported(ToolSource::Managed, false).is_ok());
+        assert!(ensure_update_supported(ToolSource::System, false).is_ok());
     }
 }

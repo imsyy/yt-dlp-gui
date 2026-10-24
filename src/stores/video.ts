@@ -68,7 +68,7 @@ export const useVideoStore = defineStore("video", () => {
    */
   const fetchVideoInfo = async (
     targetUrl: string,
-    options: { silent?: boolean } = {},
+    options: { silent?: boolean; customArgs?: string } = {},
   ): Promise<FetchedVideoData | null> => {
     const settingStore = useSettingStore();
     fetching.value = true;
@@ -79,6 +79,7 @@ export const useVideoStore = defineStore("video", () => {
         cookieFile,
         cookieBrowser,
         proxy: settingStore.proxy || null,
+        customArgs: options.customArgs ?? settingStore.defaultCustomArgs,
       });
       let videoInfo: VideoInfo;
       let isPlaylist = false;
@@ -86,13 +87,14 @@ export const useVideoStore = defineStore("video", () => {
 
       const entries = filterPlaylistEntries(info.entries || []);
 
-      if (info._type === "playlist" && entries.length) {
+      if ((info._type === "playlist" || info._type === "multi_video") && entries.length) {
         isPlaylist = true;
         playlistEntries = entries.map((e, i) => ({
           id: e.id || String(i + 1),
           title: e.title || `第 ${i + 1} P`,
           duration: e.duration ?? null,
           url: e.url || "",
+          playlist_index: e.playlist_index,
         }));
         const firstEntry = entries[0];
         const formats: VideoFormat[] = firstEntry?.formats || info.formats || [];
@@ -126,7 +128,7 @@ export const useVideoStore = defineStore("video", () => {
         .sort(compareAudioFormats);
 
       // YouTube URL 且 Deno 未安装时提示
-      if (/youtube\.com|youtu\.be/i.test(targetUrl)) {
+      if (settingStore.jsRuntime === "deno" && /youtube\.com|youtu\.be/i.test(targetUrl)) {
         try {
           const denoStatus = await invoke<DenoStatus>("get_deno_status");
           if (!denoStatus.installed) {

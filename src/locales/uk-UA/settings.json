@@ -1,5 +1,6 @@
 {
   "settings": {
+    "toolNotRunnable": "Неможливо запустити",
     "title": "Налаштування",
     "installed": "Встановлено",
     "notInstalled": "Не встановлено",
@@ -9,6 +10,12 @@
     "toolManager": "Необхідне налаштування",
     "sourceManaged": "Вбудований",
     "sourceSystem": "Системний PATH",
+    "sourceLocal": "Локальний / venv",
+    "ytdlpLocalPath": "Шлях до виконуваного файлу yt-dlp",
+    "ytdlpLocalPathHint": "Виберіть виконуваний файл yt-dlp, зокрема з venv (Scripts/yt-dlp.exe або bin/yt-dlp).",
+    "selectYtdlpExecutable": "Вибрати виконуваний файл yt-dlp",
+    "localManaged": "Зовнішнє керування",
+    "localManagedHint": "Оновлюйте цю інсталяцію через pip або менеджер пакетів, яким її встановлено.",
     "installManaged": "Встановити копію додатка",
     "updateNow": "Оновити",
     "systemManaged": "Керується системою",
@@ -108,7 +115,12 @@
     "appUpdateFailed": "Помилка оновлення: {e}",
     "appIsLatest": "У вас остання версія",
     "systemBinaryNotice": "Зараз використовується системний yt-dlp. «Перевірити оновлення» оновлює лише копію, керовану додатком. Перемкніть режим шляху на «Лише додаток», щоб оновлення набуло чинності.",
-    "showTrayIcon": "Показувати значок у системному треї"
+    "showTrayIcon": "Показувати значок у системному треї",
+    "showHomeTips": "Показувати підказки на головній",
+    "playlistSubfolders": "Завантажувати кожен список в окрему папку",
+    "startMaximized": "Запускати з розгорнутим вікном",
+    "jsRuntime": "Середовище JavaScript",
+    "jsRuntimeHint": "Deno можна встановити в застосунку. Інші середовища використовують системний PATH."
   },
   "cookie": {
     "settings": "Налаштування cookies",

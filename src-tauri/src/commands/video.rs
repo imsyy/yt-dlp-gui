@@ -64,7 +64,76 @@ fn normalize_netscape_cookie_file(text: &str) -> Result<String, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::normalize_netscape_cookie_file;
+    use super::{fetch_thumbnail, normalize_netscape_cookie_file};
+    use std::io::{BufRead, BufReader, Write};
+
+    fn image_proxy(response: &'static [u8]) -> (String, std::thread::JoinHandle<String>) {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let proxy = format!("http://{}", listener.local_addr().unwrap());
+        let server = std::thread::spawn(move || {
+            let (stream, _) = listener.accept().unwrap();
+            stream
+                .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+                .unwrap();
+            let mut reader = BufReader::new(stream);
+            let mut request = String::new();
+            reader.read_line(&mut request).unwrap();
+            loop {
+                let mut header = String::new();
+                reader.read_line(&mut header).unwrap();
+                if header == "\r\n" || header.is_empty() {
+                    break;
+                }
+            }
+            reader.into_inner().write_all(response).unwrap();
+            request
+        });
+        (proxy, server)
+    }
+
+    #[test]
+    fn thumbnail_preview_uses_proxy_and_returns_binary_bytes() {
+        use tauri::ipc::{InvokeResponseBody, IpcResponse};
+        let (proxy, server) =
+            image_proxy(b"HTTP/1.1 200 OK\r\nContent-Length: 3\r\nConnection: close\r\n\r\nabc");
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let response = runtime
+            .block_on(fetch_thumbnail(
+                "http://thumbnail.invalid/cover".into(),
+                Some(proxy),
+            ))
+            .unwrap();
+        assert!(
+            matches!(response.body().unwrap(), InvokeResponseBody::Raw(bytes) if bytes == b"abc")
+        );
+        assert!(server
+            .join()
+            .unwrap()
+            .starts_with("GET http://thumbnail.invalid/cover "));
+    }
+
+    #[test]
+    fn thumbnail_preview_rejects_oversized_responses_and_non_http_urls() {
+        let (proxy, server) = image_proxy(
+            b"HTTP/1.1 200 OK\r\nContent-Length: 10485761\r\nConnection: close\r\n\r\n",
+        );
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let response = runtime.block_on(fetch_thumbnail(
+            "http://thumbnail.invalid/cover".into(),
+            Some(proxy),
+        ));
+        assert!(response.err().unwrap().contains("exceeds 10 MiB"));
+        server.join().unwrap();
+        assert!(runtime
+            .block_on(fetch_thumbnail("file:///image.jpg".into(), None))
+            .is_err());
+    }
 
     #[test]
     fn validates_and_normalizes_cookie_file() {
@@ -93,14 +162,54 @@ pub async fn fetch_video_info(
     cookie_file: Option<String>,
     cookie_browser: Option<String>,
     proxy: Option<String>,
+    custom_args: Option<String>,
 ) -> Result<Value, String> {
+    let custom_args = utils::split_command_line_args(custom_args.as_deref().unwrap_or_default())?;
+    let extra_args: Vec<&str> = custom_args.iter().map(String::as_str).collect();
     support::run_ytdlp_json(
         &app,
         &url,
-        &[],
+        &extra_args,
         cookie_file.as_deref(),
         cookie_browser.as_deref(),
         proxy.as_deref(),
     )
     .await
+}
+
+/// Webview image requests do not inherit yt-dlp's SOCKS/HTTP proxy settings.
+#[tauri::command]
+pub async fn fetch_thumbnail(
+    url: String,
+    proxy: Option<String>,
+) -> Result<tauri::ipc::Response, String> {
+    use futures_util::StreamExt;
+    let parsed = url::Url::parse(&url).map_err(|e| format!("err_download_thumbnail:{}", e))?;
+    if !matches!(parsed.scheme(), "http" | "https") {
+        return Err("err_download_thumbnail:unsupported URL scheme".into());
+    }
+    const MAX_THUMBNAIL_BYTES: usize = 10 * 1024 * 1024;
+    let response = support::build_http_client(proxy.as_deref())?
+        .get(parsed)
+        .timeout(std::time::Duration::from_secs(20))
+        .send()
+        .await
+        .and_then(reqwest::Response::error_for_status)
+        .map_err(|e| format!("err_download_thumbnail:{}", e))?;
+    if response
+        .content_length()
+        .is_some_and(|size| size > MAX_THUMBNAIL_BYTES as u64)
+    {
+        return Err("err_download_thumbnail:image exceeds 10 MiB".into());
+    }
+    let mut stream = response.bytes_stream();
+    let mut bytes = Vec::new();
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk.map_err(|e| format!("err_read_thumbnail_data:{}", e))?;
+        if bytes.len() + chunk.len() > MAX_THUMBNAIL_BYTES {
+            return Err("err_download_thumbnail:image exceeds 10 MiB".into());
+        }
+        bytes.extend_from_slice(&chunk);
+    }
+    Ok(tauri::ipc::Response::new(bytes))
 }

@@ -153,12 +153,7 @@ const confirmRemoveChannel = (channel: ChannelRecord) => {
         @remove="confirmRemoveChannel"
       />
 
-      <n-flex
-        v-if="activeChannel"
-        vertical
-        :size="12"
-        style="flex: 1; min-width: 0; min-height: 0"
-      >
+      <n-flex v-if="activeChannel" vertical :size="12" style="flex: 1; min-width: 0; min-height: 0">
         <ChannelDetailCard
           v-model:sync-tabs="syncTabs"
           v-model:sleep-interval="sleepInterval"

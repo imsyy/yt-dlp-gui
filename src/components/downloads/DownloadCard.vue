@@ -2,10 +2,12 @@
 import { NFlex, NCheckbox, type LogInst } from "naive-ui";
 import { revealItemInDir, openUrl } from "@tauri-apps/plugin-opener";
 import { invoke } from "@tauri-apps/api/core";
+import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { useDownloadStore } from "@/stores/download";
 import { useI18n } from "vue-i18n";
 import { formatError } from "@/utils/format";
 import { cleanTaskResiduals } from "@/utils/taskFiles";
+import { useThumbnail } from "@/composables/useThumbnail";
 import type { DownloadTask } from "@/types";
 
 interface Props {
@@ -18,7 +20,12 @@ const { t } = useI18n();
 const downloadStore = useDownloadStore();
 
 const coverError = ref(false);
+const { src: thumbnailSrc } = useThumbnail(() => props.task.thumbnail);
+watch(thumbnailSrc, () => {
+  coverError.value = false;
+});
 const isLogExpanded = ref(false);
+const showTaskEditor = ref(false);
 const logRef = ref<LogInst | null>(null);
 
 const isCompleted = computed(() => props.task.status === "completed");
@@ -115,16 +122,21 @@ const toggleLog = () => {
   }
 };
 
-watch(
-  () => props.task.logs.length,
-  () => {
-    if (isLogExpanded.value) {
-      nextTick(() => {
-        logRef.value?.scrollTo({ position: "bottom", silent: true });
-      });
-    }
-  },
-);
+const copyLog = async () => {
+  try {
+    await writeText(props.task.logs.join("\n"));
+  } catch {
+    window.$message.error(t("clipboard.writeFailed"));
+  }
+};
+
+watch(logContent, () => {
+  if (isLogExpanded.value) {
+    nextTick(() => {
+      logRef.value?.scrollTo({ position: "bottom", silent: true });
+    });
+  }
+});
 
 /** 打开源网页 */
 const handleOpenSource = async () => {
@@ -292,11 +304,7 @@ const handleRemove = () => {
     <n-flex :size="14">
       <!-- 视频缩略图 -->
       <div class="task-thumbnail">
-        <img
-          v-if="task.thumbnail && !coverError"
-          :src="task.thumbnail"
-          @error="coverError = true"
-        />
+        <img v-if="thumbnailSrc && !coverError" :src="thumbnailSrc" @error="coverError = true" />
         <div v-else class="thumbnail-placeholder">
           <icon-mdi-video-outline />
         </div>
@@ -386,9 +394,9 @@ const handleRemove = () => {
               {{ $t("common.open") }}
             </n-tooltip>
 
-            <!-- 查看/收起任务日志（进行中或失败状态） -->
+            <!-- 查看/收起任务日志 -->
             <n-button
-              v-if="isActive || task.status === 'error'"
+              v-if="isActive || task.logs.length > 0"
               size="tiny"
               strong
               secondary
@@ -427,6 +435,27 @@ const handleRemove = () => {
                 </n-button>
               </template>
               {{ $t("downloads.reDownload") }}
+            </n-tooltip>
+
+            <!-- 编辑失败或取消任务的本次下载参数 -->
+            <n-tooltip
+              v-if="task.status === 'error' || task.status === 'cancelled'"
+              trigger="hover"
+            >
+              <template #trigger>
+                <n-button
+                  size="tiny"
+                  strong
+                  secondary
+                  :aria-label="$t('downloads.editAndRetry')"
+                  @click="showTaskEditor = true"
+                >
+                  <template #icon>
+                    <n-icon size="16"><icon-mdi-pencil /></n-icon>
+                  </template>
+                </n-button>
+              </template>
+              {{ $t("downloads.editAndRetry") }}
             </n-tooltip>
 
             <!-- 定位打开所在文件夹（仅已完成） -->
@@ -471,12 +500,24 @@ const handleRemove = () => {
 
         <n-collapse-transition :show="isLogExpanded">
           <div class="task-log">
-            <n-log ref="logRef" :log="logContent" :rows="8" :font-size="12" :trim="false" />
+            <n-flex justify="end">
+              <n-button size="tiny" :disabled="!task.logs.length" @click="copyLog">
+                {{ $t("common.copy") }}
+              </n-button>
+            </n-flex>
+            <n-log
+              ref="logRef"
+              :log="logContent"
+              :font-size="12"
+              :trim="false"
+              class="task-log-content"
+            />
           </div>
         </n-collapse-transition>
       </n-flex>
     </n-flex>
   </n-card>
+  <TaskEditModal v-if="showTaskEditor" v-model:show="showTaskEditor" :task="task" />
 </template>
 
 <style scoped lang="scss">
@@ -545,6 +586,7 @@ const handleRemove = () => {
 }
 
 .error-popover-body {
+  white-space: pre-wrap;
   font-size: 12px;
   line-height: 1.5;
   word-break: break-all;
@@ -554,9 +596,24 @@ const handleRemove = () => {
 }
 
 .task-log {
+  display: flex;
+  flex-direction: column;
+  height: 200px;
+  min-height: 100px;
+  max-height: 70vh;
+  resize: vertical;
   border-radius: 8px;
   padding: 6px 0 6px 6px;
   overflow: hidden;
   background: var(--n-color-modal);
+
+  :deep(*) {
+    user-select: text;
+  }
+}
+
+.task-log-content {
+  flex: 1;
+  min-height: 0;
 }
 </style>

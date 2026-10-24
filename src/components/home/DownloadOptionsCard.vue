@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { normalizeAudioFormat, normalizeVideoFormat } from "@/utils/normalizer";
 import { getCodecKey, getCodecLabel } from "@/utils/formats";
+import { useSettingStore } from "@/stores/setting";
 import { useI18n } from "vue-i18n";
 import type { VideoFormat, VideoInfo } from "@/types";
 
 const { t } = useI18n();
+const settingStore = useSettingStore();
 
 const props = defineProps<{
   videoFormats: VideoFormat[];
   audioFormats: VideoFormat[];
   videoInfo: VideoInfo;
+  extractAudio?: boolean;
 }>();
 
 const downloadMode = defineModel<"default" | "video" | "audio">("downloadMode", {
@@ -24,11 +27,26 @@ const selectedAudioFormat = defineModel<string>("selectedAudioFormat", {
 
 const selectedVideoCodec = ref("all");
 const selectedAudioCodec = ref("all");
+const multipleAudio = computed(() => downloadMode.value === "default" && !props.extractAudio);
+
+const handleAudioFormatChange = (value: string | string[] | null) => {
+  selectedAudioFormat.value = Array.isArray(value) ? value.join("+") : value || "";
+};
+
+watch(
+  [downloadMode, () => props.extractAudio],
+  ([mode, extractAudio]) => {
+    if (mode === "audio" || extractAudio) {
+      selectedAudioFormat.value = selectedAudioFormat.value.split("+")[0] || "";
+    }
+  },
+  { immediate: true },
+);
 
 const createCodecOptions = (formats: VideoFormat[]) => {
   const codecs = new Map<string, string>();
   for (const format of formats) {
-    const codec = format.vcodec !== "none" ? format.vcodec : format.acodec;
+    const codec = format.vcodec && format.vcodec !== "none" ? format.vcodec : format.acodec;
     codecs.set(getCodecKey(codec), getCodecLabel(codec));
   }
   return [
@@ -109,6 +127,7 @@ const audioFormatOptions = computed(() => {
 });
 
 const handleVideoCodecChange = (value: string) => {
+  settingStore.preferredVideoCodec = value;
   selectedVideoCodec.value = value;
   const currentIsVisible = filteredVideoFormats.value.some(
     (format) => format.format_id === selectedVideoFormat.value,
@@ -117,29 +136,56 @@ const handleVideoCodecChange = (value: string) => {
 };
 
 const handleAudioCodecChange = (value: string) => {
+  settingStore.preferredAudioCodec = value;
   selectedAudioCodec.value = value;
-  const currentIsVisible = filteredAudioFormats.value.some(
-    (format) => format.format_id === selectedAudioFormat.value,
-  );
-  if (!currentIsVisible) selectedAudioFormat.value = filteredAudioFormats.value[0]?.format_id || "";
+  const visibleSelections = selectedAudioFormat.value
+    .split("+")
+    .filter((id) => filteredAudioFormats.value.some((format) => format.format_id === id));
+  selectedAudioFormat.value = visibleSelections.length
+    ? visibleSelections.join("+")
+    : filteredAudioFormats.value[0]?.format_id || "";
 };
 
 watch(
-  () => props.videoFormats,
+  [
+    () => props.videoInfo,
+    () => props.videoFormats,
+    selectedVideoFormat,
+    () => settingStore.preferredVideoCodec,
+  ],
   () => {
-    if (!videoCodecOptions.value.some((option) => option.value === selectedVideoCodec.value)) {
-      selectedVideoCodec.value = "all";
-    }
+    const preferred = settingStore.preferredVideoCodec;
+    const selected = props.videoFormats.find(
+      (format) => format.format_id === selectedVideoFormat.value,
+    );
+    selectedVideoCodec.value =
+      videoCodecOptions.value.some((option) => option.value === preferred) &&
+      (!selected || getCodecKey(selected.vcodec) === preferred)
+        ? preferred
+        : "all";
   },
+  { immediate: true },
 );
 
 watch(
-  () => props.audioFormats,
+  [
+    () => props.videoInfo,
+    () => props.audioFormats,
+    selectedAudioFormat,
+    () => settingStore.preferredAudioCodec,
+  ],
   () => {
-    if (!audioCodecOptions.value.some((option) => option.value === selectedAudioCodec.value)) {
-      selectedAudioCodec.value = "all";
-    }
+    const preferred = settingStore.preferredAudioCodec;
+    const selectedIds = selectedAudioFormat.value.split("+");
+    const selectionsMatch = props.audioFormats
+      .filter((format) => selectedIds.includes(format.format_id))
+      .every((format) => getCodecKey(format.acodec) === preferred);
+    selectedAudioCodec.value =
+      audioCodecOptions.value.some((option) => option.value === preferred) && selectionsMatch
+        ? preferred
+        : "all";
   },
+  { immediate: true },
 );
 </script>
 
@@ -193,10 +239,14 @@ watch(
           @update:value="handleAudioCodecChange"
         />
         <n-select
-          v-model:value="selectedAudioFormat"
+          :value="
+            multipleAudio ? selectedAudioFormat.split('+').filter(Boolean) : selectedAudioFormat
+          "
+          :multiple="multipleAudio"
           :options="audioFormatOptions"
           size="small"
           style="min-width: 0"
+          @update:value="handleAudioFormatChange"
         />
       </n-flex>
     </n-flex>

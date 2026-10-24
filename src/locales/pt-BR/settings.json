@@ -1,5 +1,6 @@
 {
   "settings": {
+    "toolNotRunnable": "Não é possível executar",
     "title": "Configurações",
     "installed": "Instalado",
     "notInstalled": "Não instalado",
@@ -7,6 +8,12 @@
     "toolManager": "Configuração necessária",
     "sourceManaged": "Integrado",
     "sourceSystem": "PATH do sistema",
+    "sourceLocal": "Local / venv",
+    "ytdlpLocalPath": "Caminho do executável do yt-dlp",
+    "ytdlpLocalPathHint": "Selecione o executável do yt-dlp, inclusive em um venv (Scripts/yt-dlp.exe ou bin/yt-dlp).",
+    "selectYtdlpExecutable": "Selecionar executável do yt-dlp",
+    "localManaged": "Gerenciado externamente",
+    "localManagedHint": "Atualize esta instalação com pip ou com o gerenciador de pacotes usado na instalação.",
     "installManaged": "Instalar versão do aplicativo",
     "updateNow": "Atualizar agora",
     "systemManaged": "Gerenciado pelo sistema",
@@ -108,7 +115,12 @@
     "youtubeVisitorDataPlaceholder": "ex.: CgtBYmNkZWZHaGlqaw%3D%3D",
     "defaultFfmpegArgs": "Argumentos padrão do FFmpeg",
     "defaultFfmpegArgsHint": "São aplicados a cada vídeo novo analisado; você ainda pode alterar o valor em cada tarefa",
-    "showTrayIcon": "Mostrar ícone na bandeja do sistema"
+    "showTrayIcon": "Mostrar ícone na bandeja do sistema",
+    "showHomeTips": "Mostrar dicas na tela inicial",
+    "playlistSubfolders": "Baixar cada playlist em sua própria pasta",
+    "startMaximized": "Iniciar com a janela maximizada",
+    "jsRuntime": "Runtime JavaScript",
+    "jsRuntimeHint": "O Deno pode ser instalado no aplicativo. Os outros runtimes usam o PATH do sistema."
   },
   "cookie": {
     "settings": "Configurações de cookies",

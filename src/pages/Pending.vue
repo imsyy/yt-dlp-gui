@@ -72,8 +72,8 @@ const estimatedSize = computed(() => {
     }
   }
   if (item.downloadMode !== "video") {
-    const af = item.audioFormats.find((f) => f.format_id === item.selectedAudioFormat);
-    if (af) {
+    const selectedAudio = item.selectedAudioFormat.split("+");
+    for (const af of item.audioFormats.filter((f) => selectedAudio.includes(f.format_id))) {
       const { size } = estimateFileSize(af, duration);
       total += size;
     }
@@ -110,7 +110,7 @@ const handleBackToHome = () => {
 const handleRefresh = async () => {
   const item = activeItem.value;
   if (!item) return;
-  const data = await videoStore.fetchVideoInfo(item.url);
+  const data = await videoStore.fetchVideoInfo(item.url, { customArgs: item.customArgs });
   if (data) {
     pendingStore.refresh(item.id, data);
     window.$message.success(t("detail.refreshSuccess"));
@@ -212,7 +212,9 @@ const handleDownload = async () => {
                 size="tiny"
                 secondary
                 @click="
-                  activeItem.selectedPlaylistItems = activeItem.playlistEntries.map((_, i) => i + 1)
+                  activeItem.selectedPlaylistItems = activeItem.playlistEntries.map(
+                    (entry, i) => entry.playlist_index ?? i + 1,
+                  )
                 "
               >
                 {{ $t("common.selectAll") }}
@@ -227,8 +229,8 @@ const handleDownload = async () => {
               <n-checkbox
                 v-for="(entry, index) in activeItem.playlistEntries"
                 :key="entry.id"
-                :value="index + 1"
-                :label="`P${index + 1} ${entry.title}`"
+                :value="entry.playlist_index ?? index + 1"
+                :label="`P${entry.playlist_index ?? index + 1} ${entry.title}`"
               />
             </n-flex>
           </n-checkbox-group>
@@ -239,6 +241,7 @@ const handleDownload = async () => {
           v-model:selected-video-format="activeItem.selectedVideoFormat"
           v-model:selected-audio-format="activeItem.selectedAudioFormat"
           :video-formats="activeItem.videoFormats"
+          :extract-audio="activeItem.extractAudio"
           :audio-formats="activeItem.audioFormats"
           :video-info="activeItem.videoInfo as VideoInfo"
           class="section-card"
@@ -253,6 +256,7 @@ const handleDownload = async () => {
         <ExtraOptionsCard
           v-model:start-time="activeItem.startTime"
           v-model:end-time="activeItem.endTime"
+          v-model:force-keyframes-at-cuts="activeItem.forceKeyframesAtCuts"
           v-model:embed-subs="activeItem.embedSubs"
           v-model:embed-thumbnail="activeItem.embedThumbnail"
           v-model:write-thumbnail="activeItem.writeThumbnail"
@@ -276,7 +280,11 @@ const handleDownload = async () => {
           <DownloadDirCard />
         </div>
 
-        <DownloadBar :estimated-size-text="estimatedSizeText" @download="handleDownload" />
+        <DownloadBar
+          :estimated-size-text="estimatedSizeText"
+          :disabled="activeItem.isPlaylist && !activeItem.selectedPlaylistItems.length"
+          @download="handleDownload"
+        />
       </div>
     </template>
 
