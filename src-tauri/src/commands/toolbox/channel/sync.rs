@@ -294,7 +294,7 @@ pub async fn channel_sync_start(
 
         // 确定需要拉取的 URL 列表与内容类型标签
         let base_url = clean_channel_url(&channel.url);
-        let sync_targets: Vec<(String, String)> = if channel.platform == "youtube" {
+        let mut sync_targets: Vec<(String, String)> = if channel.platform == "youtube" {
             let configured_tabs = tabs.unwrap_or_else(|| {
                 vec![
                     "videos".to_string(),
@@ -341,7 +341,15 @@ pub async fn channel_sync_start(
             }
         };
 
-        for (tab_name, target_url) in &sync_targets {
+        // 自动生成的 Topic 频道（`{artist} - Topic`）没有任何 tab，
+        // 所有 tab 都抓不到条目时，回落到频道根 URL（yt-dlp 会解析成 uploads 播放列表）。
+        let mut fallback_attempted = !matches!(channel.platform.as_str(), "youtube");
+        let mut target_index = 0usize;
+        while target_index < sync_targets.len() {
+            let (tab_name, target_url) = sync_targets[target_index].clone();
+            let (tab_name, target_url) = (&tab_name, &target_url);
+            target_index += 1;
+
             if cancel_flag.load(Ordering::Relaxed) {
                 break;
             }
@@ -584,6 +592,17 @@ pub async fn channel_sync_start(
 
             app_handle.state::<ProcessRegistry>().take(&run_id);
             let _ = child.wait().await;
+
+            // 最后一个 tab 跑完仍然零条目：说明这是个没有 tab 的频道，追加一次根 URL 兜底
+            if !fallback_attempted
+                && target_index == sync_targets.len()
+                && total_synced_count == 0
+                && encountered_error.is_none()
+                && !cancel_flag.load(Ordering::Relaxed)
+            {
+                fallback_attempted = true;
+                sync_targets.push(("uploads".to_string(), base_url.clone()));
+            }
         }
 
         // 清理当前同步任务状态
