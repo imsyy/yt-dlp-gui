@@ -96,6 +96,12 @@ export const localeEntries: LocaleEntry[] = [
     match: (languageCandidate) => languageCandidate.startsWith("sk"),
   },
   {
+    code: "tr-TR",
+    flag: "🇹🇷",
+    label: "Türkçe",
+    match: (languageCandidate) => languageCandidate.startsWith("tr"),
+  },
+  {
     code: "zh-CN",
     flag: "🇨🇳",
     label: "简体中文",
