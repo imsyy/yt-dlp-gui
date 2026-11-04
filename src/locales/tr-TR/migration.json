@@ -1,0 +1,14 @@
+{
+  "migration": {
+    "title": "Eski Veri Algılandı",
+    "description": "Önceki bir sürümden indirme görevleri ve çözümleme geçmişi bulundu. Bunları mevcut sürüme taşımak istiyor musunuz? Eski önbelleğe alınmış veriler taşıma sonrasında otomatik olarak temizlenecektir.",
+    "tasksCount": "{n} indirme görevi",
+    "historyCount": "{n} geçmiş girdisi",
+    "migrateNow": "Şimdi aktar",
+    "migratingTasks": "İndirme görevleri aktarılıyor…",
+    "migratingHistory": "Çözümleme geçmişi aktarılıyor…",
+    "failed": "Veri aktarımı başarısız oldu: {message}",
+    "retry": "Yeniden Dene",
+    "success": "Veri aktarımı tamamlandı"
+  }
+}

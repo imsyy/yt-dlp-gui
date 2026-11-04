@@ -1,0 +1,33 @@
+{
+  "home": {
+    "slogan": "Video bağlantısını yapıştırın, anında indirin",
+    "inputPlaceholder": "Video bağlantısını girin...",
+    "parse": "Çözümle",
+    "pasteFromClipboard": "Yapıştır",
+    "parseHistory": "Geçmiş",
+    "noHistory": "Henüz geçmiş yok",
+    "enterValidUrl": "Lütfen geçerli bir bağlantı girin",
+    "standardMode": "Standart",
+    "batchMode": "Toplu",
+    "batchPlaceholder": "Her satıra bir video bağlantısı yapıştırın; kopyalar otomatik temizlenir\nÇözümlemeyi başlatmak için Ctrl + Enter tuşlarına basın",
+    "parseBatch": "{count} Bağlantıyı Çözümle",
+    "batchEmpty": "En az bir geçerli bağlantı girin",
+    "batchLimit": "Aynı anda en fazla {count} bağlantı çözümlenebilir",
+    "batchPasted": "Panodan {count} bağlantı algılandı",
+    "batchComplete": "Toplu çözümleme tamamlandı: {succeeded} başarılı, {failed} başarısız",
+    "batchAllFailed": "Tüm bağlantıların çözümlenmesi başarısız oldu",
+    "pendingBehavior": "Çözümlemeden sonra bekleyen seçenekleri aç",
+    "quickBehavior": "Varsayılan seçeneklerle hemen indir",
+    "quickSettings": "Hızlı indirme ayarları",
+    "quickPrepareFailed": "Video bilgileri alınamadı",
+    "maxQuality": "En yüksek kalite",
+    "tips": [
+      "İndirme sorunları mı yaşıyorsunuz? Çerezleri ayarlamak veya yt-dlp'yi güncellemek için Ayarlar'a gidin",
+      "YouTube, Bilibili, Twitter (X) vb. dahil binlerce web sitesini destekler",
+      "İhtiyacınıza göre yalnızca video veya yalnızca ses modunu seçin",
+      "İndirmeden önce bir indirme dizini belirlediğinizden emin olun",
+      "Tam format listesini almak için YouTube için Deno çalışma zamanını kurmanız önerilir",
+      "Çözümleme geçmişinde gezinmek için klavyenin Yukarı/Aşağı tuşlarını kullanın"
+    ]
+  }
+}

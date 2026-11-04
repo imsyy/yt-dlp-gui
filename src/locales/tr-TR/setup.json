@@ -1,0 +1,15 @@
+{
+  "setup": {
+    "ytdlpTitle": "yt-dlp Gerekli",
+    "ytdlpDesc": "yt-dlp bu uygulamanın temel indirme motorudur ve şu anda yüklü değildir. O olmadan hiçbir video çözümlenemez veya indirilemez.",
+    "ytdlpHint": "Ayarlar'a gidin ve yt-dlp'yi otomatik olarak kurmak için indirme düğmesine tıklayın. Kurulduktan sonra tüm özellikler kullanılabilir olacaktır.",
+    "denoTitle": "Deno Çalışma Zamanı Önerilir",
+    "denoDesc": "YouTube video bilgilerini çözümlemek için bir JavaScript çalışma zamanı gerektirir",
+    "denoHint": "Deno, yt-dlp'nin YouTube video bilgilerini çözümlemesi için gereken bir JavaScript çalışma zamanıdır. Kurulması, daha yüksek kaliteli seçenekler dahil tam format listesini etkinleştirir.",
+    "ffmpegTitle": "Birleştirme için FFmpeg Gerekli",
+    "ffmpegDesc": "Seçilen video ve ses akışları FFmpeg veya FFprobe mevcut olmadığı için birleştirilemiyor.",
+    "ffmpegHint": "Sistem kurulumunu kullanmak veya uygulama tarafından yönetilen FFmpeg paketini kurmak için Ayarlar'a gidin, ardından indirmeyi tekrar başlatın.",
+    "goToSettings": "Ayarlar'a Git",
+    "later": "Daha Sonra"
+  }
+}
