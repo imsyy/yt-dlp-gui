@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { readText } from "@tauri-apps/plugin-clipboard-manager";
 import { isValidUrl } from "@/utils/validate";
 import { useVideoStore } from "@/stores/video";
@@ -22,7 +22,7 @@ const url = ref("");
 const batchInput = ref("");
 const batchParsing = ref(false);
 const showQuickSettings = ref(false);
-const BATCH_LIMIT = 50;
+const BATCH_LIMIT = 999;
 
 /**
  * 从多行或空格分隔的文本中提取并去重有效网址

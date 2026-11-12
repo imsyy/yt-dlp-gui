@@ -72,6 +72,11 @@ const router = createRouter({
           name: "toolbox-browser-extension",
           component: () => import("@/pages/toolbox/BrowserExtension.vue"),
         },
+        {
+          path: "collector",
+          name: "toolbox-collector",
+          component: () => import("@/pages/toolbox/VideoCollector.vue"),
+        },
       ],
     },
     {
